@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>SVG XML parser and serializer with support for Vectorer custom extension attributes.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vectorer.Abstractions\Vectorer.Abstractions.csproj" />
+    <ProjectReference Include="..\Vectorer.Core\Vectorer.Core.csproj" />
+  </ItemGroup>
+</Project>

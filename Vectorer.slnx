@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/plugins/">
+    <Project Path="plugins/Vectorer.SamplePlugin/Vectorer.SamplePlugin.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Vectorer.Abstractions/Vectorer.Abstractions.csproj" />
+    <Project Path="src/Vectorer.App/Vectorer.App.csproj" />
+    <Project Path="src/Vectorer.Core/Vectorer.Core.csproj" />
+    <Project Path="src/Vectorer.Plugins/Vectorer.Plugins.csproj" />
+    <Project Path="src/Vectorer.Rendering/Vectorer.Rendering.csproj" />
+    <Project Path="src/Vectorer.Svg/Vectorer.Svg.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Vectorer.Core.Tests/Vectorer.Core.Tests.csproj" />
+    <Project Path="tests/Vectorer.Rendering.Tests/Vectorer.Rendering.Tests.csproj" />
+    <Project Path="tests/Vectorer.Svg.Tests/Vectorer.Svg.Tests.csproj" />
+  </Folder>
+</Solution>

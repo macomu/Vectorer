@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Sample plugin demonstrating menu/toolbar contributions, SVG document manipulation, and custom SkiaSharp runtime shaders.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Vectorer.Abstractions\Vectorer.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

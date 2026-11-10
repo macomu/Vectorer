@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Core services for Vectorer: document manipulation, Undo/Redo history, and 2D boolean path geometry.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vectorer.Abstractions\Vectorer.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Dynamic plugin loader and extension host for Vectorer.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vectorer.Abstractions\Vectorer.Abstractions.csproj" />
+    <ProjectReference Include="..\Vectorer.Core\Vectorer.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Vectorer.Abstractions\Vectorer.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Vectorer.Core\Vectorer.Core.csproj" />
+    <ProjectReference Include="..\..\src\Vectorer.Plugins\Vectorer.Plugins.csproj" />
+    <ProjectReference Include="..\..\plugins\Vectorer.SamplePlugin\Vectorer.SamplePlugin.csproj" />
+  </ItemGroup>
+</Project>

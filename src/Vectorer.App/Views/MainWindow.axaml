@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Vectorer.App.ViewModels"
+        xmlns:controls="using:Vectorer.App.Controls"
+        xmlns:plugins="using:Vectorer.Abstractions.Plugins"
+        xmlns:docs="using:Vectorer.Abstractions.Documents"
+        x:Class="Vectorer.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Vectorer — Lightweight Extensible SVG Editor"
+        Width="1220" Height="760"
+        Background="#0D1117">
+
+  <DockPanel>
+    <!-- Top Toolbar -->
+    <Border DockPanel.Dock="Top" Background="#161B22" Padding="10,8" BorderBrush="#30363D" BorderThickness="0,0,0,1">
+      <WrapPanel Orientation="Horizontal" ItemSpacing="8">
+        <Button Content="+ Convex Polygon" Command="{Binding AddConvexPolygonCommand}" />
+        <Button Content="+ Concave Star (Texture)" Command="{Binding AddConcavePolygonCommand}" />
+        <Button Content="+ Circle" Command="{Binding AddCircleCommand}" />
+        <Button Content="+ Arc" Command="{Binding AddArcCommand}" />
+        <Separator Width="12" Opacity="0" />
+        <Button Content="Boolean Union" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
+        <Button Content="Boolean Difference" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
+        <Separator Width="12" Opacity="0" />
+        <Button Content="Toggle Blur Filter" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
+        <Button Content="Cycle Layer Blend" Command="{Binding CycleActiveLayerBlendModeCommand}" />
+        <Separator Width="12" Opacity="0" />
+        <Button Content="Undo" Command="{Binding UndoCommand}" />
+        <Button Content="Redo" Command="{Binding RedoCommand}" />
+
+        <!-- Dynamic Plugin Toolbar Contributions -->
+        <ItemsControl ItemsSource="{Binding PluginToolbarItems}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="plugins:IToolbarContribution">
+              <Button Content="{Binding Title}"
+                      ToolTip.Tip="{Binding Tooltip}"
+                      Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ExecutePluginToolbarItemCommand}"
+                      CommandParameter="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </WrapPanel>
+    </Border>
+
+    <!-- Bottom Status Bar -->
+    <Border DockPanel.Dock="Bottom" Background="#161B22" Padding="12,6" BorderBrush="#30363D" BorderThickness="0,1,0,0">
+      <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" FontSize="12" />
+    </Border>
+
+    <!-- Right Layer Inspector Panel -->
+    <Border DockPanel.Dock="Right" Width="260" Background="#161B22" Padding="12" BorderBrush="#30363D" BorderThickness="1,0,0,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Layers &amp; Blend Modes" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,8" />
+        <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="#0D1117">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="docs:LayerNode">
+              <StackPanel Spacing="2" Margin="4">
+                <TextBlock Text="{Binding Name}" FontWeight="Medium" Foreground="#E6EDF3" />
+                <TextBlock Text="{Binding BlendMode, StringFormat='Blend: {0}'}" FontSize="11" Foreground="#8B949E" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Center Vector Canvas Viewport -->
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#0D1117">
+      <Border HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
+              BorderBrush="#30363D" BorderThickness="1" BoxShadow="0 8 24 0 #60000000">
+        <controls:VectorCanvasControl Width="{Binding CurrentDocument.Width}"
+                                      Height="{Binding CurrentDocument.Height}"
+                                      Document="{Binding CurrentDocument}"
+                                      Renderer="{Binding DocumentRenderer}"
+                                      RenderVersion="{Binding RenderVersion}" />
+      </Border>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

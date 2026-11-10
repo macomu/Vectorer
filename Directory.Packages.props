@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!--
+    IMPORTANT LICENSE RULE:
+    Vectorer is distributed under the MIT License.
+    Every package added here MUST use a permissive license compatible with MIT distribution
+    (e.g., MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause).
+    NEVER add packages licensed under GPL, LGPL, AGPL, or restrictive commercial licenses.
+    Always document the license next to each PackageVersion entry and update THIRD_PARTY_NOTICES.md.
+  -->
+  <ItemGroup>
+    <!-- UI Framework: Avalonia (License: MIT) -->
+    <PackageVersion Include="Avalonia" Version="11.3.0" />
+    <PackageVersion Include="Avalonia.Desktop" Version="11.3.0" />
+    <PackageVersion Include="Avalonia.Skia" Version="11.3.0" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.0" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.0" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.0" />
+
+    <!-- MVVM Toolkit (License: MIT) -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+
+    <!-- 2D Graphics, Boolean Path Ops, Filters, Shaders & PNG Export: SkiaSharp (License: MIT) -->
+    <PackageVersion Include="SkiaSharp" Version="2.88.9" />
+
+    <!-- Unit Testing (License: Apache-2.0 / MIT) -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+</Project>
