@@ -6,7 +6,7 @@
         xmlns:docs="using:Vectorer.Abstractions.Documents"
         x:Class="Vectorer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Vectorer — SVG Editor"
+        Title="{Binding WindowTitle}"
         Width="1280" Height="800" MinWidth="1024" MinHeight="720"
         Background="#0D1117">
   <Window.Styles>
@@ -14,8 +14,20 @@
     <Style Selector="NumericUpDown"><Setter Property="MinWidth" Value="115" /><Setter Property="FormatString" Value="0.##" /></Style>
     <Style Selector="ListBox.tools ListBoxItem"><Setter Property="Padding" Value="8" /><Setter Property="Margin" Value="3,2" /><Setter Property="HorizontalContentAlignment" Value="Center" /></Style>
   </Window.Styles>
-  <DockPanel>
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+    <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+    <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+  </Window.KeyBindings>
+  <DockPanel IsEnabled="{Binding !IsBusy}">
     <Menu DockPanel.Dock="Top" Background="#161B22">
+      <MenuItem Header="ファイル">
+        <MenuItem Header="新規" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <MenuItem Header="開く…" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+        <MenuItem Header="保存" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+        <MenuItem Header="名前を付けて保存…" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+      </MenuItem>
       <MenuItem Header="編集">
         <MenuItem Header="元に戻す" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
         <MenuItem Header="やり直し" InputGesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
@@ -27,12 +39,26 @@
         <MenuItem Header="縮小" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
         <MenuItem Header="100%" InputGesture="Ctrl+1" Command="{Binding ResetZoomCommand}" />
       </MenuItem>
+      <MenuItem Header="オブジェクト">
+        <MenuItem Header="グループ化" InputGesture="Ctrl+G" Command="{Binding GroupSelectionCommand}" />
+        <MenuItem Header="グループ解除" InputGesture="Ctrl+Shift+G" Command="{Binding UngroupSelectionCommand}" />
+        <MenuItem Header="グループ内を編集" InputGesture="Enter" Command="{Binding EnterGroupCommand}" />
+        <MenuItem Header="親階層へ戻る" Command="{Binding ExitGroupCommand}" />
+        <Separator />
+        <MenuItem Header="左右反転" Command="{Binding FlipHorizontalCommand}" />
+        <MenuItem Header="上下反転" Command="{Binding FlipVerticalCommand}" />
+      </MenuItem>
       <MenuItem Header="パス">
         <MenuItem Header="オブジェクトをパスに変換" Command="{Binding ObjectToPathCommand}" />
         <MenuItem Header="ストロークをパスに変換" Command="{Binding StrokeToPathCommand}" />
         <Separator />
         <MenuItem Header="統合" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
         <MenuItem Header="差分" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
+        <MenuItem Header="交差" Command="{Binding BooleanIntersectionCommand}" />
+        <MenuItem Header="排他的論理和" Command="{Binding BooleanXorCommand}" />
+        <MenuItem Header="逆差分" Command="{Binding BooleanReverseDifferenceCommand}" />
+        <MenuItem Header="開く/閉じる（ノードツール）" Command="{Binding TogglePathClosedCommand}" />
+        <MenuItem Header="シンプル化（ノードツール）" Command="{Binding SimplifyPathCommand}" />
       </MenuItem>
       <MenuItem Header="レイヤー">
         <MenuItem Header="合成モード切替" Command="{Binding CycleActiveLayerBlendModeCommand}" />
@@ -43,29 +69,88 @@
     </Menu>
     <Border DockPanel.Dock="Top" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,1" Padding="10,6">
       <Grid ColumnDefinitions="*,Auto">
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,12,0">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" MinWidth="60" />
-            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsRectangleTool}">
-              <TextBlock Text="角丸" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsPolygonTool}">
-              <TextBlock Text="頂点数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsStarTool}">
-              <TextBlock Text="内径比" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsArcTool}">
-              <ComboBox ItemsSource="{Binding ArcModes}" SelectedItem="{Binding ArcMode}" />
-              <TextBlock Text="開始°" /><NumericUpDown Value="{Binding ArcStart}" Minimum="-360" Maximum="360" />
-              <TextBlock Text="展開°" /><NumericUpDown Value="{Binding ArcSweep}" Minimum="-360" Maximum="360" />
-            </StackPanel>
-          </StackPanel>
-        </ScrollViewer>
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" ToolTip.Tip="次に描画する図形のスタイル (#RRGGBB / #AARRGGBB)">
-          <TextBlock Text="描画色" /><TextBox Text="{Binding FillColor}" Width="90" />
-          <TextBlock Text="線" /><TextBox Text="{Binding StrokeColor}" Width="90" />
-          <NumericUpDown Value="{Binding StrokeWidth}" Minimum="0" Maximum="100" Increment="0.5" ToolTip.Tip="線幅 (px)" />
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,8,0">
+          <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" MinWidth="60" />
+          <Button Content="⋯" ToolTip.Tip="ツールの詳細設定">
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <ScrollViewer MaxHeight="460" Width="410">
+                  <StackPanel Spacing="10">
+                    <TextBlock Text="ツール設定" FontWeight="SemiBold" />
+                    <StackPanel Spacing="8" IsVisible="{Binding IsRectangleTool}">
+                      <TextBlock Text="角丸半径" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsPolygonTool}">
+                      <TextBlock Text="頂点数 (3〜64)" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" />
+                      <StackPanel IsVisible="{Binding IsStarTool}"><TextBlock Text="内径比" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsArcTool}">
+                      <ComboBox ItemsSource="{Binding ArcModes}" SelectedItem="{Binding ArcMode}" />
+                      <TextBlock Text="開始角°" /><NumericUpDown Value="{Binding ArcStart}" Minimum="-360" Maximum="360" />
+                      <TextBlock Text="展開角°" /><NumericUpDown Value="{Binding ArcSweep}" Minimum="-360" Maximum="360" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsFreehandTool}">
+                      <TextBlock Text="スムージング (%)" /><NumericUpDown Value="{Binding Smoothing}" Minimum="0" Maximum="100" />
+                      <CheckBox Content="描画後にパスを閉じる" IsChecked="{Binding CloseFreehand}" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsBezierTool}">
+                      <CheckBox Content="直線ポリライン" IsChecked="{Binding BezierPolyline}" />
+                      <Button Content="開いたパスとして確定 (Enter)" Command="{Binding FinishBezierCommand}" />
+                      <Button Content="閉じて確定" Command="{Binding CloseBezierCommand}" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsNodeTool}">
+                      <WrapPanel Orientation="Horizontal">
+                        <Button Content="中点追加" Command="{Binding AddNodeCommand}" /><Button Content="点を削除" Command="{Binding DeleteNodeCommand}" />
+                        <Button Content="コーナー" Command="{Binding CornerNodeCommand}" /><Button Content="スムーズ" Command="{Binding SmoothNodeCommand}" /><Button Content="対称" Command="{Binding SymmetricNodeCommand}" />
+                        <Button Content="直線化" Command="{Binding StraightSegmentCommand}" /><Button Content="曲線化" Command="{Binding CurvedSegmentCommand}" />
+                        <Button Content="端点結合" Command="{Binding JoinPathCommand}" /><Button Content="選択点で切断" Command="{Binding CutPathCommand}" />
+                        <Button Content="開く/閉じる" Command="{Binding TogglePathClosedCommand}" />
+                      </WrapPanel>
+                      <TextBlock Text="単純化の許容誤差 (px)" /><NumericUpDown Value="{Binding SimplifyTolerance}" Minimum="0.1" Maximum="50" Increment="0.5" />
+                      <Button Content="シンプル化" Command="{Binding SimplifyPathCommand}" />
+                    </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding IsTextTool}">
+                      <TextBlock Text="フォント" /><TextBox Text="{Binding FontFamily}" />
+                      <TextBlock Text="サイズ (px)" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" />
+                      <StackPanel Orientation="Horizontal" Spacing="8"><ToggleButton Content="太字" IsChecked="{Binding TextBold}" /><ToggleButton Content="斜体" IsChecked="{Binding TextItalic}" /></StackPanel>
+                      <ComboBox ItemsSource="{Binding TextAlignments}" SelectedItem="{Binding TextAlignment}" />
+                      <TextBlock Text="字間 (px)" /><NumericUpDown Value="{Binding LetterSpacing}" Minimum="-100" Maximum="1000" />
+                      <TextBlock Text="キャンバスをクリックして入力。Ctrl+Enterで確定、Escで取消。" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Text="線種" /><ComboBox ItemsSource="{Binding DashOptions}" SelectedItem="{Binding StrokeDash}" PlaceholderText="混在 / カスタム" />
+                  </StackPanel>
+                </ScrollViewer>
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+          <TextBlock Text="{Binding ToolHint}" TextTrimming="CharacterEllipsis" MaxWidth="300" Foreground="#94A3B8" FontSize="11" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="{Binding StyleTarget}" FontSize="11" />
+          <Button Content="塗り" ToolTip.Tip="塗り色">
+            <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
+              <TextBlock Text="塗り (#RRGGBB / #AARRGGBB)" />
+              <TextBox Text="{Binding FillColor}" Watermark="混在" />
+              <ItemsControl ItemsSource="{Binding ColorSwatches}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ColorSwatch"><Button Width="32" Height="32" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetFillColorCommand}" CommandParameter="{Binding Value}" /></DataTemplate></ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Content="塗りなし" Command="{Binding ClearFillCommand}" />
+            </StackPanel></Flyout></Button.Flyout>
+          </Button>
+          <TextBox Text="{Binding FillColor}" Width="90" Watermark="混在" />
+          <Button Content="線" ToolTip.Tip="線色">
+            <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
+              <TextBox Text="{Binding StrokeColor}" Watermark="混在" />
+              <ItemsControl ItemsSource="{Binding ColorSwatches}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ColorSwatch"><Button Width="32" Height="32" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetStrokeColorCommand}" CommandParameter="{Binding Value}" /></DataTemplate></ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button Content="線なし" Command="{Binding ClearStrokeCommand}" />
+            </StackPanel></Flyout></Button.Flyout>
+          </Button>
+          <TextBox Text="{Binding StrokeColor}" Width="90" Watermark="混在" />
+          <NumericUpDown Value="{Binding StrokeWidth}" Minimum="0" Maximum="1000" Increment="0.5" ToolTip.Tip="線幅 (px) / 空欄は混在" />
         </StackPanel>
       </Grid>
     </Border>
@@ -76,7 +161,7 @@
         <TextBlock Grid.Column="2" Text="{Binding ToolHint}" TextTrimming="CharacterEllipsis" Foreground="#94A3B8" FontSize="12" />
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
           <ToggleButton Content="グリッド" IsChecked="{Binding ShowGrid}" />
-          <ToggleButton Content="スナップ" IsChecked="{Binding SnapToGrid}" ToolTip.Tip="20px グリッドに吸着" />
+          <ToggleButton Content="スナップ" IsChecked="{Binding SnapToGrid}" ToolTip.Tip="グリッド・頂点・境界に吸着" />
           <Button Content="−" Command="{Binding ZoomOutCommand}" /><Button Content="{Binding ZoomLabel}" Command="{Binding ResetZoomCommand}" /><Button Content="+" Command="{Binding ZoomInCommand}" />
         </StackPanel>
         <TextBlock Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding StatusMessage}" Foreground="#64748B" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
@@ -104,22 +189,41 @@
         </StackPanel>
       </ScrollViewer>
     </Border>
-    <Border DockPanel.Dock="Right" Width="220" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="10">
-      <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="レイヤー" FontWeight="SemiBold" Margin="0,0,0,10" />
-        <TextBlock DockPanel.Dock="Bottom" Text="Ctrl + ホイール: ズーム&#10;Space + ドラッグ: パン&#10;Ctrl+0: 全体表示&#10;Esc: 操作をキャンセル" Foreground="#94A3B8" FontSize="12" LineHeight="22" Margin="0,12" />
-        <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="Transparent">
-          <ListBox.ItemTemplate>
-            <DataTemplate x:DataType="docs:LayerNode">
-              <StackPanel Spacing="4" Margin="2">
-                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" />
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
+    <Border DockPanel.Dock="Right" Width="250" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="10">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="10">
+          <Expander Header="変形" IsExpanded="True" IsVisible="{Binding HasSelection}">
+            <StackPanel Spacing="6">
+              <TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" />
+              <TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" />
+              <TextBlock Text="幅" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="0.01" Maximum="1000000" />
+              <TextBlock Text="高さ" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="0.01" Maximum="1000000" />
+              <CheckBox Content="縦横比を固定" IsChecked="{Binding LockAspect}" />
+              <TextBlock Text="追加回転°" /><NumericUpDown Value="{Binding SelectionRotation}" Minimum="-360" Maximum="360" />
+              <Button Content="変形を適用" Command="{Binding ApplyTransformCommand}" />
+            </StackPanel>
+          </Expander>
+          <Expander Header="多角形パラメータ" IsVisible="{Binding HasParametricPolygon}" IsExpanded="True">
+            <StackPanel Spacing="6">
+              <TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
+              <TextBlock Text="外径" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
+              <TextBlock Text="内径比（星形）" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" />
+              <TextBlock Text="開始角°" /><NumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
+            </StackPanel>
+          </Expander>
+          <TextBlock Text="レイヤー" FontWeight="SemiBold" />
+          <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="Transparent">
+            <ListBox.ItemTemplate><DataTemplate x:DataType="docs:LayerNode"><StackPanel Spacing="4" Margin="2"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /><TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock Text="Ctrl + ホイール: ズーム&#10;Space + ドラッグ: パン&#10;Ctrl+0: 全体表示&#10;Esc: 操作をキャンセル" Foreground="#94A3B8" FontSize="12" LineHeight="22" />
+        </StackPanel>
+      </ScrollViewer>
     </Border>
+    <DockPanel>
+      <Border DockPanel.Dock="Top" Background="#161B22" Padding="8,3" IsVisible="{Binding IsInGroup}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><Button Content="← 親へ" Command="{Binding ExitGroupCommand}" /><TextBlock Text="{Binding ScopePath}" /></StackPanel>
+      </Border>
     <controls:VectorCanvasControl Workspace="{Binding}" RenderVersion="{Binding RenderVersion}" />
+    </DockPanel>
   </DockPanel>
 </Window>

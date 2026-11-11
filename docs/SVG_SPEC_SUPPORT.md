@@ -46,3 +46,13 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 
 ### 3.4 SkiaSharp シェーダー (`SKRuntimeEffect`)
 - オブジェクトに適用されたシェーダーは、`vectorer:shader-id`、`vectorer:shader-uniforms`（JSON または key=value 形式）、およびカスタム SkSL がある場合は `<defs><vectorer:shader id="..." sksl="..." /></defs>` として保存します。
+
+
+## Phase 2 編集データの保存（2026-11-11）
+
+- 基本図形・レイヤー・グループのアフィン変形は標準 `transform="matrix(a b c d e f)"` として保持します。読み込みでは matrix / translate / scale / rotate / skewX / skewY に対応します。
+- 正多角形・星形は標準の `points` に加えて `vectorer:poly-kind="regular|star"`、`vectorer:cx/cy`、`vectorer:points-count`、`vectorer:outer-r`、`vectorer:inner-r`、`vectorer:start-angle` を保存します。Freeform化した図形は標準頂点列を使用します。
+- パスの `vectorer:node-kinds` はアンカー順の Corner / Smooth / Symmetric のカンマ区切りです。幾何形状は標準 `d`、塗り規則は標準 `fill-rule` に保持します。
+- 線端・線結合・マイター・破線・位相は標準の stroke-linecap / stroke-linejoin / stroke-miterlimit / stroke-dasharray / stroke-dashoffset を使用します。単色の透明度は fill-opacity / stroke-opacity へ分離し、標準SVGの8桁色はRGBA順で読み込みます。
+- テキストは標準 `<text>` と行ごとの `<tspan>` として保存します。フォント名・サイズ・太字・斜体・字間・配置を保持します。表示とパス変換はローカルフォントのグリフ輪郭を共有します。
+- 編集用モデルへ変換するSVGの円弧は分割近似です。複雑な文字組み、任意のCSS継承、フォント埋込みはこの実装範囲に含めません。

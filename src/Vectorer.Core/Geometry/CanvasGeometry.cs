@@ -3,7 +3,7 @@ using Vectorer.Abstractions.Documents;
 
 namespace Vectorer.Core.Geometry;
 
-public enum DrawingTool { Select, Rectangle, Ellipse, Arc, Polygon, Star, Freehand, Pan }
+public enum DrawingTool { Select, Rectangle, Ellipse, Arc, Polygon, Star, Freehand, Pan, Node, Bezier, Text }
 
 /// <summary>Document-space geometry shared by the interactive editor. No UI dependencies.</summary>
 public static class CanvasGeometry

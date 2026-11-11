@@ -235,9 +235,35 @@ public sealed class EllipseShapeNode : ShapeNode
 /// Represents a convex or concave polygon shape defined by a list of vertices.
 /// Includes helper factories for regular convex polygons and star/concave polygons.
 /// </summary>
+public enum PolygonKind { Freeform, RegularConvex, ConcaveStar }
+
 public sealed class PolygonShapeNode : ShapeNode
 {
     public List<SKPoint> Points { get; set; } = [];
+    public PolygonKind PolygonKind { get; set; }
+    public SKPoint Center { get; set; }
+    public int PointCount { get; set; } = 5;
+    public float OuterRadius { get; set; } = 100;
+    public float InnerRadius { get; set; } = 45;
+    public float StartAngleDegrees { get; set; } = -90;
+
+    public void ConvertToFreeform() => PolygonKind = PolygonKind.Freeform;
+
+    public void RegeneratePoints()
+    {
+        if (PolygonKind == PolygonKind.Freeform) return;
+        ArgumentOutOfRangeException.ThrowIfLessThan(PointCount, 3);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(PointCount, 64);
+        Points.Clear();
+        var count = PolygonKind == PolygonKind.ConcaveStar ? PointCount * 2 : PointCount;
+        for (var i = 0; i < count; i++)
+        {
+            var radius = PolygonKind == PolygonKind.ConcaveStar && i % 2 == 1 ? InnerRadius : OuterRadius;
+            var angle = (StartAngleDegrees + 360f * i / count) * MathF.PI / 180;
+            Points.Add(new SKPoint(Center.X + radius * MathF.Cos(angle), Center.Y + radius * MathF.Sin(angle)));
+        }
+    }
+
     public bool IsClosed { get; set; } = true;
 
     public PolygonShapeNode()
@@ -248,14 +274,9 @@ public sealed class PolygonShapeNode : ShapeNode
     public static PolygonShapeNode CreateRegularConvex(SKPoint center, float radius, int sides, float startAngleDegrees = -90f)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(sides, 3);
-        var node = new PolygonShapeNode { Name = $"Convex Polygon ({sides})" };
-        for (var i = 0; i < sides; i++)
-        {
-            var angleRad = (startAngleDegrees + (360f * i / sides)) * MathF.PI / 180f;
-            node.Points.Add(new SKPoint(
-                center.X + (radius * MathF.Cos(angleRad)),
-                center.Y + (radius * MathF.Sin(angleRad))));
-        }
+        var node = new PolygonShapeNode { Name = $"Convex Polygon ({sides})", PolygonKind = PolygonKind.RegularConvex,
+            Center = center, OuterRadius = radius, PointCount = sides, StartAngleDegrees = startAngleDegrees };
+        node.RegeneratePoints();
 
         return node;
     }
@@ -263,16 +284,9 @@ public sealed class PolygonShapeNode : ShapeNode
     public static PolygonShapeNode CreateConcaveStar(SKPoint center, float outerRadius, float innerRadius, int pointsCount, float startAngleDegrees = -90f)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pointsCount, 3);
-        var node = new PolygonShapeNode { Name = $"Concave Star ({pointsCount})" };
-        var totalVertices = pointsCount * 2;
-        for (var i = 0; i < totalVertices; i++)
-        {
-            var r = (i % 2 == 0) ? outerRadius : innerRadius;
-            var angleRad = (startAngleDegrees + (360f * i / totalVertices)) * MathF.PI / 180f;
-            node.Points.Add(new SKPoint(
-                center.X + (r * MathF.Cos(angleRad)),
-                center.Y + (r * MathF.Sin(angleRad))));
-        }
+        var node = new PolygonShapeNode { Name = $"Concave Star ({pointsCount})", PolygonKind = PolygonKind.ConcaveStar,
+            Center = center, OuterRadius = outerRadius, InnerRadius = innerRadius, PointCount = pointsCount, StartAngleDegrees = startAngleDegrees };
+        node.RegeneratePoints();
 
         return node;
     }
@@ -351,6 +365,8 @@ public sealed class ArcShapeNode : ShapeNode
 public sealed class PathShapeNode : ShapeNode
 {
     public string SvgPathData { get; set; } = string.Empty;
+    public string NodeKinds { get; set; } = string.Empty;
+    public SKPathFillType FillType { get; set; } = SKPathFillType.Winding;
 
     public PathShapeNode()
     {
@@ -370,6 +386,8 @@ public sealed class PathShapeNode : ShapeNode
             return new SKPath();
         }
 
-        return SKPath.ParseSvgPathData(SvgPathData) ?? new SKPath();
+        var path = SKPath.ParseSvgPathData(SvgPathData) ?? new SKPath();
+        path.FillType = FillType;
+        return path;
     }
 }

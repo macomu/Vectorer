@@ -11,6 +11,7 @@
     <Project Path="src/Vectorer.Svg/Vectorer.Svg.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Vectorer.App.Tests/Vectorer.App.Tests.csproj" />
     <Project Path="tests/Vectorer.Core.Tests/Vectorer.Core.Tests.csproj" />
     <Project Path="tests/Vectorer.Rendering.Tests/Vectorer.Rendering.Tests.csproj" />
     <Project Path="tests/Vectorer.Svg.Tests/Vectorer.Svg.Tests.csproj" />

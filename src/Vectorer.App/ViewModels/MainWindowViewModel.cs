@@ -73,14 +73,18 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     public void ExecuteCommand(IDocumentCommand command)
     {
         _undoRedoService.ExecuteCommand(command);
+        NotifyDocumentState();
         SyncLayersCollection();
+        SyncSelectionEditors();
         RequestRedraw();
     }
 
     public void SelectNodes(IEnumerable<SceneNode> nodes)
     {
+        var selection = nodes.Distinct().ToList();
         _selectedNodes.Clear();
-        _selectedNodes.AddRange(nodes);
+        _selectedNodes.AddRange(selection);
+        SyncSelectionEditors();
         OnPropertyChanged(nameof(SelectionSummary));
         RequestRedraw();
         StatusMessage = $"Selected {_selectedNodes.Count} item(s).";
@@ -88,6 +92,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     public void RequestRedraw()
     {
+        ValidateScope();
+        OnPropertyChanged(nameof(ScopePath));
+        OnPropertyChanged(nameof(IsInGroup));
         RenderVersion++;
     }
 
@@ -178,13 +185,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         ApplyBooleanOnSelection(BooleanOperationType.Difference);
     }
 
+    [RelayCommand] private void BooleanIntersection() => ApplyBooleanOnSelection(BooleanOperationType.Intersection);
+    [RelayCommand] private void BooleanXor() => ApplyBooleanOnSelection(BooleanOperationType.Xor);
+    [RelayCommand] private void BooleanReverseDifference() => ApplyBooleanOnSelection(BooleanOperationType.ReverseDifference);
+
     [RelayCommand]
     private void ToggleGaussianBlurOnActiveLayer()
     {
         var layer = EnsureActiveLayer();
-        layer.Filter = layer.Filter is { HasActiveFilter: true }
-            ? null
-            : new FilterSettings(BlurSigmaX: 6f, BlurSigmaY: 6f);
+        var before = layer.Filter;
+        var after = before is { HasActiveFilter: true } ? null : new FilterSettings(BlurSigmaX: 6f, BlurSigmaY: 6f);
+        ExecuteCommand(new DelegateDocumentCommand("Layer blur", () => layer.Filter = after, () => layer.Filter = before));
         RequestRedraw();
         StatusMessage = layer.Filter is not null
             ? $"Applied Gaussian Blur (σ=6) to '{layer.Name}'."
@@ -197,7 +208,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var layer = EnsureActiveLayer();
         var modes = Enum.GetValues<LayerBlendMode>();
         var nextIndex = ((int)layer.BlendMode + 1) % modes.Length;
-        layer.BlendMode = modes[nextIndex];
+        var before = layer.BlendMode;
+        var after = modes[nextIndex];
+        ExecuteCommand(new DelegateDocumentCommand("Layer blend mode", () => layer.BlendMode = after, () => layer.BlendMode = before));
         RequestRedraw();
         StatusMessage = $"Layer '{layer.Name}' blend mode set to {layer.BlendMode}.";
     }
@@ -208,6 +221,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         if (_undoRedoService.CanUndo)
         {
             _undoRedoService.Undo();
+            NotifyDocumentState();
             SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
@@ -221,6 +235,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         if (_undoRedoService.CanRedo)
         {
             _undoRedoService.Redo();
+            NotifyDocumentState();
             SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
@@ -243,15 +258,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     private void ApplyBooleanOnSelection(BooleanOperationType op)
     {
         if (IsInteracting) return;
-        var layer = CurrentDocument.Layers.FirstOrDefault(l => l.IsVisible && !l.IsLocked
-            && _selectedNodes.Count >= 2 && _selectedNodes.All(n => n is ShapeNode && !n.IsLocked && l.Children.Contains(n)));
-        if (layer is null)
-        {
-            StatusMessage = "同じレイヤーの図形を2つ以上選択してください。";
-            return;
-        }
-        var shapes = layer.Children.OfType<ShapeNode>().Where(n => _selectedNodes.Contains(n)).ToList();
-        var positions = shapes.Select(n => (Node: n, Index: layer.Children.IndexOf(n))).ToArray();
+        var selected = GetEditableEntries().Where(e => SelectedNodes.Contains(e.Node)).ToArray();
+        if (selected.Length < 2 || selected.Length != SelectedNodes.Count || selected.Any(e => e.Node is not ShapeNode)
+            || selected.Select(e => e.Container).Distinct().Count() != 1)
+        { StatusMessage = "同じ階層の図形を2つ以上選択してください。"; return; }
+        var layer = selected[0].Container;
+        var shapes = selected.Select(e => (ShapeNode)e.Node).ToList();
+        var positions = selected.Select(e => (e.Node, e.Index)).ToArray();
         var combined = _booleanService.CombineMany(shapes, op);
         if (combined is null)
         {

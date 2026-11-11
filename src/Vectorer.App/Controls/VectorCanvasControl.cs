@@ -7,11 +7,14 @@ using Avalonia.Platform;
 using SkiaSharp;
 using Vectorer.App.ViewModels;
 using Vectorer.Core.Geometry;
+using Vectorer.App.Tools;
+using Vectorer.Abstractions.Documents;
+using Avalonia.Threading;
 
 namespace Vectorer.App.Controls;
 
 /// <summary>Viewport rendering and input routing; document edits live in the workspace.</summary>
-public sealed class VectorCanvasControl : Control
+public sealed class VectorCanvasControl : Decorator
 {
     public static readonly StyledProperty<MainWindowViewModel?> WorkspaceProperty =
         AvaloniaProperty.Register<VectorCanvasControl, MainWindowViewModel?>(nameof(Workspace));
@@ -25,6 +28,57 @@ public sealed class VectorCanvasControl : Control
     private bool _panning;
     private bool _space;
     private IPointer? _pointer;
+    private TextBox? _textEditor;
+    private SKPoint _textPosition;
+    private float _textSize;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == WorkspaceProperty)
+        {
+            if (change.OldValue is MainWindowViewModel before) { before.TextEditRequested -= OpenTextEditor; before.FinishTextEditingRequested -= CommitInlineText; }
+            if (change.NewValue is MainWindowViewModel after) { after.TextEditRequested += OpenTextEditor; after.FinishTextEditingRequested += CommitInlineText; }
+        }
+    }
+    private void OpenTextEditor(TextShapeNode text, SKPoint point)
+    {
+        if (_textEditor is not null) CloseTextEditor(true);
+        _textPosition = point; _textSize = text.FontSize;
+        var editor = new TextBox { Text = text.Text, AcceptsReturn = true, MinWidth = 240, MinHeight = 70,
+            FontFamily = new FontFamily(text.FontFamily), FontSize = Math.Clamp(text.FontSize * Workspace!.Zoom, 10, 120),
+            Background = new SolidColorBrush(Color.FromRgb(22, 27, 34)) };
+        _textEditor = editor;
+        editor.AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (e.Key == Key.Escape) { CloseTextEditor(false); e.Handled = true; }
+            else if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { CloseTextEditor(true); e.Handled = true; }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        editor.LostFocus += (_, _) => { if (_textEditor == editor) CloseTextEditor(true); };
+        Child = editor; InvalidateMeasure();
+        Dispatcher.UIThread.Post(() => { if (_textEditor == editor) { editor.Focus(); editor.SelectAll(); } });
+    }
+    private void CloseTextEditor(bool commit)
+    {
+        if (_textEditor is not { } editor) return;
+        _textEditor = null;
+        Workspace?.CommitText(commit ? editor.Text ?? "" : null);
+        Child = null; Focus(); InvalidateVisual();
+    }
+    private void CommitInlineText() => CloseTextEditor(true);
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        _textEditor?.Measure(new Size(360, 180));
+        return new Size(double.IsInfinity(availableSize.Width) ? 800 : availableSize.Width, double.IsInfinity(availableSize.Height) ? 600 : availableSize.Height);
+    }
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        if (_textEditor is { } editor && Workspace is { } vm)
+            editor.Arrange(new Rect(new Point(Math.Clamp(_offset.X + _textPosition.X * vm.Zoom, 0, Math.Max(0, finalSize.Width - 300)),
+                Math.Clamp(_offset.Y + (_textPosition.Y - _textSize) * vm.Zoom, 0, Math.Max(0, finalSize.Height - 120))), new Size(300, 120)));
+        return finalSize;
+    }
+
 
     static VectorCanvasControl() => AffectsRender<VectorCanvasControl>(WorkspaceProperty, RenderVersionProperty);
     public VectorCanvasControl() { Focusable = true; ClipToBounds = true; }
@@ -52,7 +106,14 @@ public sealed class VectorCanvasControl : Control
             canvas.DrawRect(0, 0, doc.Width, doc.Height, paper);
             canvas.Save();
             canvas.ClipRect(new SKRect(0, 0, doc.Width, doc.Height));
-            vm.DocumentRenderer.RenderDocument(doc, canvas);
+            if (vm.EditingGroup is { } editingGroup)
+            {
+                using var dim = new SKPaint { Color = new SKColor(255, 255, 255, 70) };
+                canvas.SaveLayer(dim); vm.DocumentRenderer.RenderDocument(doc, canvas); canvas.Restore();
+                canvas.Save(); var scopeParent = vm.ScopeParent; canvas.Concat(ref scopeParent);
+                vm.DocumentRenderer.RenderNodes([editingGroup], canvas); canvas.Restore();
+            }
+            else vm.DocumentRenderer.RenderDocument(doc, canvas);
             var unit = (float)(1 / vm.Zoom);
             if (vm.ShowGrid)
             {
@@ -77,7 +138,7 @@ public sealed class VectorCanvasControl : Control
             canvas.Restore();
             using var outline = new SKPaint { Color = new SKColor(96, 165, 250), Style = SKPaintStyle.Stroke, StrokeWidth = unit, IsAntialias = true };
             using var handle = new SKPaint { Color = new SKColor(226, 232, 240), IsAntialias = true };
-            if (vm.GetSelectionBounds() is { } bounds)
+            if (vm.ActiveTool != DrawingTool.Node && vm.GetSelectionBounds() is { } bounds)
             {
                 canvas.DrawRect(bounds, outline);
                 foreach (var point in MainWindowViewModel.GetHandles(bounds))
@@ -89,6 +150,38 @@ public sealed class VectorCanvasControl : Control
                 canvas.DrawLine(bounds.MidX, bounds.Top, bounds.MidX, bounds.Top - 24 * unit, outline);
                 canvas.DrawCircle(bounds.MidX, bounds.Top - 24 * unit, 4 * unit, handle);
             }
+            if (vm.ActiveTool == DrawingTool.Select)
+            {
+                using var parameterPaint = new SKPaint { Color = new SKColor(251, 191, 36), IsAntialias = true };
+                foreach (var parameter in ShapeParameterGesture.GetHandles(vm))
+                { canvas.DrawCircle(parameter.Position, 4 * unit, parameterPaint); canvas.DrawCircle(parameter.Position, 4 * unit, outline); }
+            }
+            if (vm.CanvasTool is NodeEditTool nodes)
+            {
+                nodes.Synchronize();
+                foreach (var anchor in nodes.Model.Contours.SelectMany(c => c.Anchors))
+                {
+                    var position = nodes.World.MapPoint(anchor.Position);
+                    if (nodes.SelectedAnchors.Contains(anchor))
+                    {
+                        foreach (var direction in new[] { anchor.Incoming, anchor.Outgoing })
+                            if (direction is { } value)
+                            {
+                                var end = nodes.World.MapPoint(value); canvas.DrawLine(position, end, outline);
+                                canvas.DrawCircle(end, 3 * unit, handle); canvas.DrawCircle(end, 3 * unit, outline);
+                            }
+                    }
+                    using var nodeFill = new SKPaint { Color = nodes.SelectedAnchors.Contains(anchor) ? new SKColor(59, 130, 246) : SKColors.White };
+                    var rect = SKRect.Create(position.X - 4 * unit, position.Y - 4 * unit, 8 * unit, 8 * unit);
+                    canvas.DrawRect(rect, nodeFill); canvas.DrawRect(rect, outline);
+                }
+            }
+            if (vm.CanvasTool is BezierPenTool pen)
+                foreach (var anchor in pen.Anchors)
+                {
+                    canvas.DrawCircle(anchor.Position, 3 * unit, handle);
+                    if (anchor.Outgoing is { } direction) { canvas.DrawLine(anchor.Position, direction, outline); canvas.DrawCircle(direction, 3 * unit, handle); }
+                }
             if (vm.Marquee is { } marquee)
             {
                 using var fill = new SKPaint { Color = new SKColor(59, 130, 246, 35) };
@@ -105,7 +198,12 @@ public sealed class VectorCanvasControl : Control
         if (Workspace is not { } vm) return;
         var current = e.GetCurrentPoint(this);
         if (!current.Properties.IsLeftButtonPressed && !current.Properties.IsMiddleButtonPressed) return;
+        if (_textEditor is not null) return;
         Focus();
+        if (e.ClickCount == 2 && !_space && !current.Properties.IsMiddleButtonPressed)
+        { vm.HandleDoubleClick(ToDocument(current.Position)); e.Handled = true; return; }
+        if (vm.ActiveTool == DrawingTool.Text && !current.Properties.IsMiddleButtonPressed && !_space)
+        { vm.BeginTextEdit(ToDocument(current.Position)); e.Handled = true; return; }
         _pointer = e.Pointer;
         _panning = current.Properties.IsMiddleButtonPressed || _space || vm.ActiveTool == DrawingTool.Pan;
         if (_panning) { vm.CancelInteraction(); _panStart = current.Position; _offsetBeforePan = _offset; }
@@ -119,7 +217,8 @@ public sealed class VectorCanvasControl : Control
         if (Workspace is not { } vm) return;
         var point = e.GetPosition(this);
         if (_panning) { _offset = _offsetBeforePan + (point - _panStart); InvalidateVisual(); }
-        else vm.UpdateInteraction(ToDocument(point), e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+        else if (_pointer is not null) vm.UpdateInteraction(ToDocument(point), e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+        else { var cursor = ToDocument(point); vm.CursorPosition = $"{cursor.X:0.0}, {cursor.Y:0.0}"; }
     }
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
@@ -138,7 +237,7 @@ public sealed class VectorCanvasControl : Control
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        Workspace?.CancelInteraction();
+        if (_pointer is not null) Workspace?.CancelInteraction();
         _panning = false;
         _pointer = null;
     }
@@ -160,11 +259,12 @@ public sealed class VectorCanvasControl : Control
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (Workspace is not { } vm) return;
+        if (Workspace is not { } vm || e.Handled || _textEditor?.IsKeyboardFocusWithin == true) return;
+        if (e.Key == Key.Enter && vm.CanvasTool is BezierPenTool pen) { pen.Finish(); e.Handled = true; return; }
         if (e.Key == Key.Escape)
         {
             if (_panning) _offset = _offsetBeforePan;
-            if (vm.IsInteracting) vm.CancelInteraction(); else vm.SelectNodes([]);
+            vm.HandleEscape();
             _panning = false;
             _pointer?.Capture(null);
             _pointer = null;
@@ -189,6 +289,9 @@ public sealed class VectorCanvasControl : Control
                 case Key.OemSemicolon when e.KeyModifiers.HasFlag(KeyModifiers.Shift): vm.SnapToGrid = !vm.SnapToGrid; break;
                 case Key.C when e.KeyModifiers.HasFlag(KeyModifiers.Shift): vm.ObjectToPathCommand.Execute(null); break;
                 case Key.C when e.KeyModifiers.HasFlag(KeyModifiers.Alt): vm.StrokeToPathCommand.Execute(null); break;
+                case Key.G: if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) vm.UngroupSelectionCommand.Execute(null); else vm.GroupSelectionCommand.Execute(null); break;
+                case Key.K: vm.TogglePathClosedCommand.Execute(null); break;
+                case Key.L: vm.SimplifyPathCommand.Execute(null); break;
                 default: return;
             }
         }
@@ -196,13 +299,17 @@ public sealed class VectorCanvasControl : Control
         {
             switch (e.Key)
             {
+                case Key.N: case Key.A: vm.ChooseTool(DrawingTool.Node); break;
+                case Key.B: vm.ChooseTool(DrawingTool.Bezier); break;
+                case Key.T: vm.ChooseTool(DrawingTool.Text); break;
+                case Key.Enter: vm.EnterGroupCommand.Execute(null); break;
                 case Key.V: case Key.S: vm.ChooseTool(DrawingTool.Select); break;
                 case Key.R: vm.ChooseTool(DrawingTool.Rectangle); break;
                 case Key.E: vm.ChooseTool(DrawingTool.Ellipse); break;
                 case Key.Y: vm.ChooseTool(DrawingTool.Polygon); break;
                 case Key.P: vm.ChooseTool(DrawingTool.Freehand); break;
                 case Key.H: vm.ChooseTool(DrawingTool.Pan); break;
-                case Key.Delete: case Key.Back: vm.DeleteSelectionCommand.Execute(null); break;
+                case Key.Delete: case Key.Back: if (vm.CanvasTool is NodeEditTool nodes) nodes.DeleteNodes(); else vm.DeleteSelectionCommand.Execute(null); break;
                 default: return;
             }
         }

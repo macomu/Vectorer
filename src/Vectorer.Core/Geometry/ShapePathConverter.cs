@@ -24,6 +24,8 @@ public static class ShapePathConverter
         }
         var result = new PathShapeNode((strokeOnly ? outline : path).ToSvgPathData())
         {
+            FillType = (strokeOnly ? outline : path).FillType,
+            NodeKinds = !strokeOnly && source is PathShapeNode existing ? existing.NodeKinds : "",
             Id = source.Id, Name = source.Name, Transform = source.Transform, Style = style,
             IsLocked = source.IsLocked, IsVisible = source.IsVisible, Opacity = source.Opacity,
             BlendMode = source.BlendMode, Filter = source.Filter, ShaderEffect = source.ShaderEffect

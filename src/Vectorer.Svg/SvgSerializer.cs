@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using SkiaSharp;
@@ -83,9 +84,15 @@ public sealed class SvgSerializer : ISvgSerializer
             PolygonShapeNode polygon => SerializePolygon(polygon),
             ArcShapeNode arc => SerializeArc(arc),
             PathShapeNode path => SerializePath(path),
+            TextShapeNode text => SerializeText(text),
             _ => new XElement(SvgNs + "g")
         };
 
+        if (!node.Transform.IsIdentity)
+        {
+            var m = node.Transform;
+            element.SetAttributeValue("transform", $"matrix({FormatFloat(m.ScaleX)} {FormatFloat(m.SkewY)} {FormatFloat(m.SkewX)} {FormatFloat(m.ScaleY)} {FormatFloat(m.TransX)} {FormatFloat(m.TransY)})");
+        }
         element.SetAttributeValue("id", node.Id);
         element.SetAttributeValue(VectorerNs + "name", node.Name);
 
@@ -193,9 +200,18 @@ public sealed class SvgSerializer : ISvgSerializer
     {
         var pointsStr = string.Join(" ", polygon.Points.Select(p => $"{FormatFloat(p.X)},{FormatFloat(p.Y)}"));
         var tagName = polygon.IsClosed ? "polygon" : "polyline";
-        return new XElement(
-            SvgNs + tagName,
-            new XAttribute("points", pointsStr));
+        var element = new XElement(SvgNs + tagName, new XAttribute("points", pointsStr));
+        if (polygon.PolygonKind != PolygonKind.Freeform)
+        {
+            element.SetAttributeValue(VectorerNs + "poly-kind", polygon.PolygonKind == PolygonKind.ConcaveStar ? "star" : "regular");
+            element.SetAttributeValue(VectorerNs + "cx", FormatFloat(polygon.Center.X));
+            element.SetAttributeValue(VectorerNs + "cy", FormatFloat(polygon.Center.Y));
+            element.SetAttributeValue(VectorerNs + "points-count", polygon.PointCount);
+            element.SetAttributeValue(VectorerNs + "outer-r", FormatFloat(polygon.OuterRadius));
+            element.SetAttributeValue(VectorerNs + "inner-r", FormatFloat(polygon.InnerRadius));
+            element.SetAttributeValue(VectorerNs + "start-angle", FormatFloat(polygon.StartAngleDegrees));
+        }
+        return element;
     }
 
     private static XElement SerializeArc(ArcShapeNode arc)
@@ -214,11 +230,37 @@ public sealed class SvgSerializer : ISvgSerializer
             new XAttribute(VectorerNs + "close-mode", arc.CloseMode.ToString()));
     }
 
+    private static XElement SerializeText(TextShapeNode text)
+    {
+        var element = new XElement(SvgNs + "text", new XAttribute("x", FormatFloat(text.Position.X)), new XAttribute("y", FormatFloat(text.Position.Y)),
+            new XAttribute("font-family", text.FontFamily), new XAttribute("font-size", FormatFloat(text.FontSize)),
+            new XAttribute("font-weight", text.IsBold ? "bold" : "normal"), new XAttribute("font-style", text.IsItalic ? "italic" : "normal"),
+            new XAttribute("text-anchor", text.TextAlign == SKTextAlign.Center ? "middle" : text.TextAlign == SKTextAlign.Right ? "end" : "start"),
+            new XAttribute("letter-spacing", FormatFloat(text.LetterSpacing)), new XAttribute(XNamespace.Xml + "space", "preserve"));
+        var lines = text.Text.Replace("\r", "").Split('\n');
+        for (var i = 0; i < lines.Length; i++)
+            element.Add(new XElement(SvgNs + "tspan", new XAttribute("x", FormatFloat(text.Position.X)),
+                new XAttribute("y", FormatFloat(text.Position.Y + i * text.FontSize * 1.2f)), lines[i]));
+        return element;
+    }
+
+    private static TextShapeNode ParseText(XElement el) => new()
+    {
+        Text = el.Elements(SvgNs + "tspan").Any() ? string.Join("\n", el.Elements(SvgNs + "tspan").Select(e => e.Value)) : el.Value,
+        Position = new SKPoint(ParseFloat(el.Attribute("x")?.Value, 0), ParseFloat(el.Attribute("y")?.Value, 0)),
+        FontFamily = el.Attribute("font-family")?.Value ?? "sans-serif", FontSize = ParseFloat(el.Attribute("font-size")?.Value, 16),
+        IsBold = el.Attribute("font-weight")?.Value is "bold" or "700", IsItalic = el.Attribute("font-style")?.Value == "italic",
+        TextAlign = el.Attribute("text-anchor")?.Value switch { "middle" => SKTextAlign.Center, "end" => SKTextAlign.Right, _ => SKTextAlign.Left },
+        LetterSpacing = ParseFloat(el.Attribute("letter-spacing")?.Value, 0)
+    };
+
     private static XElement SerializePath(PathShapeNode path)
     {
         return new XElement(
             SvgNs + "path",
-            new XAttribute("d", path.SvgPathData));
+            new XAttribute("d", path.SvgPathData),
+            new XAttribute("fill-rule", path.FillType == SKPathFillType.EvenOdd ? "evenodd" : "nonzero"),
+            new XAttribute(VectorerNs + "node-kinds", path.NodeKinds));
     }
 
     private static void WriteShapeStyleAttributes(XElement element, ShapeStyle style)
@@ -226,7 +268,8 @@ public sealed class SvgSerializer : ISvgSerializer
         switch (style.Fill)
         {
             case SolidColorFill solid:
-                element.SetAttributeValue("fill", FormatColor(solid.Color));
+                element.SetAttributeValue("fill", Rgb(solid.Color));
+                if (solid.Color.Alpha < 255) element.SetAttributeValue("fill-opacity", FormatFloat(solid.Color.Alpha / 255f));
                 break;
             case TextureFill texture:
                 element.SetAttributeValue("fill", FormatColor(texture.PrimaryColor));
@@ -243,8 +286,15 @@ public sealed class SvgSerializer : ISvgSerializer
 
         if (style.Stroke is { IsVisible: true } stroke)
         {
-            element.SetAttributeValue("stroke", FormatColor(stroke.Color));
+            element.SetAttributeValue("stroke", Rgb(stroke.Color));
+            if (stroke.Color.Alpha < 255) element.SetAttributeValue("stroke-opacity", FormatFloat(stroke.Color.Alpha / 255f));
             element.SetAttributeValue("stroke-width", FormatFloat(stroke.Width));
+            element.SetAttributeValue("stroke-linecap", stroke.Cap.ToString().ToLowerInvariant());
+            element.SetAttributeValue("stroke-linejoin", stroke.Join.ToString().ToLowerInvariant());
+            element.SetAttributeValue("stroke-miterlimit", FormatFloat(stroke.MiterLimit));
+            if (stroke.DashArray is { Length: > 0 })
+                element.SetAttributeValue("stroke-dasharray", string.Join(" ", stroke.DashArray.Select(FormatFloat)));
+            element.SetAttributeValue("stroke-dashoffset", FormatFloat(stroke.DashPhase));
         }
         else
         {
@@ -328,6 +378,7 @@ public sealed class SvgSerializer : ISvgSerializer
             "polygon" => ParsePolygon(el, isClosed: true),
             "polyline" => ParsePolygon(el, isClosed: false),
             "path" => ParsePathOrArc(el),
+            "text" => ParseText(el),
             _ => null
         };
 
@@ -414,6 +465,17 @@ public sealed class SvgSerializer : ISvgSerializer
             }
         }
 
+        var kind = el.Attribute(VectorerNs + "poly-kind")?.Value;
+        if (kind is "star" or "regular")
+        {
+            poly.PolygonKind = kind == "star" ? PolygonKind.ConcaveStar : PolygonKind.RegularConvex;
+            poly.Center = new SKPoint(ParseFloat(el.Attribute(VectorerNs + "cx")?.Value, 0), ParseFloat(el.Attribute(VectorerNs + "cy")?.Value, 0));
+            poly.PointCount = Math.Clamp((int)ParseFloat(el.Attribute(VectorerNs + "points-count")?.Value, 5), 3, 64);
+            poly.OuterRadius = Math.Max(0, ParseFloat(el.Attribute(VectorerNs + "outer-r")?.Value, 100));
+            poly.InnerRadius = Math.Max(0, ParseFloat(el.Attribute(VectorerNs + "inner-r")?.Value, 45));
+            poly.StartAngleDegrees = ParseFloat(el.Attribute(VectorerNs + "start-angle")?.Value, -90);
+            poly.RegeneratePoints();
+        }
         return poly;
     }
 
@@ -436,7 +498,8 @@ public sealed class SvgSerializer : ISvgSerializer
             };
         }
 
-        return new PathShapeNode(el.Attribute("d")?.Value ?? string.Empty);
+        return new PathShapeNode(el.Attribute("d")?.Value ?? string.Empty)
+        { NodeKinds = el.Attribute(VectorerNs + "node-kinds")?.Value ?? "", FillType = el.Attribute("fill-rule")?.Value == "evenodd" ? SKPathFillType.EvenOdd : SKPathFillType.Winding };
     }
 
     private static void ApplyCommonAttributes(XElement el, SceneNode node)
@@ -456,6 +519,7 @@ public sealed class SvgSerializer : ISvgSerializer
         node.IsVisible = !string.Equals(el.Attribute("display")?.Value, "none", StringComparison.OrdinalIgnoreCase);
         node.IsLocked = string.Equals(el.Attribute(VectorerNs + "locked")?.Value, "true", StringComparison.OrdinalIgnoreCase);
         node.Opacity = ParseFloat(el.Attribute("opacity")?.Value, 1.0f);
+        node.Transform = ParseTransform(el.Attribute("transform")?.Value);
 
         var blendStr = el.Attribute(VectorerNs + "blend-mode")?.Value;
         if (!string.IsNullOrWhiteSpace(blendStr) && Enum.TryParse<LayerBlendMode>(blendStr, ignoreCase: true, out var blendMode))
@@ -498,7 +562,8 @@ public sealed class SvgSerializer : ISvgSerializer
             }
             else if (!string.IsNullOrWhiteSpace(fillAttr))
             {
-                style.Fill = new SolidColorFill(ParseColor(fillAttr, new SKColor(66, 133, 244)));
+                var color = ParseSvgColor(fillAttr, new SKColor(66, 133, 244));
+                style.Fill = new SolidColorFill(color.WithAlpha((byte)Math.Clamp(color.Alpha * ParseFloat(el.Attribute("fill-opacity")?.Value, 1), 0, 255)));
             }
         }
 
@@ -509,13 +574,45 @@ public sealed class SvgSerializer : ISvgSerializer
         }
         else
         {
-            var strokeColor = ParseColor(strokeAttr, SKColors.Black);
+            var strokeColor = ParseSvgColor(strokeAttr, SKColors.Black);
+            strokeColor = strokeColor.WithAlpha((byte)Math.Clamp(strokeColor.Alpha * ParseFloat(el.Attribute("stroke-opacity")?.Value, 1), 0, 255));
             var strokeWidth = ParseFloat(el.Attribute("stroke-width")?.Value, 1f);
-            style.Stroke = new StrokeStyle(strokeColor, strokeWidth);
+            _ = Enum.TryParse<SKStrokeCap>(el.Attribute("stroke-linecap")?.Value, true, out var cap);
+            _ = Enum.TryParse<SKStrokeJoin>(el.Attribute("stroke-linejoin")?.Value, true, out var join);
+            var dash = Numbers(el.Attribute("stroke-dasharray")?.Value).Where(n => n >= 0).ToArray();
+            if (dash.Length % 2 == 1) dash = dash.Concat(dash).ToArray();
+            style.Stroke = new StrokeStyle(strokeColor, strokeWidth, cap, join,
+                ParseFloat(el.Attribute("stroke-miterlimit")?.Value, 4), dash.Length > 0 && dash.Any(n => n > 0) ? dash : null,
+                ParseFloat(el.Attribute("stroke-dashoffset")?.Value, 0));
         }
     }
 
-    private static string FormatFloat(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+    private static float[] Numbers(string? raw) => Regex.Matches(raw ?? "", @"[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?")
+        .Select(m => float.Parse(m.Value, CultureInfo.InvariantCulture)).ToArray();
+
+    private static SKMatrix ParseTransform(string? raw)
+    {
+        var result = SKMatrix.CreateIdentity();
+        foreach (Match match in Regex.Matches(raw ?? "", @"([a-zA-Z]+)\s*\(([^)]*)\)"))
+        {
+            var v = Numbers(match.Groups[2].Value);
+            var next = match.Groups[1].Value switch
+            {
+                "matrix" when v.Length == 6 => new SKMatrix(v[0], v[2], v[4], v[1], v[3], v[5], 0, 0, 1),
+                "translate" when v.Length >= 1 => SKMatrix.CreateTranslation(v[0], v.Length > 1 ? v[1] : 0),
+                "scale" when v.Length >= 1 => SKMatrix.CreateScale(v[0], v.Length > 1 ? v[1] : v[0]),
+                "rotate" when v.Length == 3 => SKMatrix.CreateRotationDegrees(v[0], v[1], v[2]),
+                "rotate" when v.Length == 1 => SKMatrix.CreateRotationDegrees(v[0]),
+                "skewX" when v.Length == 1 => SKMatrix.CreateSkew(MathF.Tan(v[0] * MathF.PI / 180), 0),
+                "skewY" when v.Length == 1 => SKMatrix.CreateSkew(0, MathF.Tan(v[0] * MathF.PI / 180)),
+                _ => SKMatrix.CreateIdentity()
+            };
+            result = SKMatrix.Concat(result, next);
+        }
+        return result;
+    }
+
+    private static string FormatFloat(float value) => value.ToString("G9", CultureInfo.InvariantCulture);
 
     private static float ParseFloat(string? raw, float defaultValue)
     {
@@ -526,8 +623,16 @@ public sealed class SvgSerializer : ISvgSerializer
 
         var cleaned = raw.Replace("px", "", StringComparison.OrdinalIgnoreCase).Trim();
         return float.TryParse(cleaned, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
+            ? (float.IsFinite(parsed) ? parsed : defaultValue)
             : defaultValue;
+    }
+
+    private static string Rgb(SKColor color) => $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
+    private static SKColor ParseSvgColor(string? raw, SKColor fallback)
+    {
+        if (raw is { Length: 9 } && raw[0] == '#' && uint.TryParse(raw.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgba))
+            return new SKColor((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba);
+        return ParseColor(raw, fallback);
     }
 
     private static string FormatColor(SKColor color) =>
