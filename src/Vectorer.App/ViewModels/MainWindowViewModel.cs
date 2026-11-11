@@ -64,7 +64,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         _pngExportService = new PngExportService(DocumentRenderer);
         _pluginHost = new PluginHostService();
 
-        _currentDocument = CreateInitialDemoDocument();
+        _currentDocument = SvgDocument.CreateDefault();
         SyncLayersCollection();
 
         LoadBuiltInAndExternalPlugins();
@@ -360,54 +360,4 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         }
     }
 
-    private static SvgDocument CreateInitialDemoDocument()
-    {
-        var doc = new SvgDocument
-        {
-            Title = "Vectorer Starter Canvas",
-            Width = 860f,
-            Height = 540f,
-            ViewBox = new SKRect(0, 0, 860, 540),
-            BackgroundColor = new SKColor(22, 27, 34)
-        };
-
-        var baseLayer = new LayerNode { Name = "Base Shapes Layer" };
-        var hex = PolygonShapeNode.CreateRegularConvex(new SKPoint(230, 270), 105f, sides: 6);
-        hex.Style.Fill = new SolidColorFill(new SKColor(56, 189, 248));
-        hex.Style.Stroke = new StrokeStyle(new SKColor(224, 242, 254), 3f);
-        baseLayer.Children.Add(hex);
-
-        var arc = new ArcShapeNode
-        {
-            Name = "Textured Sector",
-            Center = new SKPoint(620, 270),
-            RadiusX = 105f,
-            RadiusY = 105f,
-            StartAngleDegrees = -45f,
-            SweepAngleDegrees = 270f,
-            CloseMode = ArcCloseMode.PieSlice
-        };
-        arc.Style.Fill = new TextureFill(
-            TexturePatternKind.Checkerboard,
-            new SKColor(52, 211, 153),
-            new SKColor(6, 78, 59),
-            Scale: 20f);
-        arc.Style.Stroke = new StrokeStyle(new SKColor(167, 243, 208), 3f);
-        baseLayer.Children.Add(arc);
-
-        var blendLayer = new LayerNode
-        {
-            Name = "Overlay & Shader Layer",
-            BlendMode = LayerBlendMode.Overlay
-        };
-
-        var star = PolygonShapeNode.CreateConcaveStar(new SKPoint(425, 270), outerRadius: 120f, innerRadius: 52f, pointsCount: 7);
-        star.ShaderEffect = new ShaderEffectDescriptor(SampleVectorerPlugin.SunsetWaveShaderId);
-        star.Style.Stroke = new StrokeStyle(new SKColor(254, 240, 138), 2.5f);
-        blendLayer.Children.Add(star);
-
-        doc.Layers.Add(baseLayer);
-        doc.Layers.Add(blendLayer);
-        return doc;
-    }
 }
