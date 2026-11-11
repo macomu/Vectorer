@@ -98,7 +98,8 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
 
             if (!node.Transform.IsIdentity)
             {
-                canvas.Concat(ref UnsafeTransformRef(node));
+                var transform = node.Transform;
+                canvas.Concat(ref transform);
             }
 
             switch (node)
@@ -280,10 +281,4 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         _ => SKBlendMode.SrcOver
     };
 
-    private static ref SKMatrix UnsafeTransformRef(SceneNode node)
-    {
-        var matrix = node.Transform;
-        node.Transform = matrix;
-        return ref System.Runtime.CompilerServices.Unsafe.AsRef(in matrix);
-    }
 }

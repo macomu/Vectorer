@@ -12,6 +12,30 @@ namespace Vectorer.Rendering.Tests;
 public sealed class RenderingAndPngExportTests
 {
     [Fact]
+    public void RenderDocument_AppliesNestedTransformsWithoutLosingGeometry()
+    {
+        var document = SvgDocument.CreateDefault(200, 200);
+        document.Layers[0].Transform = SKMatrix.CreateTranslation(50, 20);
+        var group = new GroupNode { Transform = SKMatrix.CreateScale(2, 2) };
+        var shape = new RectangleShapeNode { Rect = new SKRect(0, 0, 20, 20), Transform = SKMatrix.CreateTranslation(10, 15) };
+        shape.Style.Fill = new SolidColorFill(SKColors.Red);
+        shape.Style.Stroke = null;
+        group.Children.Add(shape);
+        document.Layers[0].Children.Add(group);
+        using var bitmap = new SKBitmap(200, 200);
+        using var canvas = new SKCanvas(bitmap);
+        var renderer = new SkiaDocumentRenderer();
+        for (var i = 0; i < 3; i++)
+        {
+            canvas.Clear(SKColors.Transparent);
+            renderer.RenderDocument(document, canvas);
+            Assert.Equal(SKColors.Red, bitmap.GetPixel(80, 60));
+            Assert.Equal(0, bitmap.GetPixel(10, 10).Alpha);
+        }
+        Assert.Equal(SKMatrix.CreateTranslation(10, 15), shape.Transform);
+    }
+
+    [Fact]
     public void ExportDocumentToBytes_RespectsTargetDimensions()
     {
         var doc = SvgDocument.CreateDefault(400, 300);

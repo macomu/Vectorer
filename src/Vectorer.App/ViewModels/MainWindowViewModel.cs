@@ -67,6 +67,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         SyncLayersCollection();
 
         LoadBuiltInAndExternalPlugins();
+        ActiveToolItem = Tools[0];
     }
 
     public void ExecuteCommand(IDocumentCommand command)
@@ -80,6 +81,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     {
         _selectedNodes.Clear();
         _selectedNodes.AddRange(nodes);
+        OnPropertyChanged(nameof(SelectionSummary));
+        RequestRedraw();
         StatusMessage = $"Selected {_selectedNodes.Count} item(s).";
     }
 
@@ -166,13 +169,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [RelayCommand]
     private void BooleanUnionActiveLayerShapes()
     {
-        ApplyBooleanOnLastTwoShapes(BooleanOperationType.Union);
+        ApplyBooleanOnSelection(BooleanOperationType.Union);
     }
 
     [RelayCommand]
     private void BooleanDifferenceActiveLayerShapes()
     {
-        ApplyBooleanOnLastTwoShapes(BooleanOperationType.Difference);
+        ApplyBooleanOnSelection(BooleanOperationType.Difference);
     }
 
     [RelayCommand]
@@ -205,6 +208,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         if (_undoRedoService.CanUndo)
         {
             _undoRedoService.Undo();
+            SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
             StatusMessage = "Undo executed.";
@@ -217,6 +221,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         if (_undoRedoService.CanRedo)
         {
             _undoRedoService.Redo();
+            SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
             StatusMessage = "Redo executed.";
@@ -235,17 +240,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         StatusMessage = $"Executed plugin tool: {item.Title}";
     }
 
-    private void ApplyBooleanOnLastTwoShapes(BooleanOperationType op)
+    private void ApplyBooleanOnSelection(BooleanOperationType op)
     {
-        var layer = EnsureActiveLayer();
-        var shapes = layer.Children.OfType<ShapeNode>().TakeLast(2).ToList();
-        if (shapes.Count < 2)
+        if (IsInteracting) return;
+        var layer = CurrentDocument.Layers.FirstOrDefault(l => l.IsVisible && !l.IsLocked
+            && _selectedNodes.Count >= 2 && _selectedNodes.All(n => n is ShapeNode && !n.IsLocked && l.Children.Contains(n)));
+        if (layer is null)
         {
-            StatusMessage = "Need at least 2 shapes on the active layer for boolean operations.";
+            StatusMessage = "同じレイヤーの図形を2つ以上選択してください。";
             return;
         }
-
-        var combined = _booleanService.Combine(shapes[0], shapes[1], op);
+        var shapes = layer.Children.OfType<ShapeNode>().Where(n => _selectedNodes.Contains(n)).ToList();
+        var positions = shapes.Select(n => (Node: n, Index: layer.Children.IndexOf(n))).ToArray();
+        var combined = _booleanService.CombineMany(shapes, op);
         if (combined is null)
         {
             StatusMessage = $"Boolean {op} produced an empty shape.";
@@ -256,15 +263,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             $"Boolean {op}",
             execute: () =>
             {
-                layer.Children.Remove(shapes[0]);
-                layer.Children.Remove(shapes[1]);
-                layer.Children.Add(combined);
+                foreach (var shape in shapes) layer.Children.Remove(shape);
+                layer.Children.Insert(positions[0].Index, combined);
             },
             undo: () =>
             {
                 layer.Children.Remove(combined);
-                layer.Children.Add(shapes[0]);
-                layer.Children.Add(shapes[1]);
+                foreach (var position in positions) layer.Children.Insert(position.Index, position.Node);
             }));
 
         SelectNodes([combined]);
@@ -289,13 +294,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     private void SyncLayersCollection()
     {
+        var previousActiveLayer = ActiveLayer;
         Layers.Clear();
         foreach (var layer in CurrentDocument.Layers)
         {
             Layers.Add(layer);
         }
 
-        ActiveLayer ??= Layers.FirstOrDefault();
+        ActiveLayer = previousActiveLayer is not null && Layers.Contains(previousActiveLayer)
+            ? previousActiveLayer : Layers.FirstOrDefault();
     }
 
     private void LoadBuiltInAndExternalPlugins()

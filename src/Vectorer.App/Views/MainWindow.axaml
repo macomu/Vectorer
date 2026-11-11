@@ -6,79 +6,120 @@
         xmlns:docs="using:Vectorer.Abstractions.Documents"
         x:Class="Vectorer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Vectorer — Lightweight Extensible SVG Editor"
-        Width="1220" Height="760"
+        Title="Vectorer — SVG Editor"
+        Width="1280" Height="800" MinWidth="1024" MinHeight="720"
         Background="#0D1117">
-
+  <Window.Styles>
+    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center" /></Style>
+    <Style Selector="NumericUpDown"><Setter Property="MinWidth" Value="115" /><Setter Property="FormatString" Value="0.##" /></Style>
+    <Style Selector="ListBox.tools ListBoxItem"><Setter Property="Padding" Value="8" /><Setter Property="Margin" Value="3,2" /><Setter Property="HorizontalContentAlignment" Value="Center" /></Style>
+  </Window.Styles>
   <DockPanel>
-    <!-- Top Toolbar -->
-    <Border DockPanel.Dock="Top" Background="#161B22" Padding="10,8" BorderBrush="#30363D" BorderThickness="0,0,0,1">
-      <WrapPanel Orientation="Horizontal" ItemSpacing="8">
-        <Button Content="+ Convex Polygon" Command="{Binding AddConvexPolygonCommand}" />
-        <Button Content="+ Concave Star (Texture)" Command="{Binding AddConcavePolygonCommand}" />
-        <Button Content="+ Circle" Command="{Binding AddCircleCommand}" />
-        <Button Content="+ Arc" Command="{Binding AddArcCommand}" />
-        <Separator Width="12" Opacity="0" />
-        <Button Content="Boolean Union" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
-        <Button Content="Boolean Difference" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
-        <Separator Width="12" Opacity="0" />
-        <Button Content="Toggle Blur Filter" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
-        <Button Content="Cycle Layer Blend" Command="{Binding CycleActiveLayerBlendModeCommand}" />
-        <Separator Width="12" Opacity="0" />
-        <Button Content="Undo" Command="{Binding UndoCommand}" />
-        <Button Content="Redo" Command="{Binding RedoCommand}" />
-
-        <!-- Dynamic Plugin Toolbar Contributions -->
-        <ItemsControl ItemsSource="{Binding PluginToolbarItems}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="6" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="plugins:IToolbarContribution">
-              <Button Content="{Binding Title}"
-                      ToolTip.Tip="{Binding Tooltip}"
-                      Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ExecutePluginToolbarItemCommand}"
-                      CommandParameter="{Binding}" />
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </WrapPanel>
+    <Menu DockPanel.Dock="Top" Background="#161B22">
+      <MenuItem Header="編集">
+        <MenuItem Header="元に戻す" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <MenuItem Header="やり直し" InputGesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+        <Separator />
+        <MenuItem Header="選択を削除" InputGesture="Delete" Command="{Binding DeleteSelectionCommand}" />
+      </MenuItem>
+      <MenuItem Header="表示">
+        <MenuItem Header="拡大" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
+        <MenuItem Header="縮小" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+        <MenuItem Header="100%" InputGesture="Ctrl+1" Command="{Binding ResetZoomCommand}" />
+      </MenuItem>
+      <MenuItem Header="パス">
+        <MenuItem Header="オブジェクトをパスに変換" Command="{Binding ObjectToPathCommand}" />
+        <MenuItem Header="ストロークをパスに変換" Command="{Binding StrokeToPathCommand}" />
+        <Separator />
+        <MenuItem Header="統合" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
+        <MenuItem Header="差分" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
+      </MenuItem>
+      <MenuItem Header="レイヤー">
+        <MenuItem Header="合成モード切替" Command="{Binding CycleActiveLayerBlendModeCommand}" />
+      </MenuItem>
+      <MenuItem Header="フィルタ・拡張">
+        <MenuItem Header="レイヤーのぼかし切替" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
+      </MenuItem>
+    </Menu>
+    <Border DockPanel.Dock="Top" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,1" Padding="10,6">
+      <Grid ColumnDefinitions="*,Auto">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,12,0">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" MinWidth="60" />
+            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsRectangleTool}">
+              <TextBlock Text="角丸" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsPolygonTool}">
+              <TextBlock Text="頂点数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsStarTool}">
+              <TextBlock Text="内径比" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsArcTool}">
+              <ComboBox ItemsSource="{Binding ArcModes}" SelectedItem="{Binding ArcMode}" />
+              <TextBlock Text="開始°" /><NumericUpDown Value="{Binding ArcStart}" Minimum="-360" Maximum="360" />
+              <TextBlock Text="展開°" /><NumericUpDown Value="{Binding ArcSweep}" Minimum="-360" Maximum="360" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" ToolTip.Tip="次に描画する図形のスタイル (#RRGGBB / #AARRGGBB)">
+          <TextBlock Text="描画色" /><TextBox Text="{Binding FillColor}" Width="90" />
+          <TextBlock Text="線" /><TextBox Text="{Binding StrokeColor}" Width="90" />
+          <NumericUpDown Value="{Binding StrokeWidth}" Minimum="0" Maximum="100" Increment="0.5" ToolTip.Tip="線幅 (px)" />
+        </StackPanel>
+      </Grid>
     </Border>
-
-    <!-- Bottom Status Bar -->
-    <Border DockPanel.Dock="Bottom" Background="#161B22" Padding="12,6" BorderBrush="#30363D" BorderThickness="0,1,0,0">
-      <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" FontSize="12" />
+    <Border DockPanel.Dock="Bottom" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,0" Padding="10,6">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto,Auto">
+        <TextBlock Text="{Binding CursorPosition}" MinWidth="105" FontSize="12" />
+        <TextBlock Grid.Column="1" Text="{Binding SelectionSummary}" Margin="12,0" FontSize="12" />
+        <TextBlock Grid.Column="2" Text="{Binding ToolHint}" TextTrimming="CharacterEllipsis" Foreground="#94A3B8" FontSize="12" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+          <ToggleButton Content="グリッド" IsChecked="{Binding ShowGrid}" />
+          <ToggleButton Content="スナップ" IsChecked="{Binding SnapToGrid}" ToolTip.Tip="20px グリッドに吸着" />
+          <Button Content="−" Command="{Binding ZoomOutCommand}" /><Button Content="{Binding ZoomLabel}" Command="{Binding ResetZoomCommand}" /><Button Content="+" Command="{Binding ZoomInCommand}" />
+        </StackPanel>
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding StatusMessage}" Foreground="#64748B" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+      </Grid>
     </Border>
-
-    <!-- Right Layer Inspector Panel -->
-    <Border DockPanel.Dock="Right" Width="260" Background="#161B22" Padding="12" BorderBrush="#30363D" BorderThickness="1,0,0,0">
+    <Border DockPanel.Dock="Left" Width="58" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,0,1,0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+          <ListBox Classes="tools" ItemsSource="{Binding Tools}" SelectedItem="{Binding ActiveToolItem}" Background="Transparent" SelectionMode="Single">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ToolItem">
+                <controls:ToolIcon Icon="{Binding Icon}" Width="24" Height="24" ToolTip.Tip="{Binding Hint}" AutomationProperties.Name="{Binding Title}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Separator Margin="6,8" />
+          <ItemsControl ItemsSource="{Binding PluginToolbarItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="plugins:IToolbarContribution">
+                <Button Content="+" Margin="7,3" HorizontalAlignment="Stretch" ToolTip.Tip="{Binding Title}" AutomationProperties.Name="{Binding Title}"
+                        Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ExecutePluginToolbarItemCommand}" CommandParameter="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+    <Border DockPanel.Dock="Right" Width="220" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="10">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="Layers &amp; Blend Modes" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,8" />
-        <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="#0D1117">
+        <TextBlock DockPanel.Dock="Top" Text="レイヤー" FontWeight="SemiBold" Margin="0,0,0,10" />
+        <TextBlock DockPanel.Dock="Bottom" Text="Ctrl + ホイール: ズーム&#10;Space + ドラッグ: パン&#10;Ctrl+0: 全体表示&#10;Esc: 操作をキャンセル" Foreground="#94A3B8" FontSize="12" LineHeight="22" Margin="0,12" />
+        <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="Transparent">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="docs:LayerNode">
-              <StackPanel Spacing="2" Margin="4">
-                <TextBlock Text="{Binding Name}" FontWeight="Medium" Foreground="#E6EDF3" />
-                <TextBlock Text="{Binding BlendMode, StringFormat='Blend: {0}'}" FontSize="11" Foreground="#8B949E" />
+              <StackPanel Spacing="4" Margin="2">
+                <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" />
               </StackPanel>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
       </DockPanel>
     </Border>
-
-    <!-- Center Vector Canvas Viewport -->
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#0D1117">
-      <Border HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
-              BorderBrush="#30363D" BorderThickness="1" BoxShadow="0 8 24 0 #60000000">
-        <controls:VectorCanvasControl Width="{Binding CurrentDocument.Width}"
-                                      Height="{Binding CurrentDocument.Height}"
-                                      Document="{Binding CurrentDocument}"
-                                      Renderer="{Binding DocumentRenderer}"
-                                      RenderVersion="{Binding RenderVersion}" />
-      </Border>
-    </ScrollViewer>
+    <controls:VectorCanvasControl Workspace="{Binding}" RenderVersion="{Binding RenderVersion}" />
   </DockPanel>
 </Window>
