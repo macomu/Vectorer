@@ -101,6 +101,59 @@ public sealed partial class MainWindowViewModel
     }
     public event Action? CloseRequested;
     [RelayCommand] private void ExitApplication() => CloseRequested?.Invoke();
+
+    public PngExportViewModel CreatePngExportViewModel() =>
+        new(CurrentDocument, SelectedNodes, (Vectorer.Rendering.Export.PngExportService)_pngExportService);
+
+    [RelayCommand]
+    private async Task ExportPngAsync()
+    {
+        if (IsBusy || IsInteracting || FileDialogs is null) return;
+        FinishTextEditing();
+        using var exportVm = CreatePngExportViewModel();
+        if (!await FileDialogs.ShowPngExportDialogAsync(exportVm) || !exportVm.CanExport)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            if (exportVm.Mode == PngExportMode.LayersBatch)
+            {
+                var folder = await FileDialogs.SelectExportFolderAsync();
+                if (string.IsNullOrWhiteSpace(folder)) return;
+                var options = exportVm.CreateExportOptions();
+                var prefix = exportVm.BatchFilePrefix.Trim();
+                var visibleOnly = exportVm.VisibleLayersOnly;
+                var files = await Task.Run(() => _pngExportService.ExportLayersBatchAsync(CurrentDocument, folder, prefix, visibleOnly, options));
+                StatusMessage = $"PNG一括出力完了: {files.Count} 枚 ({folder})";
+            }
+            else
+            {
+                var suggested = string.IsNullOrWhiteSpace(CurrentDocument.Title) ? "export.png" : $"{CurrentDocument.Title}.png";
+                var file = await FileDialogs.SavePngAsync(suggested);
+                if (file is null) return;
+                var bytes = await Task.Run(() => exportVm.RenderExportPngBytes());
+                await using (var stream = await file.OpenWrite())
+                {
+                    if (stream.CanSeek) stream.SetLength(0);
+                    await stream.WriteAsync(bytes);
+                    await stream.FlushAsync();
+                }
+                StatusMessage = $"PNGを書き出しました: {file.Name} ({exportVm.TargetWidth}×{exportVm.TargetHeight})";
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            StatusMessage = $"PNG出力に失敗しました: {ex.Message}";
+            await FileDialogs.ShowErrorAsync(StatusMessage);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
     private void ReplaceDocument(SvgDocument document, EditorFile? file)
     {
         CancelInteraction(); _scope.Clear(); CurrentDocument = document; _currentFile = file;

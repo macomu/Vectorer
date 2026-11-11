@@ -20,6 +20,7 @@
     <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+E" Command="{Binding ExportPngCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
   </Window.KeyBindings>
   <DockPanel IsEnabled="{Binding !IsBusy}">
@@ -29,6 +30,7 @@
         <MenuItem Header="開く…" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
         <MenuItem Header="保存" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
         <MenuItem Header="名前を付けて保存…" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <MenuItem Header="エクスポート (PNG)…" InputGesture="Ctrl+Shift+E" Command="{Binding ExportPngCommand}" />
         <Separator /><MenuItem Header="ドキュメント設定…" InputGesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
         <MenuItem Header="終了" InputGesture="Alt+F4" Command="{Binding ExitApplicationCommand}" />
       </MenuItem>

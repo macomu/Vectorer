@@ -20,6 +20,9 @@ public interface IEditorFileDialogs
     async Task<UnsavedDecision> ConfirmUnsavedAsync() => await ConfirmDiscardAsync() ? UnsavedDecision.Discard : UnsavedDecision.Cancel;
     Task<DocumentSettings?> EditDocumentAsync(DocumentSettings current, bool isNew) => Task.FromResult<DocumentSettings?>(current);
     Task<bool> ShowRotateLayerDialogAsync(RotateLayerViewModel viewModel) => Task.FromResult(true);
+    Task<bool> ShowPngExportDialogAsync(PngExportViewModel viewModel) => Task.FromResult(false);
+    Task<EditorFile?> SavePngAsync(string suggestedName) => Task.FromResult<EditorFile?>(null);
+    Task<string?> SelectExportFolderAsync() => Task.FromResult<string?>(null);
     Task ShowErrorAsync(string message) => Task.CompletedTask;
 }
 
@@ -27,6 +30,7 @@ public interface IEditorFileDialogs
 public sealed class EditorFileDialogs(Window owner) : IEditorFileDialogs
 {
     private static readonly FilePickerFileType SvgType = new("SVG") { Patterns = ["*.svg"], MimeTypes = ["image/svg+xml"] };
+    private static readonly FilePickerFileType PngType = new("PNG") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
     private static EditorFile Adapt(IStorageFile file) => new(file.Name, file.OpenReadAsync, file.OpenWriteAsync);
     public async Task<EditorFile?> OpenSvgAsync()
     {
@@ -116,6 +120,186 @@ public sealed class EditorFileDialogs(Window owner) : IEditorFileDialogs
 
         cancel.Click += (_, _) => dialog.Close(false);
         apply.Click += (_, _) => dialog.Close(true);
+        return await dialog.ShowDialog<bool>(owner);
+    }
+
+    public async Task<EditorFile?> SavePngAsync(string suggestedName)
+    {
+        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "PNGを保存",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "png",
+            FileTypeChoices = [PngType],
+            ShowOverwritePrompt = true
+        });
+        return file is null ? null : Adapt(file);
+    }
+
+    public async Task<string?> SelectExportFolderAsync()
+    {
+        var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "レイヤー一括出力先フォルダを選択",
+            AllowMultiple = false
+        });
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+    }
+
+    public async Task<bool> ShowPngExportDialogAsync(PngExportViewModel vm)
+    {
+        var dialog = new Window
+        {
+            Title = "PNG エクスポート",
+            Width = 680,
+            Height = 470,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            DataContext = vm
+        };
+
+        var root = new DockPanel { Margin = new Avalonia.Thickness(20) };
+
+        // Mode radio buttons at top
+        var modePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 18, Margin = new Avalonia.Thickness(0, 0, 0, 14) };
+        modePanel.Children.Add(new TextBlock { Text = "出力対象モード:", FontWeight = Avalonia.Media.FontWeight.SemiBold });
+        foreach (var (label, prop) in new[]
+        {
+            ("ドキュメント全体", nameof(vm.IsDocumentMode)),
+            ("選択中の要素のみ", nameof(vm.IsSelectionMode)),
+            ("レイヤー別一括出力", nameof(vm.IsLayersBatchMode))
+        })
+        {
+            var radio = new RadioButton { Content = label, GroupName = "PngExportModeGroup" };
+            radio.Bind(RadioButton.IsCheckedProperty, new Binding(prop) { Mode = BindingMode.TwoWay });
+            modePanel.Children.Add(radio);
+        }
+        DockPanel.SetDock(modePanel, Dock.Top);
+        root.Children.Add(modePanel);
+
+        // Bottom buttons
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Avalonia.Thickness(0, 14, 0, 0)
+        };
+        var cancel = new Button { Content = "キャンセル" };
+        var exportBtn = new Button { Content = "エクスポート..." };
+        exportBtn.Bind(Button.IsEnabledProperty, new Binding(nameof(vm.CanExport)));
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(exportBtn);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        root.Children.Add(buttons);
+
+        // Main 2-column area
+        var bodyGrid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,18,*") };
+
+        // Left column: Settings
+        var settingsStack = new StackPanel { Spacing = 10 };
+        settingsStack.Children.Add(new TextBlock { Text = "出力設定", FontWeight = Avalonia.Media.FontWeight.SemiBold });
+
+        var baseRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        baseRow.Children.Add(new TextBlock { Text = "基準寸法:" });
+        var baseVal = new TextBlock { Foreground = Avalonia.Media.Brushes.LightSkyBlue };
+        baseVal.Bind(TextBlock.TextProperty, new Binding(nameof(vm.BaseDimensionsLabel)));
+        baseRow.Children.Add(baseVal);
+        settingsStack.Children.Add(baseRow);
+
+        var widthRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*,Auto") };
+        widthRow.Children.Add(new TextBlock { Text = "幅 (px)" });
+        var widthInput = new NumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
+        widthInput.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.TargetWidth)) { Mode = BindingMode.TwoWay });
+        Grid.SetColumn(widthInput, 1);
+        widthRow.Children.Add(widthInput);
+        var lockCheck = new CheckBox { Content = "🔒 比率固定", Margin = new Avalonia.Thickness(8, 0, 0, 0) };
+        lockCheck.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.LockAspect)) { Mode = BindingMode.TwoWay });
+        Grid.SetColumn(lockCheck, 2);
+        widthRow.Children.Add(lockCheck);
+        settingsStack.Children.Add(widthRow);
+
+        var heightRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*") };
+        heightRow.Children.Add(new TextBlock { Text = "高さ (px)" });
+        var heightInput = new NumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
+        heightInput.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.TargetHeight)) { Mode = BindingMode.TwoWay });
+        Grid.SetColumn(heightInput, 1);
+        heightRow.Children.Add(heightInput);
+        settingsStack.Children.Add(heightRow);
+
+        var scaleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        scaleRow.Children.Add(new TextBlock { Text = "倍率:" });
+        foreach (var preset in new[] { "0.5", "1", "2", "4" })
+        {
+            var btn = new Button
+            {
+                Content = $"{preset}x",
+                Command = vm.ApplyScalePresetFromTextCommand,
+                CommandParameter = preset,
+                Padding = new Avalonia.Thickness(8, 3)
+            };
+            scaleRow.Children.Add(btn);
+        }
+        var scaleStatus = new TextBlock { FontSize = 12, Foreground = Avalonia.Media.Brushes.Silver, Margin = new Avalonia.Thickness(6, 0, 0, 0) };
+        scaleStatus.Bind(TextBlock.TextProperty, new Binding(nameof(vm.ScaleStatusLabel)));
+        scaleRow.Children.Add(scaleStatus);
+        settingsStack.Children.Add(scaleRow);
+
+        var transparentCheck = new CheckBox { Content = "背景を透過する" };
+        transparentCheck.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.TransparentBackground)) { Mode = BindingMode.TwoWay });
+        settingsStack.Children.Add(transparentCheck);
+
+        var batchStack = new StackPanel { Spacing = 8, Margin = new Avalonia.Thickness(0, 6, 0, 0) };
+        batchStack.Bind(Avalonia.Visual.IsVisibleProperty, new Binding(nameof(vm.IsLayersBatchMode)));
+        batchStack.Children.Add(new TextBlock { Text = "ファイル名接頭辞:" });
+        var prefixBox = new TextBox();
+        prefixBox.Bind(TextBox.TextProperty, new Binding(nameof(vm.BatchFilePrefix)) { Mode = BindingMode.TwoWay });
+        batchStack.Children.Add(prefixBox);
+        var visibleOnlyCheck = new CheckBox { Content = "非表示レイヤーを除外する" };
+        visibleOnlyCheck.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.VisibleLayersOnly)) { Mode = BindingMode.TwoWay });
+        batchStack.Children.Add(visibleOnlyCheck);
+        settingsStack.Children.Add(batchStack);
+
+        Grid.SetColumn(settingsStack, 0);
+        bodyGrid.Children.Add(settingsStack);
+
+        // Right column: Preview
+        var previewDock = new DockPanel();
+        var previewHeader = new TextBlock { Text = "プレビュー", FontWeight = Avalonia.Media.FontWeight.SemiBold, Margin = new Avalonia.Thickness(0, 0, 0, 8) };
+        DockPanel.SetDock(previewHeader, Dock.Top);
+        previewDock.Children.Add(previewHeader);
+
+        var outSizeText = new TextBlock
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Avalonia.Thickness(0, 8, 0, 0),
+            FontSize = 12
+        };
+        outSizeText.Bind(TextBlock.TextProperty, new Binding(nameof(vm.OutputSizeLabel)));
+        DockPanel.SetDock(outSizeText, Dock.Bottom);
+        previewDock.Children.Add(outSizeText);
+
+        var previewBorder = new Border
+        {
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#0F172A")),
+            BorderBrush = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#30363D")),
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(4),
+            Padding = new Avalonia.Thickness(8)
+        };
+        var previewImage = new Image { Stretch = Avalonia.Media.Stretch.Uniform };
+        previewImage.Bind(Image.SourceProperty, new Binding(nameof(vm.PreviewBitmap)));
+        previewBorder.Child = previewImage;
+        previewDock.Children.Add(previewBorder);
+
+        Grid.SetColumn(previewDock, 2);
+        bodyGrid.Children.Add(previewDock);
+
+        root.Children.Add(bodyGrid);
+        dialog.Content = root;
+
+        cancel.Click += (_, _) => dialog.Close(false);
+        exportBtn.Click += (_, _) => { if (vm.CanExport) dialog.Close(true); };
         return await dialog.ShowDialog<bool>(owner);
     }
 
