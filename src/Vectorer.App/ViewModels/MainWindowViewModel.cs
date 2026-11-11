@@ -69,6 +69,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         LoadBuiltInAndExternalPlugins();
         ActiveToolItem = Tools[0];
+        SyncSelectionEditors();
     }
 
     public void ExecuteCommand(IDocumentCommand command)

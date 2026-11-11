@@ -278,35 +278,198 @@
         </StackPanel>
       </ScrollViewer>
     </Border>
-    <Border DockPanel.Dock="Right" Width="250" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="10">
-      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="10">
-          <Expander Header="変形" IsExpanded="True" IsVisible="{Binding HasSelection}">
-            <StackPanel Spacing="6">
-              <TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" />
-              <TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" />
-              <TextBlock Text="幅" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="0.01" Maximum="1000000" />
-              <TextBlock Text="高さ" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="0.01" Maximum="1000000" />
-              <CheckBox Content="縦横比を固定" IsChecked="{Binding LockAspect}" />
-              <TextBlock Text="追加回転°" /><NumericUpDown Value="{Binding SelectionRotation}" Minimum="-360" Maximum="360" />
-              <Button Content="変形を適用" Command="{Binding ApplyTransformCommand}" />
-            </StackPanel>
-          </Expander>
-          <Expander Header="多角形パラメータ" IsVisible="{Binding HasParametricPolygon}" IsExpanded="True">
-            <StackPanel Spacing="6">
-              <TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
-              <TextBlock Text="外径" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
-              <StackPanel IsVisible="{Binding HasStarPolygon}"><TextBlock Text="内径比（星形）" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
-              <TextBlock Text="開始角°" /><NumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
-            </StackPanel>
-          </Expander>
-          <TextBlock Text="レイヤー" FontWeight="SemiBold" />
+    <Border DockPanel.Dock="Right" Width="300" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="6">
+      <Grid RowDefinitions="3*,4,2*">
+        <TabControl Grid.Row="0" Padding="4">
+          <TabItem Header="塗り＆線" FontSize="13">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="10" Margin="0,4,4,8">
+                <TextBlock Text="{Binding StyleTarget, StringFormat='編集対象: {0}'}" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold" />
+                <Expander Header="塗りつぶし (Fill)" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="塗り種別" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding FillKinds}" SelectedItem="{Binding FillKind}" PlaceholderText="混在" />
+                    </Grid>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsSolidFill}">
+                      <Grid ColumnDefinitions="72,*">
+                        <TextBlock Text="単色 HEX" />
+                        <TextBox Grid.Column="1" Text="{Binding FillColor}" Watermark="混在 (#RRGGBB / #AARRGGBB)" />
+                      </Grid>
+                      <ItemsControl ItemsSource="{Binding ColorSwatches}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ColorSwatch">
+                            <Button Width="24" Height="24" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
+                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetFillColorCommand}" CommandParameter="{Binding Value}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsTextureFill}">
+                      <Grid ColumnDefinitions="72,*">
+                        <TextBlock Text="パターン" />
+                        <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding TexturePatterns}" SelectedItem="{Binding TexturePattern}" PlaceholderText="混在" />
+                      </Grid>
+                      <Grid ColumnDefinitions="72,*,Auto">
+                        <TextBlock Text="メイン色" />
+                        <TextBox Grid.Column="1" Text="{Binding TexturePrimaryColor}" Watermark="混在" Margin="0,0,4,0" />
+                        <Button Grid.Column="2" Content="色">
+                          <Button.Flyout>
+                            <Flyout>
+                              <ItemsControl ItemsSource="{Binding ColorSwatches}" Width="180">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:ColorSwatch">
+                                    <Button Width="26" Height="26" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
+                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetTexturePrimaryColorCommand}" CommandParameter="{Binding Value}" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </Flyout>
+                          </Button.Flyout>
+                        </Button>
+                      </Grid>
+                      <Grid ColumnDefinitions="72,*,Auto">
+                        <TextBlock Text="サブ色" />
+                        <TextBox Grid.Column="1" Text="{Binding TextureSecondaryColor}" Watermark="混在" Margin="0,0,4,0" />
+                        <Button Grid.Column="2" Content="色">
+                          <Button.Flyout>
+                            <Flyout>
+                              <ItemsControl ItemsSource="{Binding ColorSwatches}" Width="180">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:ColorSwatch">
+                                    <Button Width="26" Height="26" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
+                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetTextureSecondaryColorCommand}" CommandParameter="{Binding Value}" />
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </Flyout>
+                          </Button.Flyout>
+                        </Button>
+                      </Grid>
+                      <TextBlock Text="スケール (4〜128 px)" />
+                      <Grid ColumnDefinitions="*,90">
+                        <Slider Minimum="4" Maximum="128" Value="{Binding TextureScale}" Margin="0,0,6,0" />
+                        <NumericUpDown Grid.Column="1" Minimum="4" Maximum="128" Increment="2" Value="{Binding TextureScale}" MinWidth="80" />
+                      </Grid>
+                      <Grid ColumnDefinitions="72,*">
+                        <TextBlock Text="角度 (°)" />
+                        <NumericUpDown Grid.Column="1" Minimum="-180" Maximum="180" Increment="15" Value="{Binding TextureAngle}" />
+                      </Grid>
+                    </StackPanel>
+                    <TextBlock Text="塗り不透明度 (%)" />
+                    <Grid ColumnDefinitions="*,90">
+                      <Slider Minimum="0" Maximum="100" Value="{Binding FillOpacity}" Margin="0,0,6,0" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" MinWidth="80" />
+                    </Grid>
+                  </StackPanel>
+                </Expander>
+
+                <Expander Header="ストローク詳細 (Stroke)" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="72,*,Auto">
+                      <TextBlock Text="線色" />
+                      <TextBox Grid.Column="1" Text="{Binding StrokeColor}" Watermark="混在 / none" Margin="0,0,4,0" />
+                      <Button Grid.Column="2" Content="線なし" Command="{Binding ClearStrokeCommand}" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding ColorSwatches}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ColorSwatch">
+                          <Button Width="24" Height="24" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
+                                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetStrokeColorCommand}" CommandParameter="{Binding Value}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="線幅 (px)" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1000" Increment="0.5" Value="{Binding StrokeWidth}" />
+                    </Grid>
+                    <TextBlock Text="線不透明度 (%)" />
+                    <Grid ColumnDefinitions="*,90">
+                      <Slider Minimum="0" Maximum="100" Value="{Binding StrokeOpacity}" Margin="0,0,6,0" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding StrokeOpacity}" MinWidth="80" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="線端 (Cap)" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding StrokeCaps}" SelectedItem="{Binding StrokeCap}" PlaceholderText="混在" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="角 (Join)" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding StrokeJoins}" SelectedItem="{Binding StrokeJoin}" PlaceholderText="混在" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="Miter制限" />
+                      <NumericUpDown Grid.Column="1" Minimum="1" Maximum="100" Increment="0.5" Value="{Binding StrokeMiterLimit}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="破線種別" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding DashOptions}" SelectedItem="{Binding StrokeDash}" PlaceholderText="混在" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*,Auto">
+                      <TextBlock Text="破線配列" />
+                      <TextBox Grid.Column="1" Text="{Binding CustomDashArray}" Watermark="例: 8, 4, 2, 4" Margin="0,0,4,0" />
+                      <Button Grid.Column="2" Content="適用" Command="{Binding ApplyCustomDashCommand}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="破線位相" />
+                      <NumericUpDown Grid.Column="1" Minimum="-1000" Maximum="1000" Increment="1" Value="{Binding StrokeDashPhase}" />
+                    </Grid>
+                  </StackPanel>
+                </Expander>
+
+                <Expander Header="変形" IsExpanded="False" IsVisible="{Binding HasSelection}" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" />
+                    <TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" />
+                    <TextBlock Text="幅" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="0.01" Maximum="1000000" />
+                    <TextBlock Text="高さ" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="0.01" Maximum="1000000" />
+                    <CheckBox Content="縦横比を固定" IsChecked="{Binding LockAspect}" />
+                    <TextBlock Text="追加回転°" /><NumericUpDown Value="{Binding SelectionRotation}" Minimum="-360" Maximum="360" />
+                    <Button Content="変形を適用" Command="{Binding ApplyTransformCommand}" />
+                  </StackPanel>
+                </Expander>
+
+                <Expander Header="多角形パラメータ" IsVisible="{Binding HasParametricPolygon}" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
+                    <TextBlock Text="外径" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
+                    <StackPanel IsVisible="{Binding HasStarPolygon}"><TextBlock Text="内径比（星形）" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
+                    <TextBlock Text="開始角°" /><NumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
+                  </StackPanel>
+                </Expander>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="効果/SkSL" FontSize="13">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="8" Margin="0,4,4,8">
+                <Button Content="レイヤーのぼかし切替" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
+                <Button Content="フィルタをクリア" Command="{Binding ClearFiltersCommand}" />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+        </TabControl>
+
+        <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#30363D" />
+
+        <DockPanel Grid.Row="2" Margin="4,6,4,0">
+          <TextBlock DockPanel.Dock="Top" Text="レイヤー＆オブジェクト" FontWeight="SemiBold" Margin="0,0,0,6" />
+          <TextBlock DockPanel.Dock="Bottom" Text="Ctrl + ホイール: ズーム · Space + ドラッグ: パン · Esc: キャンセル" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
           <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="Transparent">
-            <ListBox.ItemTemplate><DataTemplate x:DataType="docs:LayerNode"><StackPanel Spacing="4" Margin="2"><TextBlock Text="{Binding Name}" TextWrapping="Wrap" /><TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" /></StackPanel></DataTemplate></ListBox.ItemTemplate>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="docs:LayerNode">
+                <StackPanel Spacing="4" Margin="2">
+                  <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
           </ListBox>
-          <TextBlock Text="Ctrl + ホイール: ズーム&#10;Space + ドラッグ: パン&#10;Ctrl+0: 全体表示&#10;Esc: 操作をキャンセル" Foreground="#94A3B8" FontSize="12" LineHeight="22" />
-        </StackPanel>
-      </ScrollViewer>
+        </DockPanel>
+      </Grid>
     </Border>
     <DockPanel>
       <Border DockPanel.Dock="Top" Background="#161B22" Padding="8,3" IsVisible="{Binding IsInGroup}">
