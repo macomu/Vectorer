@@ -87,6 +87,9 @@ dotnet tests/Vectorer.Rendering.Tests/bin/Debug/net10.0/Vectorer.Rendering.Tests
 
 # アプリケーションの実行
 dotnet run --project src/Vectorer.App/Vectorer.App.csproj
+
+# 配布パッケージ作成 (.NET 10 ファイルベースアプリ: win-x64 / win-arm64 / osx-arm64)
+dotnet run build.cs
 ```
 
 ---

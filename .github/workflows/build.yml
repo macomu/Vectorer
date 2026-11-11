@@ -1,0 +1,45 @@
+name: Build and Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Package (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            archive_path: artifacts/packages/Vectorer-win-x64.zip
+          - rid: win-arm64
+            os: windows-latest
+            archive_path: artifacts/packages/Vectorer-win-arm64.zip
+          - rid: osx-arm64
+            os: macos-latest
+            archive_path: artifacts/packages/Vectorer-osx-arm64.tar.gz
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build, test, and package (${{ matrix.rid }})
+        run: dotnet run build.cs -- --rid ${{ matrix.rid }} --configuration Release
+
+      - name: Upload build artifact (${{ matrix.rid }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: Vectorer-${{ matrix.rid }}
+          path: ${{ matrix.archive_path }}
+          if-no-files-found: error
+          retention-days: 30

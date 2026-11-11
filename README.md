@@ -58,6 +58,14 @@ dotnet test
 
 # アプリケーションの起動
 dotnet run --project src/Vectorer.App
+
+# リリースパッケージの作成 (.NET 10 ファイルベースアプリ)
+# デフォルトで win-x64 (.zip), win-arm64 (.zip), osx-arm64 (.tar.gz) を artifacts/packages/ に出力
+dotnet run build.cs
+
+# 特定の RID のみパッケージ化する場合
+dotnet run build.cs -- --rid win-x64
+dotnet run build.cs -- --rid osx-arm64 --skip-tests
 ```
 
 ## 開発者および AI エージェント向けガイド
