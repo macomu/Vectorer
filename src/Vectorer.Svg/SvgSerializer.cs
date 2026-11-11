@@ -130,6 +130,12 @@ public sealed class SvgSerializer : ISvgSerializer
             {
                 element.SetAttributeValue(VectorerNs + "shader-sksl", node.ShaderEffect.InlineSksl);
             }
+            if (node.ShaderEffect.Uniforms is { Count: > 0 } uniforms)
+            {
+                var uniformText = string.Join(";", uniforms.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                    .Select(kv => $"{kv.Key}={FormatFloat(kv.Value)}"));
+                element.SetAttributeValue(VectorerNs + "shader-uniforms", uniformText);
+            }
         }
 
         if (node is ShapeNode shapeNode)
@@ -535,8 +541,35 @@ public sealed class SvgSerializer : ISvgSerializer
         if (!string.IsNullOrWhiteSpace(shaderId))
         {
             var inlineSksl = el.Attribute(VectorerNs + "shader-sksl")?.Value;
-            node.ShaderEffect = new ShaderEffectDescriptor(shaderId, inlineSksl);
+            var uniforms = ParseShaderUniforms(el.Attribute(VectorerNs + "shader-uniforms")?.Value);
+            node.ShaderEffect = new ShaderEffectDescriptor(shaderId, inlineSksl, uniforms);
         }
+    }
+
+    private static IReadOnlyDictionary<string, float>? ParseShaderUniforms(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var dict = new Dictionary<string, float>(StringComparer.Ordinal);
+        foreach (var part in raw.Split([';', ','], StringSplitOptions.RemoveEmptyEntries))
+        {
+            var sep = part.IndexOf('=');
+            if (sep < 0) sep = part.IndexOf(':');
+            if (sep <= 0) continue;
+            var key = part[..sep].Trim().Trim('"', '{', '}');
+            var valStr = part[(sep + 1)..].Trim().Trim('"', '{', '}');
+            if (!string.IsNullOrWhiteSpace(key)
+                && float.TryParse(valStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var val)
+                && float.IsFinite(val))
+            {
+                dict[key] = val;
+            }
+        }
+
+        return dict.Count > 0 ? dict : null;
     }
 
     private static void ReadShapeStyleAttributes(XElement el, ShapeStyle style)

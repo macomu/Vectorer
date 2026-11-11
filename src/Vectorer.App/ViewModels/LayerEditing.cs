@@ -95,7 +95,11 @@ public sealed partial class MainWindowViewModel
         }));
         ActiveLayer = lower; SelectNodes(children.Select(c => c.Node));
     }
-    partial void OnActiveLayerChanged(LayerNode? value) => MergeLayerDownCommand.NotifyCanExecuteChanged();
+    partial void OnActiveLayerChanged(LayerNode? value)
+    {
+        MergeLayerDownCommand.NotifyCanExecuteChanged();
+        SyncEffectsInspector();
+    }
     [RelayCommand] private void ExecutePluginMenu(Vectorer.Abstractions.Plugins.IMenuContribution? contribution)
     { if (!IsInteracting && contribution is not null) contribution.Execute(this); }
     [RelayCommand] private void ClearFilters()

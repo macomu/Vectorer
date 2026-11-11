@@ -60,12 +60,16 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         }
     }
 
-    public void RenderNode(SceneNode node, SKCanvas canvas)
+    public void RenderNode(SceneNode node, SKCanvas canvas) => RenderNodeCore(node, canvas, null);
+
+    private void RenderNodeCore(SceneNode node, SKCanvas canvas, ShaderEffectDescriptor? inheritedShader)
     {
         if (!node.IsVisible || node.Opacity <= 0f)
         {
             return;
         }
+
+        var activeShader = node.ShaderEffect ?? inheritedShader;
 
         var requiresLayerSave = node.Opacity < 0.999f
             || node.BlendMode != LayerBlendMode.Normal
@@ -109,12 +113,12 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
                 case ContainerNode container:
                     foreach (var child in container.Children)
                     {
-                        RenderNode(child, canvas);
+                        RenderNodeCore(child, canvas, activeShader);
                     }
                     break;
 
                 case ShapeNode shape:
-                    RenderShape(shape, canvas);
+                    RenderShape(shape, canvas, activeShader);
                     break;
             }
         }
@@ -126,7 +130,7 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         }
     }
 
-    private void RenderShape(ShapeNode shape, SKCanvas canvas)
+    private void RenderShape(ShapeNode shape, SKCanvas canvas, ShaderEffectDescriptor? activeShader)
     {
         using var path = shape.BuildLocalPath();
         if (path.IsEmpty)
@@ -135,11 +139,12 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         }
 
         var bounds = path.TightBounds;
+        var shaderDescriptor = shape.ShaderEffect ?? activeShader;
 
         // 1. Fill or Per-Object Runtime Shader
-        if (shape.ShaderEffect is not null)
+        if (shaderDescriptor is not null)
         {
-            using var customShader = ShaderRegistry.CreateShaderForDescriptor(shape.ShaderEffect, bounds);
+            using var customShader = ShaderRegistry.CreateShaderForDescriptor(shaderDescriptor, bounds);
             if (customShader is not null)
             {
                 using var shaderPaint = new SKPaint

@@ -150,6 +150,7 @@ public sealed partial class MainWindowViewModel
             }
             SyncShapeDetails();
             SyncTransformFields();
+            SyncEffectsInspector();
             OnPropertyChanged(nameof(IsSolidFill));
             OnPropertyChanged(nameof(IsTextureFill));
             OnPropertyChanged(nameof(HasParametricPolygon));

@@ -122,8 +122,11 @@
         <MenuItem Header="ロック切替" Command="{Binding ToggleLayerLockCommand}" />
       </MenuItem>
       <MenuItem Header="フィルタ・拡張">
+        <MenuItem Header="ぼかしフィルタ (Gaussian Blur)…" Command="{Binding OpenBlurInspectorCommand}" />
         <MenuItem Header="レイヤーのぼかし切替" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
         <MenuItem Header="フィルタをクリア" Command="{Binding ClearFiltersCommand}" />
+        <Separator />
+        <MenuItem Header="SkSL シェーダーを適用…" Command="{Binding OpenShaderInspectorCommand}" />
         <MenuItem Header="プラグインコマンド" ItemsSource="{Binding PluginMenus}">
           <MenuItem.ItemContainerTheme>
             <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="plugins:IMenuContribution">
@@ -280,7 +283,7 @@
     </Border>
     <Border DockPanel.Dock="Right" Width="300" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="6">
       <Grid RowDefinitions="3*,4,2*">
-        <TabControl Grid.Row="0" Padding="4">
+        <TabControl Grid.Row="0" Padding="4" SelectedIndex="{Binding SelectedInspectorTab}">
           <TabItem Header="塗り＆線" FontSize="13">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled">
               <StackPanel Spacing="10" Margin="0,4,4,8">
@@ -445,9 +448,76 @@
           </TabItem>
           <TabItem Header="効果/SkSL" FontSize="13">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-              <StackPanel Spacing="8" Margin="0,4,4,8">
-                <Button Content="レイヤーのぼかし切替" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
-                <Button Content="フィルタをクリア" Command="{Binding ClearFiltersCommand}" />
+              <StackPanel Spacing="10" Margin="0,4,4,8">
+                <TextBlock Text="{Binding EffectTargetLabel, StringFormat='編集対象: {0}'}" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold" />
+
+                <Expander Header="合成・不透明度" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="不透明度 (%)" />
+                    <Grid ColumnDefinitions="*,90">
+                      <Slider Minimum="0" Maximum="100" Value="{Binding EffectOpacity}" Margin="0,0,6,0" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding EffectOpacity}" MinWidth="80" />
+                    </Grid>
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="合成モード" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding BlendModes}" SelectedItem="{Binding EffectBlendMode}" PlaceholderText="混在" />
+                    </Grid>
+                  </StackPanel>
+                </Expander>
+
+                <Expander Header="ガウスぼかし (Gaussian Blur)" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <CheckBox Content="ぼかしフィルタを有効化" IsChecked="{Binding IsBlurEnabled}" />
+                    <TextBlock Text="水平ぼかし σX (0〜100)" />
+                    <Grid ColumnDefinitions="*,90">
+                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaX}" Margin="0,0,6,0" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaX}" MinWidth="80" />
+                    </Grid>
+                    <TextBlock Text="垂直ぼかし σY (0〜100)" />
+                    <Grid ColumnDefinitions="*,90">
+                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaY}" Margin="0,0,6,0" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaY}" MinWidth="80" />
+                    </Grid>
+                    <CheckBox Content="水平・垂直 (σX = σY) を連動" IsChecked="{Binding LinkBlurSigma}" />
+                    <Button Content="フィルタをクリア" Command="{Binding ClearFiltersCommand}" HorizontalAlignment="Stretch" />
+                  </StackPanel>
+                </Expander>
+
+                <Expander Header="SkSL シェーダー (SKRuntimeEffect)" IsExpanded="True" HorizontalAlignment="Stretch">
+                  <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="72,*">
+                      <TextBlock Text="シェーダー" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding ShaderOptions}" SelectedItem="{Binding SelectedShaderOption}" PlaceholderText="混在" />
+                    </Grid>
+
+                    <StackPanel Spacing="6" IsVisible="{Binding HasActiveShader}">
+                      <TextBlock Text="Uniform パラメータ" FontWeight="SemiBold" FontSize="12" Foreground="#94A3B8" />
+                      <ItemsControl ItemsSource="{Binding ShaderUniforms}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ShaderUniformItem">
+                            <StackPanel Spacing="3" Margin="0,2">
+                              <TextBlock Text="{Binding Name}" FontSize="12" />
+                              <Grid ColumnDefinitions="*,90">
+                                <Slider Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Value="{Binding Value}" Margin="0,0,6,0" />
+                                <NumericUpDown Grid.Column="1" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Increment="{Binding Increment}" Value="{Binding Value}" MinWidth="80" />
+                              </Grid>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+
+                      <Expander Header="ライブ SkSL エディタ" IsExpanded="False" HorizontalAlignment="Stretch">
+                        <StackPanel Spacing="6">
+                          <TextBox Text="{Binding SkslSourceCode}" AcceptsReturn="True" TextWrapping="NoWrap" Height="150" FontFamily="Consolas, Monospace" FontSize="12" />
+                          <Button Content="SkSL をコンパイル＆適用" Command="{Binding CompileAndApplySkslCommand}" HorizontalAlignment="Stretch" />
+                          <Border IsVisible="{Binding HasSkslError}" Background="#3B1219" BorderBrush="#F87171" BorderThickness="1" Padding="6" CornerRadius="4">
+                            <TextBlock Text="{Binding SkslCompileError}" Foreground="#FCA5A5" TextWrapping="Wrap" FontSize="11" />
+                          </Border>
+                        </StackPanel>
+                      </Expander>
+                    </StackPanel>
+                  </StackPanel>
+                </Expander>
               </StackPanel>
             </ScrollViewer>
           </TabItem>
