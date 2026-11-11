@@ -12,6 +12,18 @@ namespace Vectorer.Rendering.Tests;
 public sealed class RenderingAndPngExportTests
 {
     [Fact]
+    public void RenderDocument_AppliesNonZeroViewBoxAndRestoresCanvasMatrix()
+    {
+        var document = SvgDocument.CreateDefault(100, 100); document.ViewBox = new SKRect(10, 20, 60, 70);
+        var rect = new RectangleShapeNode { Rect = new SKRect(10, 20, 35, 45) };
+        rect.Style.Fill = new SolidColorFill(SKColors.Red); rect.Style.Stroke = null;
+        document.Layers[0].Children.Add(rect);
+        using var bitmap = new SKBitmap(100, 100); using var canvas = new SKCanvas(bitmap); canvas.Clear(SKColors.Transparent);
+        var matrix = canvas.TotalMatrix; new SkiaDocumentRenderer().RenderDocument(document, canvas);
+        Assert.Equal(SKColors.Red, bitmap.GetPixel(20, 20)); Assert.Equal(0, bitmap.GetPixel(80, 80).Alpha);
+        Assert.Equal(matrix, canvas.TotalMatrix);
+    }
+    [Fact]
     public void RenderDocument_AppliesNestedTransformsWithoutLosingGeometry()
     {
         var document = SvgDocument.CreateDefault(200, 200);

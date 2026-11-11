@@ -96,6 +96,8 @@ public sealed partial class MainWindowViewModel
         };
         foreach (var name in new[] { nameof(ActiveTool), nameof(IsRectangleTool), nameof(IsPolygonTool), nameof(IsStarTool), nameof(IsArcTool), nameof(IsNodeTool), nameof(IsBezierTool), nameof(IsFreehandTool), nameof(IsTextTool), nameof(ToolHint) })
             OnPropertyChanged(name);
+        NotifyPrimaryInputs();
+        RequestRedraw();
     }
     partial void OnZoomChanged(double value) { OnPropertyChanged(nameof(ZoomLabel)); RequestRedraw(); }
     partial void OnShowGridChanged(bool value) => RequestRedraw();
@@ -130,15 +132,19 @@ public sealed partial class MainWindowViewModel
     [RelayCommand] private void SymmetricNode() { if (CanvasTool is NodeEditTool tool) tool.SetKind(PathNodeKind.Symmetric); }
     [RelayCommand] private void StraightSegment() { if (CanvasTool is NodeEditTool tool) tool.SetCurved(false); }
     [RelayCommand] private void CurvedSegment() { if (CanvasTool is NodeEditTool tool) tool.SetCurved(true); }
-    [RelayCommand] private void TogglePathClosed() { if (CanvasTool is NodeEditTool tool) tool.ToggleClosed(); }
+    [RelayCommand] private void TogglePathClosed() => EditSelectedPaths(false);
     [RelayCommand] private void CutPath() { if (CanvasTool is NodeEditTool tool) tool.CutSelected(); }
-    [RelayCommand] private void JoinPath() { if (CanvasTool is NodeEditTool tool) tool.JoinSelected(); }
-    [RelayCommand] private void SimplifyPath() { if (CanvasTool is NodeEditTool tool) tool.Simplify((float)SimplifyTolerance); }
+    [RelayCommand] private void JoinPath() { if (SelectedNodes.Count > 1) JoinSelectedPaths(); else if (CanvasTool is NodeEditTool tool) tool.JoinSelected(); }
+    [RelayCommand] private void SimplifyPath() => EditSelectedPaths(true);
 
     public static float Distance(SKPoint a, SKPoint b) => MathF.Sqrt(MathF.Pow(a.X - b.X, 2) + MathF.Pow(a.Y - b.Y, 2));
     public static SKPoint[] GetHandles(SKRect b) => [new(b.Left,b.Top), new(b.MidX,b.Top), new(b.Right,b.Top), new(b.Right,b.MidY), new(b.Right,b.Bottom), new(b.MidX,b.Bottom), new(b.Left,b.Bottom), new(b.Left,b.MidY)];
 
     [RelayCommand] private void DeleteSelection()
+    {
+        if (_canvasTool is NodeEditTool tool) tool.DeleteNodes(); else DeleteSelectedObjects();
+    }
+    public void DeleteSelectedObjects()
     {
         if (IsInteracting) return;
         var changes = GetEditableEntries()

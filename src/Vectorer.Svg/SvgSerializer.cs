@@ -58,6 +58,7 @@ public sealed class SvgSerializer : ISvgSerializer
             new XAttribute("width", FormatFloat(document.Width)),
             new XAttribute("height", FormatFloat(document.Height)),
             new XAttribute("viewBox", $"{FormatFloat(document.ViewBox.Left)} {FormatFloat(document.ViewBox.Top)} {FormatFloat(document.ViewBox.Width)} {FormatFloat(document.ViewBox.Height)}"),
+            new XAttribute("preserveAspectRatio", document.PreserveAspectRatio),
             new XAttribute(VectorerNs + "title", document.Title));
 
         if (document.BackgroundColor.Alpha > 0)
@@ -305,6 +306,9 @@ public sealed class SvgSerializer : ISvgSerializer
     private static SvgDocument ParseXDocument(XDocument xDoc)
     {
         var root = xDoc.Root ?? throw new XmlException("Invalid SVG document: missing root element.");
+        if (root.Name.LocalName != "svg" || root.Name.Namespace != SvgNs && root.Name.Namespace != XNamespace.None)
+            throw new XmlException("The selected file is not an SVG document.");
+        ExpandInheritedStyles(root, new Dictionary<string, string> { ["fill"] = "#000000", ["stroke"] = "none" });
         var width = ParseFloat(root.Attribute("width")?.Value, 800f);
         var height = ParseFloat(root.Attribute("height")?.Value, 600f);
 
@@ -316,6 +320,10 @@ public sealed class SvgSerializer : ISvgSerializer
             ViewBox = new SKRect(0, 0, width, height)
         };
 
+        var viewBox = Numbers(root.Attribute("viewBox")?.Value);
+        if (viewBox.Length == 4 && viewBox[2] > 0 && viewBox[3] > 0)
+            doc.ViewBox = SKRect.Create(viewBox[0], viewBox[1], viewBox[2], viewBox[3]);
+        doc.PreserveAspectRatio = root.Attribute("preserveAspectRatio")?.Value ?? "xMidYMid meet";
         var bgAttr = root.Attribute(VectorerNs + "background")?.Value;
         if (!string.IsNullOrWhiteSpace(bgAttr) && SKColor.TryParse(bgAttr, out var bgColor))
         {
@@ -451,19 +459,8 @@ public sealed class SvgSerializer : ISvgSerializer
     private static PolygonShapeNode ParsePolygon(XElement el, bool isClosed)
     {
         var poly = new PolygonShapeNode { IsClosed = isClosed };
-        var rawPoints = el.Attribute("points")?.Value;
-        if (!string.IsNullOrWhiteSpace(rawPoints))
-        {
-            var pairs = rawPoints.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-            foreach (var pair in pairs)
-            {
-                var coords = pair.Split(',');
-                if (coords.Length == 2)
-                {
-                    poly.Points.Add(new SKPoint(ParseFloat(coords[0], 0f), ParseFloat(coords[1], 0f)));
-                }
-            }
-        }
+        var coordinates = Numbers(el.Attribute("points")?.Value);
+        for (var i = 0; i + 1 < coordinates.Length; i += 2) poly.Points.Add(new SKPoint(coordinates[i], coordinates[i + 1]));
 
         var kind = el.Attribute(VectorerNs + "poly-kind")?.Value;
         if (kind is "star" or "regular")
@@ -587,6 +584,27 @@ public sealed class SvgSerializer : ISvgSerializer
         }
     }
 
+    private static readonly HashSet<string> InheritedProperties = ["fill", "stroke", "fill-rule", "fill-opacity", "stroke-opacity", "stroke-width", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-dasharray", "stroke-dashoffset", "color", "font-family", "font-size", "font-weight", "font-style", "text-anchor", "letter-spacing"];
+    private static void ExpandInheritedStyles(XElement element, Dictionary<string, string> inherited)
+    {
+        foreach (var declaration in (element.Attribute("style")?.Value ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var colon = declaration.IndexOf(':'); if (colon < 0) continue;
+            var name = declaration[..colon].Trim();
+            if (InheritedProperties.Contains(name) || name is "opacity" or "display") element.SetAttributeValue(name, declaration[(colon + 1)..].Trim());
+        }
+        var current = new Dictionary<string, string>(inherited);
+        foreach (var property in InheritedProperties)
+        {
+            var value = element.Attribute(property)?.Value;
+            if (value is null or "inherit") { if (inherited.TryGetValue(property, out var parent)) element.SetAttributeValue(property, parent); }
+            else current[property] = value;
+        }
+        foreach (var property in new[] { "fill", "stroke" })
+            if (element.Attribute(property)?.Value == "currentColor") element.SetAttributeValue(property, current.GetValueOrDefault("color", "#000000"));
+        foreach (var child in element.Elements()) ExpandInheritedStyles(child, current);
+    }
+
     private static float[] Numbers(string? raw) => Regex.Matches(raw ?? "", @"[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?")
         .Select(m => float.Parse(m.Value, CultureInfo.InvariantCulture)).ToArray();
 
@@ -630,10 +648,29 @@ public sealed class SvgSerializer : ISvgSerializer
     private static string Rgb(SKColor color) => $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
     private static SKColor ParseSvgColor(string? raw, SKColor fallback)
     {
+        raw = raw?.Trim();
+        if (raw is not null && NamedColors.TryGetValue(raw, out var named)) return named;
+        if (raw is not null && Regex.Match(raw, @"^rgba?\((.*)\)$", RegexOptions.IgnoreCase) is { Success: true } rgb)
+        {
+            var components = Regex.Split(rgb.Groups[1].Value.Trim(), @"[,\s/]+");
+            if (components.Length is 3 or 4)
+            {
+                static byte Component(string text, bool alpha)
+                {
+                    var percent = text.EndsWith('%');
+                    var value = float.TryParse(text.TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) && float.IsFinite(parsed) ? parsed : 0;
+                    value *= percent ? 2.55f : alpha ? 255 : 1;
+                    return (byte)Math.Clamp(MathF.Round(value), 0, 255);
+                }
+                return new SKColor(Component(components[0], false), Component(components[1], false), Component(components[2], false), components.Length == 4 ? Component(components[3], true) : (byte)255);
+            }
+        }
         if (raw is { Length: 9 } && raw[0] == '#' && uint.TryParse(raw.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgba))
             return new SKColor((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba);
         return ParseColor(raw, fallback);
     }
+    private static readonly Dictionary<string, SKColor> NamedColors = typeof(SKColors).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(f => f.FieldType == typeof(SKColor)).ToDictionary(f => f.Name, f => (SKColor)f.GetValue(null)!, StringComparer.OrdinalIgnoreCase);
 
     private static string FormatColor(SKColor color) =>
         color.Alpha == 255

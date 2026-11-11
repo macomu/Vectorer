@@ -54,6 +54,7 @@ public sealed partial class MainWindowViewModel
                 if (SelectedNodes[0] is RectangleShapeNode rect) CornerRadius = (decimal)rect.CornerRadiusX;
                 if (SelectedNodes[0] is ArcShapeNode arc) { ArcStart = (decimal)arc.StartAngleDegrees; ArcSweep = (decimal)arc.SweepAngleDegrees; ArcMode = arc.CloseMode; }
             }
+            SyncShapeDetails();
             SyncTransformFields();
             OnPropertyChanged(nameof(HasParametricPolygon));
             OnPropertyChanged(nameof(IsRectangleTool));
@@ -111,12 +112,22 @@ public sealed partial class MainWindowViewModel
         { p.PointCount = state.Count; p.OuterRadius = state.Outer; p.InnerRadius = state.Inner; p.StartAngleDegrees = state.Angle; p.RegeneratePoints(); }
         ExecuteCommand(new DelegateDocumentCommand("Polygon parameters", () => Apply(after), () => Apply(before)));
     }
-    partial void OnCornerRadiusChanged(decimal value)
+    partial void OnCornerRadiusChanged(decimal value) => EditCorners(false, value);
+    partial void OnCornerRadiusYChanged(decimal value) => EditCorners(true, value);
+    private void EditCorners(bool yAxis, decimal value)
     {
-        if (_syncingEditors || IsInteracting || SelectedNodes.Count != 1 || SelectedNodes[0] is not RectangleShapeNode rect) return;
+        if (_syncingEditors || IsInteracting) return;
+        if (SelectedNodes.Count != 1 || SelectedNodes[0] is not RectangleShapeNode rect)
+        {
+            if (LinkCorners)
+            { _syncingEditors = true; CornerRadius = CornerRadiusY = value; _syncingEditors = false; }
+            return;
+        }
         var before = (rect.CornerRadiusX, rect.CornerRadiusY);
+        var x = LinkCorners || !yAxis ? Math.Max(0, (float)value) : before.CornerRadiusX;
+        var y = LinkCorners || yAxis ? Math.Max(0, (float)value) : before.CornerRadiusY;
         ExecuteCommand(new DelegateDocumentCommand("Rectangle corners",
-            () => rect.CornerRadiusX = rect.CornerRadiusY = Math.Max(0, (float)value),
+            () => { rect.CornerRadiusX = x; rect.CornerRadiusY = y; },
             () => { rect.CornerRadiusX = before.CornerRadiusX; rect.CornerRadiusY = before.CornerRadiusY; }));
     }
 

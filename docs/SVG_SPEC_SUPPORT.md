@@ -56,3 +56,10 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 - 線端・線結合・マイター・破線・位相は標準の stroke-linecap / stroke-linejoin / stroke-miterlimit / stroke-dasharray / stroke-dashoffset を使用します。単色の透明度は fill-opacity / stroke-opacity へ分離し、標準SVGの8桁色はRGBA順で読み込みます。
 - テキストは標準 `<text>` と行ごとの `<tspan>` として保存します。フォント名・サイズ・太字・斜体・字間・配置を保持します。表示とパス変換はローカルフォントのグリフ輪郭を共有します。
 - 編集用モデルへ変換するSVGの円弧は分割近似です。複雑な文字組み、任意のCSS継承、フォント埋込みはこの実装範囲に含めません。
+
+## Phase 2 仕上げでの互換性補完
+
+- `viewBox` の原点・サイズと `preserveAspectRatio`（meet / slice / none）を読み書きし、レンダラーとキャンバス操作で同じビューポート変換を使用します。
+- 塗り・線・塗り規則・不透明度・フォント設定の親からの継承とインラインstyleに対応します。SVG既定の塗りは黒です。
+- 色名、rgb()/rgba()、currentColor、空白区切りpolygon/polyline座標に対応します。任意の外部CSS、tspanごとの複雑な組版、フォント埋込みは対象外です。
+- パス単純化は適応分割と三次ベジェ再フィットにより端点・鋭い角・複数輪郭を保持します。独立したPathの結合では最も近い開いた端点を使い、スタイルは背面側から継承します。

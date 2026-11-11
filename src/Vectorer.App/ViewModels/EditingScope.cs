@@ -44,7 +44,7 @@ public sealed partial class MainWindowViewModel
     {
         ValidateScope();
         ContainerNode container = EditingGroup ?? (ContainerNode)EnsureActiveLayer();
-        var world = EditingGroup is null ? container.Transform : SKMatrix.Concat(ScopeParent, container.Transform);
+        var world = EditingGroup is null ? SKMatrix.Concat(CurrentDocument.GetViewportTransform(), container.Transform) : SKMatrix.Concat(ScopeParent, container.Transform);
         if (container.IsLocked || !container.IsVisible || !world.TryInvert(out _))
         { StatusMessage = "描画先が非表示・ロック中、または変換できません。"; return null; }
         return (container, world);
@@ -53,7 +53,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_scope.Count == 0) return;
         ContainerNode? container = CurrentDocument.Layers.FirstOrDefault(l => l.Children.Contains(_scope[0].Group) && !l.IsLocked && l.IsVisible);
-        var parent = container?.Transform ?? SKMatrix.CreateIdentity();
+        var parent = container is null ? SKMatrix.CreateIdentity() : SKMatrix.Concat(CurrentDocument.GetViewportTransform(), container.Transform);
         for (var i = 0; i < _scope.Count; i++)
         {
             var group = _scope[i].Group;
@@ -97,24 +97,32 @@ public sealed partial class MainWindowViewModel
             else if (hit is null && IsInGroup) ExitGroup();
         }
     }
+    private List<SKPoint>? _snapCandidates;
+    private bool _snapExcludedSelection;
     public SKPoint SnapPoint(SKPoint point, bool excludeSelection = false)
     {
         if (!SnapToGrid) return point;
-        var candidates = new List<SKPoint> { CanvasGeometry.Snap(point) };
-        foreach (var (node, parent) in GetEditableNodes().Where(e => !excludeSelection || !SelectedNodes.Contains(e.Node)))
+        if (_snapCandidates is null || _snapExcludedSelection != excludeSelection)
         {
-            using var path = CanvasGeometry.BuildWorldPath(node, parent);
-            var bounds = path.TightBounds;
-            candidates.AddRange(GetHandles(bounds)); candidates.Add(new(bounds.MidX, bounds.MidY));
-            if (node is PolygonShapeNode polygon)
-            { var world = SKMatrix.Concat(parent, polygon.Transform); candidates.AddRange(polygon.Points.Select(world.MapPoint)); }
-            else if (node is PathShapeNode shape)
+            _snapExcludedSelection = excludeSelection;
+            _snapCandidates = [];
+            foreach (var (node, parent) in GetEditableNodes().Where(e => !excludeSelection || !SelectedNodes.Contains(e.Node)))
             {
-                var model = EditablePath.Parse(shape.SvgPathData); var world = SKMatrix.Concat(parent, shape.Transform);
-                candidates.AddRange(model.Contours.SelectMany(c => c.Anchors).Select(a => world.MapPoint(a.Position)));
+                using var path = CanvasGeometry.BuildWorldPath(node, parent);
+                var bounds = path.TightBounds;
+                _snapCandidates.AddRange(GetHandles(bounds)); _snapCandidates.Add(new(bounds.MidX, bounds.MidY));
+                if (node is PolygonShapeNode polygon)
+                { var world = SKMatrix.Concat(parent, polygon.Transform); _snapCandidates.AddRange(polygon.Points.Select(world.MapPoint)); }
+                else if (node is PathShapeNode shape)
+                {
+                    var model = EditablePath.Parse(shape.SvgPathData); var world = SKMatrix.Concat(parent, shape.Transform);
+                    _snapCandidates.AddRange(model.Contours.SelectMany(c => c.Anchors).Select(a => world.MapPoint(a.Position)));
+                }
             }
         }
-        return SnapGeometry.Nearest(point, candidates, (float)(8 / Zoom)) ?? CanvasGeometry.Snap(point);
+        var nearest = SnapGeometry.Nearest(point, _snapCandidates, (float)(8 / Zoom));
+        var grid = CanvasGeometry.Snap(point);
+        return nearest is { } target && Distance(target, point) <= Distance(grid, point) ? target : grid;
     }
     [RelayCommand] private void GroupSelection()
     {

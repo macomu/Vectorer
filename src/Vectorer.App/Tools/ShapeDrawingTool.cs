@@ -38,10 +38,11 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
         else PreviewShape = CanvasGeometry.CreateShape(Workspace.ActiveTool, _start, point, shift, alt,
             (float)Workspace.CornerRadius, (int)Workspace.PolygonSides, (float)Workspace.InnerRatio,
             (float)Workspace.ArcStart, (float)Workspace.ArcSweep, Workspace.ArcMode);
+        if (PreviewShape is RectangleShapeNode rectangle) rectangle.CornerRadiusY = (float)Workspace.CornerRadiusY;
         PreviewShape.Style = Workspace.DefaultCreationStyle.Clone();
         if (Workspace.ActiveTool == DrawingTool.Freehand && !Workspace.CloseFreehand) PreviewShape.Style.Fill = null;
         if (PreviewParent.TryInvert(out var inverse)) PreviewShape.Transform = inverse;
-        Workspace.RequestRedraw();
+        Workspace.RequestRedraw(false);
     }
 
     public override void End()
@@ -63,6 +64,6 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
     {
         _drawing = false;
         PreviewShape = null;
-        Workspace.RequestRedraw();
+        Workspace.RequestRedraw(false);
     }
 }

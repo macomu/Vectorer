@@ -18,19 +18,20 @@ public sealed class PathBooleanService : IPathBooleanService
         using var pathB = secondary.BuildTransformedPath();
         using var resultPath = pathA.Op(pathB, ToSkiaPathOp(operation));
 
-        if (resultPath is null || resultPath.IsEmpty)
+        if (resultPath is null)
         {
             return null;
         }
 
+        var presentation = operation == BooleanOperationType.ReverseDifference ? secondary : primary;
         return new PathShapeNode(resultPath.ToSvgPathData())
         {
             Name = $"{primary.Name} {operation} {secondary.Name}",
-            Style = primary.Style.Clone(),
-            Opacity = primary.Opacity,
-            BlendMode = primary.BlendMode,
-            Filter = primary.Filter,
-            ShaderEffect = primary.ShaderEffect
+            Style = presentation.Style.Clone(),
+            Opacity = presentation.Opacity,
+            BlendMode = presentation.BlendMode,
+            Filter = presentation.Filter,
+            ShaderEffect = presentation.ShaderEffect
         };
     }
 
@@ -52,36 +53,32 @@ public sealed class PathBooleanService : IPathBooleanService
             };
         }
 
-        var current = shapes[0].BuildTransformedPath();
+        var ordered = operation == BooleanOperationType.ReverseDifference ? shapes.Reverse().ToArray() : shapes.ToArray();
+        var current = ordered[0].BuildTransformedPath();
         try
         {
-            var skOp = ToSkiaPathOp(operation);
+            var skOp = operation == BooleanOperationType.ReverseDifference ? SKPathOp.Difference : ToSkiaPathOp(operation);
             for (var i = 1; i < shapes.Count; i++)
             {
-                using var next = shapes[i].BuildTransformedPath();
+                using var next = ordered[i].BuildTransformedPath();
                 var combined = current.Op(next, skOp);
-                current.Dispose();
                 if (combined is null)
                 {
                     return null;
                 }
 
+                current.Dispose();
                 current = combined;
-            }
-
-            if (current.IsEmpty)
-            {
-                return null;
             }
 
             return new PathShapeNode(current.ToSvgPathData())
             {
                 Name = $"{shapes[0].Name} ({operation})",
-                Style = shapes[0].Style.Clone(),
-                Opacity = shapes[0].Opacity,
-                BlendMode = shapes[0].BlendMode,
-                Filter = shapes[0].Filter,
-                ShaderEffect = shapes[0].ShaderEffect
+                Style = ordered[0].Style.Clone(),
+                Opacity = ordered[0].Opacity,
+                BlendMode = ordered[0].BlendMode,
+                Filter = ordered[0].Filter,
+                ShaderEffect = ordered[0].ShaderEffect
             };
         }
         finally

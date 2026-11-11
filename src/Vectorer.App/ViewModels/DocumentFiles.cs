@@ -19,21 +19,25 @@ public sealed partial class MainWindowViewModel
     public async Task<bool> CanCloseAsync()
     {
         FinishTextEditing();
-        return !IsBusy && (!HasUnsavedChanges || FileDialogs is not null && await FileDialogs.ConfirmDiscardAsync());
+        return !IsBusy && await ProtectUnsavedAsync();
     }
 
     [RelayCommand] private async Task NewDocumentAsync()
     {
         if (IsBusy || IsInteracting) return;
         FinishTextEditing();
-        if (HasUnsavedChanges && (FileDialogs is null || !await FileDialogs.ConfirmDiscardAsync())) return;
-        ReplaceDocument(SvgDocument.CreateDefault(860, 540), null);
+        if (!await ProtectUnsavedAsync()) return;
+        var settings = FileDialogs is not null ? await FileDialogs.EditDocumentAsync(new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, "Untitled"), true)
+            : new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, "Untitled");
+        if (settings is null) return;
+        var document = SvgDocument.CreateDefault(settings.Width, settings.Height); document.Title = settings.Title; document.BackgroundColor = settings.Background;
+        ReplaceDocument(document, null);
     }
     [RelayCommand] private async Task OpenDocumentAsync()
     {
         if (IsBusy || IsInteracting || FileDialogs is null) return;
         FinishTextEditing();
-        if (HasUnsavedChanges && !await FileDialogs.ConfirmDiscardAsync()) return;
+        if (!await ProtectUnsavedAsync()) return;
         IsBusy = true;
         try
         {
@@ -44,7 +48,7 @@ public sealed partial class MainWindowViewModel
             StatusMessage = $"開きました: {file.Name}";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException or FormatException or ArgumentException)
-        { StatusMessage = $"開けませんでした: {ex.Message}"; }
+        { StatusMessage = $"開けませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
         finally { IsBusy = false; }
     }
     [RelayCommand] private Task SaveDocumentAsync() => SaveDocumentCoreAsync(false);
@@ -59,16 +63,44 @@ public sealed partial class MainWindowViewModel
             var file = saveAs || _currentFile is null ? await FileDialogs.SaveSvgAsync(_currentFile?.Name ?? "drawing.svg") : _currentFile;
             if (file is null) return;
             var bytes = await Task.Run(() => System.Text.Encoding.UTF8.GetBytes(_svgSerializer.SerializeToString(CurrentDocument)));
-            await using var stream = await file.OpenWrite();
-            if (stream.CanSeek) stream.SetLength(0);
-            await stream.WriteAsync(bytes);
+            await using (var stream = await file.OpenWrite())
+            {
+                if (stream.CanSeek) stream.SetLength(0);
+                await stream.WriteAsync(bytes);
+                await stream.FlushAsync();
+            }
             _currentFile = file; _savedCommand = _undoRedoService.UndoStack.LastOrDefault(); _untrackedChanges = false;
             NotifyDocumentState(); StatusMessage = $"保存しました: {file.Name}";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
-        { StatusMessage = $"保存できませんでした: {ex.Message}"; }
+        { StatusMessage = $"保存できませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
         finally { IsBusy = false; }
     }
+    private async Task<bool> ProtectUnsavedAsync()
+    {
+        if (!HasUnsavedChanges) return true;
+        if (FileDialogs is null) return false;
+        var decision = await FileDialogs.ConfirmUnsavedAsync();
+        if (decision == UnsavedDecision.Discard) return true;
+        if (decision != UnsavedDecision.Save) return false;
+        await SaveDocumentCoreAsync(false);
+        return !HasUnsavedChanges;
+    }
+    [RelayCommand] private async Task DocumentPropertiesAsync()
+    {
+        if (IsBusy || IsInteracting || FileDialogs is null) return;
+        FinishTextEditing();
+        var document = CurrentDocument;
+        var value = await FileDialogs.EditDocumentAsync(new DocumentSettings(document.Width, document.Height, document.BackgroundColor, document.Title), false);
+        if (value is null) return;
+        var before = (document.Width, document.Height, document.BackgroundColor, document.Title, document.ViewBox);
+        ExecuteCommand(new Vectorer.Core.Commands.DelegateDocumentCommand("Document properties", () =>
+        { document.Width = value.Width; document.Height = value.Height; document.BackgroundColor = value.Background; document.Title = value.Title; document.ViewBox = new SkiaSharp.SKRect(0, 0, value.Width, value.Height); },
+            () => { document.Width = before.Width; document.Height = before.Height; document.BackgroundColor = before.BackgroundColor; document.Title = before.Title; document.ViewBox = before.ViewBox; }));
+        NotifyDocumentState();
+    }
+    public event Action? CloseRequested;
+    [RelayCommand] private void ExitApplication() => CloseRequested?.Invoke();
     private void ReplaceDocument(SvgDocument document, EditorFile? file)
     {
         CancelInteraction(); _scope.Clear(); CurrentDocument = document; _currentFile = file;

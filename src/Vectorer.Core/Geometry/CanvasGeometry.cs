@@ -52,7 +52,7 @@ public static class CanvasGeometry
         foreach (var layer in document.Layers.Where(l => l.IsVisible && !l.IsLocked && l.Opacity > 0))
             foreach (var node in layer.Children.Where(n => n.IsVisible && !n.IsLocked && n.Opacity > 0))
                 if (layer.Transform.TryInvert(out _))
-                    yield return (node, layer.Transform);
+                    yield return (node, SKMatrix.Concat(document.GetViewportTransform(), layer.Transform));
     }
 
     public static SKPath BuildWorldPath(SceneNode node, SKMatrix parent)

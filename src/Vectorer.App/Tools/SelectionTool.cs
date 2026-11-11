@@ -119,7 +119,7 @@ public sealed class SelectionTool(MainWindowViewModel workspace) : CanvasToolBas
                     node.Transform = CanvasGeometry.ApplyWorldTransform(before, parent, delta);
                 break;
         }
-        Workspace.RequestRedraw();
+        Workspace.RequestRedraw(false);
     }
 
     public override void End()
@@ -144,5 +144,5 @@ public sealed class SelectionTool(MainWindowViewModel workspace) : CanvasToolBas
         if (_gesture == Gesture.Marquee) Workspace.SelectNodes(_selectionBefore);
         ClearGesture();
     }
-    private void ClearGesture() { _gesture = Gesture.None; Marquee = null; _transforms.Clear(); Workspace.RequestRedraw(); }
+    private void ClearGesture() { _gesture = Gesture.None; Marquee = null; _transforms.Clear(); Workspace.RequestRedraw(false); }
 }

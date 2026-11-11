@@ -12,8 +12,22 @@ public sealed class SvgDocument
     public float Width { get; set; } = 800f;
     public float Height { get; set; } = 600f;
     public SKRect ViewBox { get; set; } = new(0, 0, 800, 600);
+    public string PreserveAspectRatio { get; set; } = "xMidYMid meet";
     public SKColor BackgroundColor { get; set; } = SKColors.Transparent;
     public List<LayerNode> Layers { get; } = [];
+
+    public SKMatrix GetViewportTransform()
+    {
+        if (ViewBox.Width <= 0 || ViewBox.Height <= 0) return SKMatrix.CreateIdentity();
+        var sx = Width / ViewBox.Width; var sy = Height / ViewBox.Height;
+        if (PreserveAspectRatio.Trim() == "none")
+            return SKMatrix.Concat(SKMatrix.CreateScale(sx, sy), SKMatrix.CreateTranslation(-ViewBox.Left, -ViewBox.Top));
+        var scale = PreserveAspectRatio.Contains("slice", StringComparison.Ordinal) ? Math.Max(sx, sy) : Math.Min(sx, sy);
+        var x = Width - ViewBox.Width * scale; var y = Height - ViewBox.Height * scale;
+        x *= PreserveAspectRatio.Contains("xMin", StringComparison.Ordinal) ? 0 : PreserveAspectRatio.Contains("xMax", StringComparison.Ordinal) ? 1 : 0.5f;
+        y *= PreserveAspectRatio.Contains("YMin", StringComparison.Ordinal) ? 0 : PreserveAspectRatio.Contains("YMax", StringComparison.Ordinal) ? 1 : 0.5f;
+        return SKMatrix.Concat(SKMatrix.CreateTranslation(x, y), SKMatrix.Concat(SKMatrix.CreateScale(scale, scale), SKMatrix.CreateTranslation(-ViewBox.Left, -ViewBox.Top)));
+    }
 
     public static SvgDocument CreateDefault(float width = 800f, float height = 600f)
     {

@@ -4,6 +4,7 @@
         xmlns:controls="using:Vectorer.App.Controls"
         xmlns:plugins="using:Vectorer.Abstractions.Plugins"
         xmlns:docs="using:Vectorer.Abstractions.Documents"
+        xmlns:styling="using:Vectorer.Abstractions.Styling"
         x:Class="Vectorer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"
@@ -19,6 +20,7 @@
     <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
     <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
     <KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+    <KeyBinding Gesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
   </Window.KeyBindings>
   <DockPanel IsEnabled="{Binding !IsBusy}">
     <Menu DockPanel.Dock="Top" Background="#161B22">
@@ -27,17 +29,27 @@
         <MenuItem Header="開く…" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
         <MenuItem Header="保存" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
         <MenuItem Header="名前を付けて保存…" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <Separator /><MenuItem Header="ドキュメント設定…" InputGesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
+        <MenuItem Header="終了" InputGesture="Alt+F4" Command="{Binding ExitApplicationCommand}" />
       </MenuItem>
       <MenuItem Header="編集">
         <MenuItem Header="元に戻す" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
         <MenuItem Header="やり直し" InputGesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
         <Separator />
-        <MenuItem Header="選択を削除" InputGesture="Delete" Command="{Binding DeleteSelectionCommand}" />
+        <MenuItem Header="切り取り" InputGesture="Ctrl+X" Command="{Binding CutSelectionCommand}" />
+        <MenuItem Header="コピー" InputGesture="Ctrl+C" Command="{Binding CopySelectionCommand}" />
+        <MenuItem Header="貼り付け" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+        <MenuItem Header="複製" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectionCommand}" />
+        <MenuItem Header="削除" InputGesture="Delete" Command="{Binding DeleteSelectionCommand}" />
+        <Separator /><MenuItem Header="すべて選択" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}" />
       </MenuItem>
       <MenuItem Header="表示">
         <MenuItem Header="拡大" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
         <MenuItem Header="縮小" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
         <MenuItem Header="100%" InputGesture="Ctrl+1" Command="{Binding ResetZoomCommand}" />
+        <MenuItem Header="キャンバス全体を表示" InputGesture="Ctrl+0" Command="{Binding FitCanvasCommand}" />
+        <MenuItem Header="グリッド表示切替" Command="{Binding ToggleGridCommand}" />
+        <MenuItem Header="スナップ切替" Command="{Binding ToggleSnapCommand}" />
       </MenuItem>
       <MenuItem Header="オブジェクト">
         <MenuItem Header="グループ化" InputGesture="Ctrl+G" Command="{Binding GroupSelectionCommand}" />
@@ -45,40 +57,98 @@
         <MenuItem Header="グループ内を編集" InputGesture="Enter" Command="{Binding EnterGroupCommand}" />
         <MenuItem Header="親階層へ戻る" Command="{Binding ExitGroupCommand}" />
         <Separator />
-        <MenuItem Header="左右反転" Command="{Binding FlipHorizontalCommand}" />
-        <MenuItem Header="上下反転" Command="{Binding FlipVerticalCommand}" />
+        <MenuItem Header="左右反転" InputGesture="Shift+H" Command="{Binding FlipHorizontalCommand}" />
+        <MenuItem Header="上下反転" InputGesture="Shift+V" Command="{Binding FlipVerticalCommand}" />
+        <MenuItem Header="重ね順">
+          <MenuItem Header="最前面" InputGesture="Home" Command="{Binding ChangeOrderCommand}" CommandParameter="front" />
+          <MenuItem Header="前面へ" InputGesture="PageUp" Command="{Binding ChangeOrderCommand}" CommandParameter="forward" />
+          <MenuItem Header="背面へ" InputGesture="PageDown" Command="{Binding ChangeOrderCommand}" CommandParameter="backward" />
+          <MenuItem Header="最背面" InputGesture="End" Command="{Binding ChangeOrderCommand}" CommandParameter="back" />
+        </MenuItem>
+        <MenuItem Header="整列と分布">
+          <MenuItem Header="左揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="left" />
+          <MenuItem Header="左右中央" Command="{Binding AlignSelectionCommand}" CommandParameter="center-x" />
+          <MenuItem Header="右揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="right" />
+          <MenuItem Header="上揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="top" />
+          <MenuItem Header="上下中央" Command="{Binding AlignSelectionCommand}" CommandParameter="center-y" />
+          <MenuItem Header="下揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="bottom" />
+          <MenuItem Header="横に等間隔" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-x" />
+          <MenuItem Header="縦に等間隔" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-y" />
+        </MenuItem>
       </MenuItem>
       <MenuItem Header="パス">
-        <MenuItem Header="オブジェクトをパスに変換" Command="{Binding ObjectToPathCommand}" />
-        <MenuItem Header="ストロークをパスに変換" Command="{Binding StrokeToPathCommand}" />
+        <MenuItem Header="オブジェクトをパスに変換" InputGesture="Ctrl+Shift+C" Command="{Binding ObjectToPathCommand}" />
+        <MenuItem Header="ストロークをパスに変換" InputGesture="Ctrl+Alt+C" Command="{Binding StrokeToPathCommand}" />
         <Separator />
-        <MenuItem Header="統合" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
-        <MenuItem Header="差分" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
-        <MenuItem Header="交差" Command="{Binding BooleanIntersectionCommand}" />
-        <MenuItem Header="排他的論理和" Command="{Binding BooleanXorCommand}" />
-        <MenuItem Header="逆差分" Command="{Binding BooleanReverseDifferenceCommand}" />
-        <MenuItem Header="開く/閉じる（ノードツール）" Command="{Binding TogglePathClosedCommand}" />
-        <MenuItem Header="シンプル化（ノードツール）" Command="{Binding SimplifyPathCommand}" />
+        <MenuItem Header="統合" InputGesture="Ctrl+Shift+U" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
+        <MenuItem Header="差分" InputGesture="Ctrl+Shift+D" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
+        <MenuItem Header="交差" InputGesture="Ctrl+Shift+I" Command="{Binding BooleanIntersectionCommand}" />
+        <MenuItem Header="排他的論理和" InputGesture="Ctrl+Shift+X" Command="{Binding BooleanXorCommand}" />
+        <MenuItem Header="逆差分" InputGesture="Ctrl+Shift+R" Command="{Binding BooleanReverseDifferenceCommand}" />
+        <MenuItem Header="開く/閉じる" InputGesture="Ctrl+K" Command="{Binding TogglePathClosedCommand}" />
+        <MenuItem Header="端点を結合" Command="{Binding JoinPathCommand}" />
+        <MenuItem Header="シンプル化" InputGesture="Ctrl+L" Command="{Binding SimplifyPathCommand}" />
       </MenuItem>
       <MenuItem Header="レイヤー">
-        <MenuItem Header="合成モード切替" Command="{Binding CycleActiveLayerBlendModeCommand}" />
+        <MenuItem Header="新規レイヤー" InputGesture="Ctrl+Shift+N" Command="{Binding NewLayerCommand}" />
+        <MenuItem Header="レイヤーを複製" Command="{Binding DuplicateLayerCommand}" />
+        <MenuItem Header="レイヤーを削除" Command="{Binding DeleteLayerCommand}" />
+        <MenuItem Header="回転・反転">
+          <MenuItem Header="時計回り90°" Command="{Binding RotateLayerCommand}" CommandParameter="90" />
+          <MenuItem Header="反時計回り90°" Command="{Binding RotateLayerCommand}" CommandParameter="-90" />
+          <MenuItem Header="180°" Command="{Binding RotateLayerCommand}" CommandParameter="180" />
+          <MenuItem Header="左右反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-x" />
+          <MenuItem Header="上下反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-y" />
+        </MenuItem>
+        <MenuItem Header="合成モード">
+          <MenuItem Header="Normal" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Normal}" />
+          <MenuItem Header="Multiply" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Multiply}" />
+          <MenuItem Header="Screen" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Screen}" />
+          <MenuItem Header="Overlay" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Overlay}" />
+          <MenuItem Header="Add" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Add}" />
+          <MenuItem Header="Subtract" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Subtract}" />
+          <MenuItem Header="Difference" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Difference}" />
+          <MenuItem Header="Darken" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Darken}" />
+          <MenuItem Header="Lighten" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Lighten}" />
+        </MenuItem>
+        <MenuItem Header="順序">
+          <MenuItem Header="最前面" Command="{Binding OrderLayerCommand}" CommandParameter="front" />
+          <MenuItem Header="前面へ" Command="{Binding OrderLayerCommand}" CommandParameter="forward" />
+          <MenuItem Header="背面へ" Command="{Binding OrderLayerCommand}" CommandParameter="backward" />
+          <MenuItem Header="最背面" Command="{Binding OrderLayerCommand}" CommandParameter="back" />
+        </MenuItem>
+        <MenuItem Header="下のレイヤーと結合" InputGesture="Ctrl+E" Command="{Binding MergeLayerDownCommand}" />
+        <MenuItem Header="表示切替" Command="{Binding ToggleLayerVisibilityCommand}" />
+        <MenuItem Header="ロック切替" Command="{Binding ToggleLayerLockCommand}" />
       </MenuItem>
       <MenuItem Header="フィルタ・拡張">
         <MenuItem Header="レイヤーのぼかし切替" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
+        <MenuItem Header="フィルタをクリア" Command="{Binding ClearFiltersCommand}" />
+        <MenuItem Header="プラグインコマンド" ItemsSource="{Binding PluginMenus}">
+          <MenuItem.ItemContainerTheme>
+            <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="plugins:IMenuContribution">
+              <Setter Property="Header" Value="{Binding Title}" />
+              <Setter Property="Command" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ExecutePluginMenuCommand}" />
+              <Setter Property="CommandParameter" Value="{Binding}" />
+            </ControlTheme>
+          </MenuItem.ItemContainerTheme>
+        </MenuItem>
       </MenuItem>
     </Menu>
     <Border DockPanel.Dock="Top" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,1" Padding="10,6">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,8,0">
-          <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" MinWidth="60" />
-          <Button Content="⋯" ToolTip.Tip="ツールの詳細設定">
+        <DockPanel Margin="0,0,8,0">
+          <TextBlock DockPanel.Dock="Left" Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" MinWidth="60" />
+          <Button DockPanel.Dock="Left" Content="⋯" ToolTip.Tip="ツールの詳細設定" Margin="0,0,8,0">
             <Button.Flyout>
               <Flyout Placement="BottomEdgeAlignedLeft">
                 <ScrollViewer MaxHeight="460" Width="410">
                   <StackPanel Spacing="10">
                     <TextBlock Text="ツール設定" FontWeight="SemiBold" />
                     <StackPanel Spacing="8" IsVisible="{Binding IsRectangleTool}">
-                      <TextBlock Text="角丸半径" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" />
+                      <TextBlock Text="角丸 Rx" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" />
+                      <TextBlock Text="角丸 Ry" /><NumericUpDown Value="{Binding CornerRadiusY}" Minimum="0" Maximum="1000" />
+                      <CheckBox Content="Rx / Ry をリンク" IsChecked="{Binding LinkCorners}" /><Button Content="角丸リセット" Command="{Binding ResetCornersCommand}" />
                     </StackPanel>
                     <StackPanel Spacing="8" IsVisible="{Binding IsPolygonTool}">
                       <TextBlock Text="頂点数 (3〜64)" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" />
@@ -117,14 +187,33 @@
                       <TextBlock Text="字間 (px)" /><NumericUpDown Value="{Binding LetterSpacing}" Minimum="-100" Maximum="1000" />
                       <TextBlock Text="キャンバスをクリックして入力。Ctrl+Enterで確定、Escで取消。" TextWrapping="Wrap" />
                     </StackPanel>
+                    <StackPanel Spacing="8" IsVisible="{Binding HasShapeDetails}">
+                      <TextBlock Text="図形のローカル座標・寸法" FontWeight="SemiBold" />
+                      <TextBlock Text="X / Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" />
+                      <TextBlock Text="Y / Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" />
+                      <StackPanel Spacing="6" IsVisible="{Binding HasRectangle}"><TextBlock Text="幅" /><NumericUpDown Value="{Binding GeometryWidth}" Minimum="0.01" Maximum="1000000" /><TextBlock Text="高さ" /><NumericUpDown Value="{Binding GeometryHeight}" Minimum="0.01" Maximum="1000000" /></StackPanel>
+                      <StackPanel Spacing="6" IsVisible="{Binding HasRadialShape}"><TextBlock Text="半径 Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="0.01" Maximum="1000000" /><TextBlock Text="半径 Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="0.01" Maximum="1000000" /><ComboBox ItemsSource="{Binding EllipseModes}" SelectedItem="{Binding EllipseMode}" /></StackPanel>
+                      <ComboBox IsVisible="{Binding HasParametricPolygon}" ItemsSource="{Binding PolygonModes}" SelectedItem="{Binding PolygonMode}" />
+                      <Button Content="図形に適用" Command="{Binding ApplyShapeDetailsCommand}" />
+                    </StackPanel>
+                    <StackPanel Spacing="6" IsVisible="{Binding HasSelection}"><TextBlock Text="傾斜 X° / Y°（変形適用時）" /><NumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" /><NumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" /><Button Content="変形を適用" Command="{Binding ApplyTransformCommand}" /></StackPanel>
+                    <TextBlock Text="レイヤーの任意角度°（キャンバス中心）" /><NumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" /><Button Content="レイヤーを回転" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />
                     <TextBlock Text="線種" /><ComboBox ItemsSource="{Binding DashOptions}" SelectedItem="{Binding StrokeDash}" PlaceholderText="混在 / カスタム" />
                   </StackPanel>
                 </ScrollViewer>
               </Flyout>
             </Button.Flyout>
           </Button>
-          <TextBlock Text="{Binding ToolHint}" TextTrimming="CharacterEllipsis" MaxWidth="300" Foreground="#94A3B8" FontSize="11" />
-        </StackPanel>
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxWidth="600">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowTransformInputs}"><TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="W" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="H" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyTransformCommand}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="Node X" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><TextBox Text="{Binding FontFamily}" Width="110" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
           <TextBlock Text="{Binding StyleTarget}" FontSize="11" />
           <Button Content="塗り" ToolTip.Tip="塗り色">
@@ -207,7 +296,7 @@
             <StackPanel Spacing="6">
               <TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
               <TextBlock Text="外径" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
-              <TextBlock Text="内径比（星形）" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" />
+              <StackPanel IsVisible="{Binding HasStarPolygon}"><TextBlock Text="内径比（星形）" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
               <TextBlock Text="開始角°" /><NumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
             </StackPanel>
           </Expander>

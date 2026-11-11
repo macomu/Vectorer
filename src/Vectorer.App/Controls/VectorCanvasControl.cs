@@ -37,8 +37,8 @@ public sealed class VectorCanvasControl : Decorator
         base.OnPropertyChanged(change);
         if (change.Property == WorkspaceProperty)
         {
-            if (change.OldValue is MainWindowViewModel before) { before.TextEditRequested -= OpenTextEditor; before.FinishTextEditingRequested -= CommitInlineText; }
-            if (change.NewValue is MainWindowViewModel after) { after.TextEditRequested += OpenTextEditor; after.FinishTextEditingRequested += CommitInlineText; }
+            if (change.OldValue is MainWindowViewModel before) { before.TextEditRequested -= OpenTextEditor; before.FinishTextEditingRequested -= CommitInlineText; before.FitCanvasRequested -= FitDocument; }
+            if (change.NewValue is MainWindowViewModel after) { after.TextEditRequested += OpenTextEditor; after.FinishTextEditingRequested += CommitInlineText; after.FitCanvasRequested += FitDocument; }
         }
     }
     private void OpenTextEditor(TextShapeNode text, SKPoint point)
@@ -64,6 +64,13 @@ public sealed class VectorCanvasControl : Decorator
         _textEditor = null;
         Workspace?.CommitText(commit ? editor.Text ?? "" : null);
         Child = null; Focus(); InvalidateVisual();
+    }
+    private void FitDocument()
+    {
+        if (Workspace is not { } vm || Bounds.Width < 65 || Bounds.Height < 65) return;
+        vm.Zoom = Math.Clamp(Math.Min((Bounds.Width - 64) / vm.CurrentDocument.Width, (Bounds.Height - 64) / vm.CurrentDocument.Height), 0.1, 32);
+        _offset = new Point((Bounds.Width - vm.CurrentDocument.Width * vm.Zoom) / 2, (Bounds.Height - vm.CurrentDocument.Height * vm.Zoom) / 2);
+        InvalidateVisual();
     }
     private void CommitInlineText() => CloseTextEditor(true);
     protected override Size MeasureOverride(Size availableSize)
@@ -260,61 +267,14 @@ public sealed class VectorCanvasControl : Decorator
     {
         base.OnKeyDown(e);
         if (Workspace is not { } vm || e.Handled || _textEditor?.IsKeyboardFocusWithin == true) return;
-        if (e.Key == Key.Enter && vm.CanvasTool is BezierPenTool pen) { pen.Finish(); e.Handled = true; return; }
-        if (e.Key == Key.Escape)
+        if (e.Key == Key.Escape && _panning)
         {
-            if (_panning) _offset = _offsetBeforePan;
-            vm.HandleEscape();
-            _panning = false;
-            _pointer?.Capture(null);
-            _pointer = null;
-            InvalidateVisual();
+            _offset = _offsetBeforePan; _panning = false; _pointer?.Capture(null); _pointer = null;
+            InvalidateVisual(); e.Handled = true; return;
         }
-        else if (vm.IsInteracting || _panning) return;
-        else if (e.Key == Key.Space) _space = true;
-        else if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
-        {
-            switch (e.Key)
-            {
-                case Key.Z: if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) vm.RedoCommand.Execute(null); else vm.UndoCommand.Execute(null); break;
-                case Key.Y: vm.RedoCommand.Execute(null); break;
-                case Key.OemPlus: case Key.Add: vm.ZoomInCommand.Execute(null); break;
-                case Key.OemMinus: case Key.Subtract: vm.ZoomOutCommand.Execute(null); break;
-                case Key.D1: vm.ResetZoomCommand.Execute(null); break;
-                case Key.D0:
-                    vm.Zoom = Math.Clamp(Math.Min((Bounds.Width - 64) / vm.CurrentDocument.Width, (Bounds.Height - 64) / vm.CurrentDocument.Height), 0.1, 32);
-                    _offset = new Point((Bounds.Width - vm.CurrentDocument.Width * vm.Zoom) / 2, (Bounds.Height - vm.CurrentDocument.Height * vm.Zoom) / 2);
-                    break;
-                case Key.OemQuotes: vm.ShowGrid = !vm.ShowGrid; break;
-                case Key.OemSemicolon when e.KeyModifiers.HasFlag(KeyModifiers.Shift): vm.SnapToGrid = !vm.SnapToGrid; break;
-                case Key.C when e.KeyModifiers.HasFlag(KeyModifiers.Shift): vm.ObjectToPathCommand.Execute(null); break;
-                case Key.C when e.KeyModifiers.HasFlag(KeyModifiers.Alt): vm.StrokeToPathCommand.Execute(null); break;
-                case Key.G: if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) vm.UngroupSelectionCommand.Execute(null); else vm.GroupSelectionCommand.Execute(null); break;
-                case Key.K: vm.TogglePathClosedCommand.Execute(null); break;
-                case Key.L: vm.SimplifyPathCommand.Execute(null); break;
-                default: return;
-            }
-        }
-        else if (e.KeyModifiers is KeyModifiers.None or KeyModifiers.Shift)
-        {
-            switch (e.Key)
-            {
-                case Key.N: case Key.A: vm.ChooseTool(DrawingTool.Node); break;
-                case Key.B: vm.ChooseTool(DrawingTool.Bezier); break;
-                case Key.T: vm.ChooseTool(DrawingTool.Text); break;
-                case Key.Enter: vm.EnterGroupCommand.Execute(null); break;
-                case Key.V: case Key.S: vm.ChooseTool(DrawingTool.Select); break;
-                case Key.R: vm.ChooseTool(DrawingTool.Rectangle); break;
-                case Key.E: vm.ChooseTool(DrawingTool.Ellipse); break;
-                case Key.Y: vm.ChooseTool(DrawingTool.Polygon); break;
-                case Key.P: vm.ChooseTool(DrawingTool.Freehand); break;
-                case Key.H: vm.ChooseTool(DrawingTool.Pan); break;
-                case Key.Delete: case Key.Back: if (vm.CanvasTool is NodeEditTool nodes) nodes.DeleteNodes(); else vm.DeleteSelectionCommand.Execute(null); break;
-                default: return;
-            }
-        }
-        else return;
-        e.Handled = true;
+        if (e.Key == Key.Space && !vm.IsInteracting) { _space = true; e.Handled = true; return; }
+        e.Handled = vm.TryHandleEditorShortcut(e.Key, e.KeyModifiers);
+        if (e.Handled && e.Key == Key.Escape) { _pointer?.Capture(null); _pointer = null; }
     }
     protected override void OnKeyUp(KeyEventArgs e) { base.OnKeyUp(e); if (e.Key == Key.Space) _space = false; }
     protected override void OnLostFocus(Avalonia.Interactivity.RoutedEventArgs e)

@@ -26,13 +26,15 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
             canvas.DrawRect(0, 0, document.Width, document.Height, bgPaint);
         }
 
-        foreach (var layer in document.Layers)
+        canvas.Save();
+        try
         {
-            if (layer.IsVisible)
-            {
-                RenderNode(layer, canvas);
-            }
+            canvas.ClipRect(new SKRect(0, 0, document.Width, document.Height));
+            var viewport = document.GetViewportTransform(); canvas.Concat(ref viewport);
+            foreach (var layer in document.Layers)
+                if (layer.IsVisible) RenderNode(layer, canvas);
         }
+        finally { canvas.Restore(); }
     }
 
     public void RenderLayer(LayerNode layer, SKCanvas canvas)

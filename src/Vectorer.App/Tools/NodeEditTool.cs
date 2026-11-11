@@ -78,7 +78,7 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
         }
         var hit = Workspace.GetEditableNodes().Reverse().FirstOrDefault(e => CanvasGeometry.HitTest(e.Node, e.Parent, point, tolerance)).Node;
         if (hit is PathShapeNode or PolygonShapeNode)
-        { Workspace.SelectNodes([hit]); _target = null; Synchronize(); Workspace.RequestRedraw(); return; }
+        { Workspace.SelectNodes([hit]); _target = null; Synchronize(); Workspace.RequestRedraw(false); return; }
         if (_target is not null)
         {
             if (!shift) SelectedAnchors.Clear();
@@ -101,11 +101,11 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
             SelectedAnchors.Clear(); SelectedAnchors.UnionWith(_marqueeBefore);
             foreach (var anchor in Model.Contours.SelectMany(c => c.Anchors))
                 if (Marquee.Value.Contains(World.MapPoint(anchor.Position))) SelectedAnchors.Add(anchor);
-            Workspace.RequestRedraw(); return;
+            Workspace.RequestRedraw(false); return;
         }
         if (!_editMoved && MainWindowViewModel.Distance(_worldStart, point) < 2 / Workspace.Zoom) return;
         _editMoved = true;
-        var local = _inverse.MapPoint(Workspace.SnapPoint(point));
+        var local = _inverse.MapPoint(Workspace.SnapPoint(point, true));
         if (_handle is not null) _handle.MoveHandle(_incoming, local);
         else if (_segment is { } segment)
         {
@@ -120,7 +120,7 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
             anchor.Position = before.Position; anchor.Incoming = before.Incoming; anchor.Outgoing = before.Outgoing;
             anchor.MoveTo(before.Position + (local - _start));
         }
-        Apply(); _loadedData = Model.ToSvgPathData(); Workspace.RequestRedraw();
+        Apply(); _loadedData = Model.ToSvgPathData(); Workspace.RequestRedraw(false);
     }
     public override void End()
     {
@@ -137,8 +137,8 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
         if (_dragging && !_marquee) _restore?.Invoke();
         ResetDrag(); _target = null; Synchronize();
     }
-    public void ClearNodeSelection() { SelectedAnchors.Clear(); Workspace.RequestRedraw(); }
-    private void ResetDrag() { _dragging = false; _marquee = false; _restore = null; _handle = null; _segment = null; Marquee = null; Workspace.RequestRedraw(); }
+    public void ClearNodeSelection() { SelectedAnchors.Clear(); Workspace.RequestRedraw(false); }
+    private void ResetDrag() { _dragging = false; _marquee = false; _restore = null; _handle = null; _segment = null; Marquee = null; Workspace.RequestRedraw(false); }
 
     private Action Capture()
     {
@@ -164,13 +164,19 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
         Apply(); var after = Capture();
         Workspace.ExecuteCommand(new DelegateDocumentCommand(description, after, before));
         _loadedData = Model.ToSvgPathData();
-        Workspace.RequestRedraw();
+        Workspace.RequestRedraw(false);
     }
+    public void SetCoordinates(float? x, float? y) => Edit(() =>
+    {
+        foreach (var anchor in SelectedAnchors)
+            anchor.MoveTo(new SKPoint(x ?? anchor.Position.X, y ?? anchor.Position.Y));
+    }, "Node coordinates");
+
     public void DeleteNodes()
     {
         if (SelectedAnchors.Count == 0) return;
         if (Model.Contours.Sum(c => c.Anchors.Count) == SelectedAnchors.Count)
-        { Workspace.DeleteSelectionCommand.Execute(null); _target = null; Synchronize(); return; }
+        { Workspace.DeleteSelectedObjects(); _target = null; Synchronize(); return; }
         Edit(() => { foreach (var c in Model.Contours) c.Anchors.RemoveAll(a => SelectedAnchors.Contains(a)); SelectedAnchors.Clear(); }, "Delete path nodes");
 
     }
@@ -226,13 +232,7 @@ public sealed class NodeEditTool(MainWindowViewModel workspace) : CanvasToolBase
     }, "Join path endpoints");
     public void Simplify(float tolerance) => Edit(() =>
     {
-        foreach (var c in Model.Contours)
-        {
-            var samples = EditablePath.Flatten(c, tolerance / 2);
-            var simplified = PathShapeNodeBuilder.Simplify(samples, tolerance / 2);
-            if (c.IsClosed && simplified.Count > 1) simplified.RemoveAt(simplified.Count - 1);
-            c.Anchors.Clear(); c.Anchors.AddRange(simplified.Select(p => new PathAnchor(p)));
-        }
+        BezierPathFitter.Simplify(Model, tolerance);
         SelectedAnchors.Clear();
     }, "Simplify path");
 }

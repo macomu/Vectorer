@@ -61,7 +61,7 @@ public sealed class BezierPenTool(MainWindowViewModel workspace) : CanvasToolBas
         PreviewShape = new PathShapeNode(_model.ToSvgPathData()) { Style = Workspace.DefaultCreationStyle.Clone() };
         PreviewShape.Style.Fill = _contour is { IsClosed: true } ? PreviewShape.Style.Fill : null;
         if (PreviewParent.TryInvert(out var inverse)) PreviewShape.Transform = inverse;
-        Workspace.RequestRedraw();
+        Workspace.RequestRedraw(false);
     }
-    public override void Cancel() { _contour = null; _model.Contours.Clear(); PreviewShape = null; _closing = false; Workspace.RequestRedraw(); }
+    public override void Cancel() { _contour = null; _model.Contours.Clear(); PreviewShape = null; _closing = false; Workspace.RequestRedraw(false); }
 }

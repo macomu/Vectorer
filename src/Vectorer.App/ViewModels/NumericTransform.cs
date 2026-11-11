@@ -13,6 +13,8 @@ public sealed partial class MainWindowViewModel
     [ObservableProperty] private decimal _selectionWidth;
     [ObservableProperty] private decimal _selectionHeight;
     [ObservableProperty] private decimal _selectionRotation;
+    [ObservableProperty] private decimal _shearX;
+    [ObservableProperty] private decimal _shearY;
     [ObservableProperty] private bool _lockAspect;
     private bool _adjustingAspect;
     public bool HasSelection => SelectedNodes.Count > 0;
@@ -20,7 +22,7 @@ public sealed partial class MainWindowViewModel
     {
         if (GetSelectionBounds() is { } b)
         { SelectionX = (decimal)b.Left; SelectionY = (decimal)b.Top; SelectionWidth = (decimal)b.Width; SelectionHeight = (decimal)b.Height; }
-        SelectionRotation = 0;
+        SelectionRotation = 0; ShearX = ShearY = 0;
         OnPropertyChanged(nameof(HasSelection));
     }
     partial void OnSelectionWidthChanged(decimal value)
@@ -47,7 +49,9 @@ public sealed partial class MainWindowViewModel
         var scale = SKMatrix.CreateScale((float)SelectionWidth / b.Width, (float)SelectionHeight / b.Height, b.Left, b.Top);
         var move = SKMatrix.CreateTranslation((float)SelectionX - b.Left, (float)SelectionY - b.Top);
         var rotation = SKMatrix.CreateRotationDegrees((float)SelectionRotation, (float)(SelectionX + SelectionWidth / 2), (float)(SelectionY + SelectionHeight / 2));
-        ApplySelectionMatrix(SKMatrix.Concat(rotation, SKMatrix.Concat(move, scale)), "Numeric transform");
+        var shear = SKMatrix.CreateSkew(MathF.Tan((float)ShearX * MathF.PI / 180), MathF.Tan((float)ShearY * MathF.PI / 180));
+        shear = SKMatrix.Concat(SKMatrix.CreateTranslation(b.MidX, b.MidY), SKMatrix.Concat(shear, SKMatrix.CreateTranslation(-b.MidX, -b.MidY)));
+        ApplySelectionMatrix(SKMatrix.Concat(rotation, SKMatrix.Concat(move, SKMatrix.Concat(scale, shear))), "Numeric transform");
     }
     [RelayCommand] private void FlipHorizontal()
     { if (GetSelectionBounds() is { } b) ApplySelectionMatrix(SKMatrix.CreateScale(-1, 1, b.MidX, b.MidY), "Flip horizontal"); }

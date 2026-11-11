@@ -32,6 +32,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     private readonly PluginHostService _pluginHost;
     private readonly ShaderEffectRegistry _shaderRegistry;
     private readonly List<SceneNode> _selectedNodes = [];
+    private (LayerNode Node, string Name, LayerBlendMode Blend)[] _layerDisplayState = [];
 
     [ObservableProperty]
     private SvgDocument _currentDocument;
@@ -84,15 +85,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var selection = nodes.Distinct().ToList();
         _selectedNodes.Clear();
         _selectedNodes.AddRange(selection);
+        if (_canvasTool is Vectorer.App.Tools.NodeEditTool nodesTool) nodesTool.Synchronize();
         SyncSelectionEditors();
         OnPropertyChanged(nameof(SelectionSummary));
         RequestRedraw();
         StatusMessage = $"Selected {_selectedNodes.Count} item(s).";
     }
 
-    public void RequestRedraw()
+    public void RequestRedraw() => RequestRedraw(true);
+    public void RequestRedraw(bool invalidateScene)
     {
+        if (invalidateScene) _snapCandidates = null;
         ValidateScope();
+        SyncNodeCoordinates();
+        MergeLayerDownCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ScopePath));
         OnPropertyChanged(nameof(IsInGroup));
         RenderVersion++;
@@ -218,6 +224,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [RelayCommand]
     private void Undo()
     {
+        if (IsInteracting || IsBusy) return;
         if (_undoRedoService.CanUndo)
         {
             _undoRedoService.Undo();
@@ -232,6 +239,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [RelayCommand]
     private void Redo()
     {
+        if (IsInteracting || IsBusy) return;
         if (_undoRedoService.CanRedo)
         {
             _undoRedoService.Redo();
@@ -272,12 +280,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             return;
         }
 
+        var hasGeometry = !string.IsNullOrWhiteSpace(combined.SvgPathData);
         ExecuteCommand(new DelegateDocumentCommand(
             $"Boolean {op}",
             execute: () =>
             {
                 foreach (var shape in shapes) layer.Children.Remove(shape);
-                layer.Children.Insert(positions[0].Index, combined);
+                if (hasGeometry) layer.Children.Insert(positions[0].Index, combined);
             },
             undo: () =>
             {
@@ -285,7 +294,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
                 foreach (var position in positions) layer.Children.Insert(position.Index, position.Node);
             }));
 
-        SelectNodes([combined]);
+        SelectNodes(hasGeometry ? [combined] : []);
         StatusMessage = $"Applied Boolean {op} on '{shapes[0].Name}' and '{shapes[1].Name}'.";
     }
 
@@ -308,6 +317,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     private void SyncLayersCollection()
     {
         var previousActiveLayer = ActiveLayer;
+        var display = CurrentDocument.Layers.Select(l => (l, l.Name, l.BlendMode)).ToArray();
+        if (_layerDisplayState.SequenceEqual(display))
+        {
+            if (ActiveLayer is null || !Layers.Contains(ActiveLayer)) ActiveLayer = Layers.FirstOrDefault();
+            return;
+        }
+        _layerDisplayState = display;
         Layers.Clear();
         foreach (var layer in CurrentDocument.Layers)
         {
