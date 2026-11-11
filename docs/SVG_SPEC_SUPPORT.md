@@ -26,9 +26,10 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 | `GroupNode` | `<g>` | 通常のグループ要素 |
 | `RectangleShapeNode` | `<rect>` | `x`, `y`, `width`, `height`, `rx`, `ry` |
 | `EllipseShapeNode` | `<ellipse>` / `<circle>` | `cx`, `cy`, `rx`, `ry` |
-| `PolygonShapeNode` | `<polygon>` | `points="x1,y1 x2,y2 ..."` |
+| `PolygonShapeNode` | `<polygon>` / `<polyline>` | 標準 `points="x1,y1 x2,y2 ..."` に加え、正多角形・星形の場合は再編集用に `vectorer:poly-kind="regular\|star\|freeform"`, `vectorer:cx`, `vectorer:cy`, `vectorer:points-count`, `vectorer:outer-r`, `vectorer:inner-r`, `vectorer:start-angle` を併記（個別頂点編集時は `freeform` に移行） |
 | `ArcShapeNode` | `<path>` | SVG `A` (Elliptical Arc) コマンド + `vectorer:shape-type="arc"` および角度メタ属性 |
 | `PathShapeNode` | `<path>` | `d="M ... Z"` |
+| `TextShapeNode` | `<text>` | `x`, `y`, `font-family`, `font-size`, `font-weight`, `font-style`, `text-anchor`, `letter-spacing` |
 
 ---
 

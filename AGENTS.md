@@ -105,6 +105,7 @@ dotnet run --project src/Vectorer.App/Vectorer.App.csproj
 詳細な設計仕様については、`docs/` 配下のドキュメントを参照・更新してください。
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): シーングラフ構造、ブレンドモード、フィルタ、テクスチャ塗り、Boolean 演算、PNG エクスポーターの設計
+- [`docs/UI_DESIGN.md`](docs/UI_DESIGN.md): 画面レイアウト、メニューバー、左側描画ツールボックス、動的コンテキストツールバー、右側インスペクタ＆レイヤーツリー、各種ダイアログの GUI 設計仕様
 - [`docs/PLUGIN_SYSTEM.md`](docs/PLUGIN_SYSTEM.md): 外部 DLL プラグインのインターフェース (`IVectorerPlugin`)、メニュー・ツールバー拡張、Skia シェーダー適用の仕組み
 - [`docs/SVG_SPEC_SUPPORT.md`](docs/SVG_SPEC_SUPPORT.md): 標準 SVG 要素と `xmlns:vectorer="https://vectorer.dev/ns/1.0"` 拡張属性のマッピング仕様
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): 実装フェーズとタスク進捗管理

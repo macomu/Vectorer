@@ -28,8 +28,8 @@ public interface IVectorerPlugin
 ### 2.2 `IPluginContext`
 プラグイン初期化時にホスト（Vectorer 本体）から渡される登録用コンテキストです。
 
-- `RegisterMenuContribution(IMenuContribution item)`: メニューバー（「拡張機能」メニューや任意のカテゴリ）にコマンド項目を追加します。
-- `RegisterToolbarContribution(IToolbarContribution item)`: ツールバーにボタンやカスタムツールを追加します。
+- `RegisterMenuContribution(IMenuContribution item)`: メニューバー（「フィルタ・拡張機能」メニューや任意のカテゴリ）にコマンド項目を追加します。
+- `RegisterToolbarContribution(IToolbarContribution item)`: ツールバー（または左ツールボックス下部）に、現在の描画ツールを切り替えることなく即座に `Execute(IEditorWorkspace)` を実行するワンショットアクションボタンを追加します。
 - `RegisterShaderProvider(IShaderEffectProvider provider)`: オブジェクトに適用可能な SkiaSharp カスタムシェーダー (`SKRuntimeEffect`) を登録します。
 
 ### 2.3 `IEditorWorkspace`

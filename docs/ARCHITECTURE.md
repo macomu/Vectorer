@@ -54,12 +54,13 @@ flowchart TD
     - **塗りつぶし (`FillPaint`)**: 単色 (`SolidColorFill`)、またはテクスチャ/パターン (`TextureFill`)
     - **アウトライン (`StrokeStyle`)**: 線色、線幅 (`StrokeWidth`)、線端 (`StrokeCap`)、角の形状 (`StrokeJoin`)、破線配列 (`DashArray`)
   - **具象図形クラス**:
-    - `PolygonShapeNode`: 凸多角形・凹多角形（頂点リスト `Points` または正多角形パラメータ）
+    - `PolygonShapeNode`: 凸多角形・凹多角形（頂点リスト `Points` に加え、正多角形・星形のパラメトリック再編集用プロパティ `PolygonKind`, `Center`, `PointCount`, `OuterRadius`, `InnerRadius`, `StartAngleDegrees` を保持。個別頂点編集時に自由多角形 `Freeform` へ移行）
     - `EllipseShapeNode`: 円・楕円 (`Center`, `RadiusX`, `RadiusY`)
     - `ArcShapeNode`: 円弧・扇形 (`Center`, `RadiusX`, `RadiusY`, `StartAngle`, `SweepAngle`, `CloseMode`)
     - `RectangleShapeNode`: 矩形・角丸矩形 (`Rect`, `CornerRadiusX`, `CornerRadiusY`)
-    - `PathShapeNode`: 任意のベクターパス（SVG Path Data 文字列 / `SKPath` 変換可能、Boolean 演算の結果もこのノードとして表現）
-  - すべての `ShapeNode` は `BuildPath()` メソッドによりローカル座標系の `SKPath` を生成できます。
+    - `PathShapeNode`: 任意のベクターパス（SVG Path Data 文字列 / `SKPath` 変換可能、Boolean 演算やパス変換の結果もこのノードとして表現）
+    - `TextShapeNode`: テキスト要素（文字列 `Text`、フォントファミリ、サイズ、太字/斜体、文字揃え、字間を保持し、`BuildLocalPath()` によるアウトラインパス化に対応）
+  - すべての `ShapeNode` は `BuildLocalPath()`（および `Transform` 適用済みの `BuildTransformedPath()`）により `SKPath` を生成できます。
 
 ---
 
@@ -76,7 +77,7 @@ flowchart TD
 | `Xor` | `SKPathOp.Xor` | 重なっている部分をくり抜いた排他的結合 |
 | `ReverseDifference` | `SKPathOp.ReverseDifference` | 2つ目の図形から1つ目の図形をくり抜く |
 
-演算結果は新しい `PathShapeNode` として生成され、Undo/Redo コマンド経由でドキュメントツリーに反映されます。
+入力図形は背面から前面の重ね順で扱います。結果の描画属性（塗り、ストローク、不透明度、ブレンドモード、フィルタ、シェーダー）は最背面の図形から、逆差分では最前面の図形から引き継ぎます。演算結果は新しい `PathShapeNode` として生成され、Undo/Redo コマンド経由でドキュメントツリーに反映されます。
 
 ---
 
@@ -118,6 +119,6 @@ flowchart TD
 1. **ドキュメント全体の保存 (`ExportDocumentAsync`)**:
    - 指定された出力サイズ (`TargetWidth`, `TargetHeight`) に合わせてドキュメント全体をスケーリングし、PNG として出力します。
 2. **選択したもののみを保存 (`ExportSelectionAsync`)**:
-   - 選択された `SceneNode` 群の合成バウンディングボックスを計算し、その領域のみを指定サイズ（またはスケール倍率）で切り出して PNG 保存します。
+   - 選択要素について、祖先を含む表示状態・変換、塗り、ストロークの線幅・線端・角形状、ぼかしの広がりを反映したキャンバス座標の描画範囲を求めます。出力可否・プレビュー・切り出し・倍率の基準寸法はこの範囲を共有し、範囲が空の場合は出力を無効にします。
 3. **レイヤー単位によるバッチ保存 (`ExportLayersBatchAsync`)**:
    - ドキュメント内の各 `LayerNode`（または表示レイヤーのみ）をループし、`{Prefix}_{LayerIndex}_{LayerName}.png` の形式で指定フォルダへ一括出力します。
