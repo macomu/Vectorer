@@ -32,6 +32,7 @@
           <MenuItem.ItemContainerTheme>
             <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RecentFileMenuEntry">
               <Setter Property="Header" Value="{Binding Header}" />
+              <Setter Property="ToolTip.Tip" Value="{Binding Header}" />
               <Setter Property="Command" Value="{Binding Command}" />
               <Setter Property="CommandParameter" Value="{Binding Parameter}" />
               <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
@@ -167,7 +168,7 @@
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="Node X" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="角数" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><TextBox Text="{Binding FontFamily}" Width="110" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><controls:FontPicker Value="{Binding FontFamily, Mode=TwoWay}" Families="{Binding InstalledFontFamilies}" Width="210" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="塗り" ToolTip.Tip="塗り色">
             <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
               <TextBlock Text="塗り (#RRGGBB / #AARRGGBB)" />
@@ -245,8 +246,8 @@
                       </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><TextBlock Text="字間 (px)" /><NumericUpDown Value="{Binding LetterSpacing}" Minimum="-100" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="傾斜 X° / Y°（変形適用時）" /><NumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><NumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="傾斜 X°" /><NumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="傾斜 Y°" /><NumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><Button Content="変形を適用" Command="{Binding ApplyTransformCommand}" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="レイヤー角度°" /><NumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="レイヤーを回転" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />

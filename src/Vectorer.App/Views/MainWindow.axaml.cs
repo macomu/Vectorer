@@ -79,6 +79,7 @@ public partial class MainWindow : Window
             {
                 await vm.LoadUserSettingsAsync(new JsonEditorUserSettingsStore());
                 EditorLayout.ColumnDefinitions[2].Width = new GridLength(vm.InspectorWidth);
+                await vm.LoadInstalledFontsAsync(new InstalledFontCatalog());
             }
             finally { vm.IsBusy = false; }
         };

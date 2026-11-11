@@ -9,6 +9,13 @@ namespace Vectorer.App.ViewModels;
 public sealed partial class MainWindowViewModel
 {
     [ObservableProperty] private string _fontFamily = "sans-serif";
+    [ObservableProperty] private IReadOnlyList<string> _installedFontFamilies = ["sans-serif", "serif", "monospace"];
+    public async Task LoadInstalledFontsAsync(Vectorer.App.Services.IInstalledFontCatalog catalog)
+    {
+        try { InstalledFontFamilies = await catalog.GetFamiliesAsync(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        { StatusMessage = $"フォント一覧を取得できませんでした: {ex.Message}"; }
+    }
     [ObservableProperty] private decimal _fontSize = 32;
     [ObservableProperty] private bool _textBold;
     [ObservableProperty] private bool _textItalic;
