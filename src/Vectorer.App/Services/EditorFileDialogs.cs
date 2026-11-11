@@ -7,7 +7,7 @@ using Avalonia.Platform.Storage;
 
 namespace Vectorer.App.Services;
 
-public sealed record EditorFile(string Name, Func<Task<Stream>> OpenRead, Func<Task<Stream>> OpenWrite);
+public sealed record EditorFile(string Name, Func<Task<Stream>> OpenRead, Func<Task<Stream>> OpenWrite, Uri? Location = null);
 
 public enum UnsavedDecision { Cancel, Discard, Save }
 public sealed record DocumentSettings(float Width, float Height, SKColor Background, string Title);
@@ -15,6 +15,7 @@ public sealed record DocumentSettings(float Width, float Height, SKColor Backgro
 public interface IEditorFileDialogs
 {
     Task<EditorFile?> OpenSvgAsync();
+    Task<EditorFile?> ResolveSvgAsync(Uri location) => Task.FromResult<EditorFile?>(null);
     Task<EditorFile?> SaveSvgAsync(string suggestedName);
     Task<bool> ConfirmDiscardAsync();
     async Task<UnsavedDecision> ConfirmUnsavedAsync() => await ConfirmDiscardAsync() ? UnsavedDecision.Discard : UnsavedDecision.Cancel;
@@ -31,7 +32,12 @@ public sealed class EditorFileDialogs(Window owner) : IEditorFileDialogs
 {
     private static readonly FilePickerFileType SvgType = new("SVG") { Patterns = ["*.svg"], MimeTypes = ["image/svg+xml"] };
     private static readonly FilePickerFileType PngType = new("PNG") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
-    private static EditorFile Adapt(IStorageFile file) => new(file.Name, file.OpenReadAsync, file.OpenWriteAsync);
+    private static EditorFile Adapt(IStorageFile file) => new(file.Name, file.OpenReadAsync, file.OpenWriteAsync, file.Path);
+    public async Task<EditorFile?> ResolveSvgAsync(Uri location)
+    {
+        var file = await owner.StorageProvider.TryGetFileFromPathAsync(location);
+        return file is null ? null : Adapt(file);
+    }
     public async Task<EditorFile?> OpenSvgAsync()
     {
         var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "SVGを開く", AllowMultiple = false, FileTypeFilter = [SvgType] });

@@ -11,6 +11,7 @@ namespace Vectorer.App.Views;
 public partial class MainWindow : Window
 {
     private bool _allowClose;
+    private bool _checkingClose;
     private SceneTreeItem? _dragTreeSource;
     private Point _dragStartPoint;
     private bool _isDraggingTreeItem;
@@ -54,12 +55,33 @@ public partial class MainWindow : Window
 
         Closing += async (_, e) =>
         {
-            if (_allowClose || DataContext is not MainWindowViewModel vm || !vm.HasUnsavedChanges && !vm.IsBusy && !vm.IsTextEditing) return;
+            if (_allowClose || DataContext is not MainWindowViewModel vm) return;
             e.Cancel = true;
-            if (await vm.CanCloseAsync()) { _allowClose = true; Close(); }
+            if (_checkingClose) return;
+            _checkingClose = true;
+            try
+            {
+                if (await vm.CanCloseAsync())
+                {
+                    await vm.SaveUserSettingsAsync(EditorLayout.ColumnDefinitions[2].ActualWidth);
+                    _allowClose = true; Close();
+                }
+            }
+            finally { _checkingClose = false; }
         };
 
         SetupSceneTreeInteractions();
+        Opened += async (_, _) =>
+        {
+            if (DataContext is not MainWindowViewModel vm) return;
+            vm.IsBusy = true;
+            try
+            {
+                await vm.LoadUserSettingsAsync(new JsonEditorUserSettingsStore());
+                EditorLayout.ColumnDefinitions[2].Width = new GridLength(vm.InspectorWidth);
+            }
+            finally { vm.IsBusy = false; }
+        };
     }
 
     private void SetupSceneTreeInteractions()

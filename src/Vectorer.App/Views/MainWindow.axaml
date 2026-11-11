@@ -28,6 +28,16 @@
       <MenuItem Header="ファイル">
         <MenuItem Header="新規" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
         <MenuItem Header="開く…" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+        <MenuItem Header="最近開いたファイル" ItemsSource="{Binding RecentFileMenuItems}">
+          <MenuItem.ItemContainerTheme>
+            <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RecentFileMenuEntry">
+              <Setter Property="Header" Value="{Binding Header}" />
+              <Setter Property="Command" Value="{Binding Command}" />
+              <Setter Property="CommandParameter" Value="{Binding Parameter}" />
+              <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+            </ControlTheme>
+          </MenuItem.ItemContainerTheme>
+        </MenuItem>
         <MenuItem Header="保存" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
         <MenuItem Header="名前を付けて保存…" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
         <MenuItem Header="エクスポート (PNG)…" InputGesture="Ctrl+Shift+E" Command="{Binding ExportPngCommand}" />

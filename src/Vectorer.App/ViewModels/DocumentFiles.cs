@@ -42,14 +42,19 @@ public sealed partial class MainWindowViewModel
         try
         {
             var file = await FileDialogs.OpenSvgAsync(); if (file is null) return;
-            await using var stream = await file.OpenRead();
-            var document = await Task.Run(() => _svgSerializer.LoadFromStream(stream));
-            ReplaceDocument(document, file);
-            StatusMessage = $"開きました: {file.Name}";
+            await OpenFileCoreAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException or FormatException or ArgumentException)
         { StatusMessage = $"開けませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
         finally { IsBusy = false; }
+    }
+    private async Task OpenFileCoreAsync(EditorFile file)
+    {
+        await using var stream = await file.OpenRead();
+        var document = await Task.Run(() => _svgSerializer.LoadFromStream(stream));
+        ReplaceDocument(document, file);
+        StatusMessage = $"開きました: {file.Name}";
+        await RememberFileAsync(file);
     }
     [RelayCommand] private Task SaveDocumentAsync() => SaveDocumentCoreAsync(false);
     [RelayCommand] private Task SaveDocumentAsAsync() => SaveDocumentCoreAsync(true);
@@ -71,6 +76,7 @@ public sealed partial class MainWindowViewModel
             }
             _currentFile = file; _savedCommand = _undoRedoService.UndoStack.LastOrDefault(); _untrackedChanges = false;
             NotifyDocumentState(); StatusMessage = $"保存しました: {file.Name}";
+            await RememberFileAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         { StatusMessage = $"保存できませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
