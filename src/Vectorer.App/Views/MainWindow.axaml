@@ -146,6 +146,13 @@
       <Grid ColumnDefinitions="Auto,*">
         <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" Margin="0,0,10,0" />
         <controls:OverflowToolbar Grid.Column="1">
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRectangleInputs}">
+            <TextBlock Text="X" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="Y" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="W" /><NumericUpDown Value="{Binding GeometryWidth}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="H" /><NumericUpDown Value="{Binding GeometryHeight}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <Button Content="適用" Command="{Binding ApplyShapeDetailsCommand}" />
+          </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowTransformInputs}"><TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="W" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="H" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyTransformCommand}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="Node X" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="適用" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
@@ -236,6 +243,8 @@
                     </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="線種" /><ComboBox ItemsSource="{Binding DashOptions}" SelectedItem="{Binding StrokeDash}" PlaceholderText="混在 / カスタム" />
                   </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasRadialShape}"><TextBlock Text="形状" /><ComboBox ItemsSource="{Binding EllipseModes}" SelectedItem="{Binding EllipseMode}" /><Button Content="形状を適用" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasParametricPolygon}"><TextBlock Text="中心X" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><ComboBox ItemsSource="{Binding PolygonModes}" SelectedItem="{Binding PolygonMode}" /><Button Content="形状を適用" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
         </controls:OverflowToolbar>
       </Grid>
     </Border>

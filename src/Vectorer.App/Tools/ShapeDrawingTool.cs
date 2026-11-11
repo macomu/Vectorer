@@ -8,15 +8,34 @@ namespace Vectorer.App.Tools;
 
 public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasToolBase(workspace)
 {
+    private readonly ShapeResizeGesture _resize = new(workspace);
+    private readonly ShapeParameterGesture _parameters = new(workspace);
+    private SKPoint _press;
     private SKPoint _start;
     private ContainerNode? _container;
     private bool _drawing;
     private readonly List<SKPoint> _points = [];
-    public override bool IsInteracting => _drawing;
+    public override bool IsInteracting => _drawing || _resize.IsActive || _parameters.IsActive;
 
-    public override void Begin(SKPoint point, bool shift)
+    public override void Begin(SKPoint point, bool shift) => Begin(point, shift, false);
+    public void Begin(SKPoint point, bool shift, bool forceNew)
     {
         Cancel();
+        _press = point;
+        if (!forceNew)
+        {
+            if (Workspace.SelectedNodes.Count == 1 && ShapeResizeGesture.Matches(Workspace.ActiveTool, Workspace.SelectedNodes[0]))
+            {
+                if (_parameters.Begin(point) || _resize.Begin(point)) return;
+            }
+            var hit = Workspace.GetEditableNodes().Reverse().FirstOrDefault(e =>
+                CanvasGeometry.HitTest(e.Node, e.Parent, point, (float)(4 / Workspace.Zoom))).Node;
+            if (ShapeResizeGesture.Matches(Workspace.ActiveTool, hit))
+            {
+                Workspace.SelectNodes([hit!]);
+                return;
+            }
+        }
         var target = Workspace.GetDrawingTarget();
         if (target is null) return;
         (_container, PreviewParent) = target.Value;
@@ -28,6 +47,12 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
 
     public override void Move(SKPoint point, bool shift, bool alt)
     {
+        if (_resize.IsActive) { _resize.Move(point, shift, alt); return; }
+        if (_parameters.IsActive)
+        {
+            if (MainWindowViewModel.Distance(point, _press) > 2 / Workspace.Zoom) _parameters.Move(point);
+            return;
+        }
         if (!_drawing) return;
         point = Workspace.SnapPoint(point);
         if (Workspace.ActiveTool == DrawingTool.Freehand)
@@ -47,6 +72,8 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
 
     public override void End()
     {
+        if (_resize.IsActive) { _resize.End(); return; }
+        if (_parameters.IsActive) { _parameters.End(); return; }
         if (PreviewShape is { } shape && _container is { } container)
         {
             using var path = shape.BuildLocalPath();
@@ -62,6 +89,7 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
 
     public override void Cancel()
     {
+        _resize.Cancel(); _parameters.Cancel();
         _drawing = false;
         PreviewShape = null;
         Workspace.RequestRedraw(false);

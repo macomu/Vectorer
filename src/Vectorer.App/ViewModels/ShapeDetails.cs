@@ -25,7 +25,9 @@ public sealed partial class MainWindowViewModel
     public bool HasRadialShape => SelectedNodes.Count == 1 && SelectedNodes[0] is EllipseShapeNode or ArcShapeNode;
     public bool HasShapeDetails => HasRectangle || HasRadialShape || HasParametricPolygon;
     public bool HasStarPolygon => SelectedNodes.Count == 1 && SelectedNodes[0] is PolygonShapeNode { PolygonKind: PolygonKind.ConcaveStar };
-    public bool ShowTransformInputs => HasSelection && !IsNodeTool && !IsTextTool && !HasRadialShape && !HasParametricPolygon;
+    public bool IsShapeEditing => SelectedNodes.Count == 1 && Vectorer.App.Tools.ShapeResizeGesture.Matches(ActiveTool, SelectedNodes[0]);
+    public bool ShowRectangleInputs => IsShapeEditing && HasRectangle;
+    public bool ShowTransformInputs => !IsShapeEditing && HasSelection && !IsNodeTool && !IsTextTool && !HasRadialShape && !HasParametricPolygon;
     public bool ShowRadialInputs => HasRadialShape && !IsNodeTool;
     public bool ShowPolygonInputs => HasParametricPolygon && !IsNodeTool;
 
@@ -60,7 +62,7 @@ public sealed partial class MainWindowViewModel
         NotifyPrimaryInputs();
     }
     private void NotifyPrimaryInputs()
-    { OnPropertyChanged(nameof(ShowTransformInputs)); OnPropertyChanged(nameof(ShowRadialInputs)); OnPropertyChanged(nameof(ShowPolygonInputs)); }
+    { OnPropertyChanged(nameof(IsShapeEditing)); OnPropertyChanged(nameof(ShowRectangleInputs)); OnPropertyChanged(nameof(ShowTransformInputs)); OnPropertyChanged(nameof(ShowRadialInputs)); OnPropertyChanged(nameof(ShowPolygonInputs)); }
 
     [RelayCommand] private void ResetCorners()
     {

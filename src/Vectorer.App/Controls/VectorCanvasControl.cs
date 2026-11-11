@@ -145,7 +145,7 @@ public sealed class VectorCanvasControl : Decorator
             canvas.Restore();
             using var outline = new SKPaint { Color = new SKColor(96, 165, 250), Style = SKPaintStyle.Stroke, StrokeWidth = unit, IsAntialias = true };
             using var handle = new SKPaint { Color = new SKColor(226, 232, 240), IsAntialias = true };
-            if (vm.ActiveTool != DrawingTool.Node && vm.GetSelectionBounds() is { } bounds)
+            if (!vm.IsShapeEditing && vm.ActiveTool != DrawingTool.Node && vm.GetSelectionBounds() is { } bounds)
             {
                 canvas.DrawRect(bounds, outline);
                 foreach (var point in MainWindowViewModel.GetHandles(bounds))
@@ -157,7 +157,19 @@ public sealed class VectorCanvasControl : Decorator
                 canvas.DrawLine(bounds.MidX, bounds.Top, bounds.MidX, bounds.Top - 24 * unit, outline);
                 canvas.DrawCircle(bounds.MidX, bounds.Top - 24 * unit, 4 * unit, handle);
             }
-            if (vm.ActiveTool == DrawingTool.Select)
+            if (vm.IsShapeEditing)
+            {
+                var points = ShapeResizeGesture.GetHandles(vm);
+                if (points.Length == 8)
+                {
+                    for (var i = 0; i < points.Length; i++)
+                    {
+                        canvas.DrawLine(points[i], points[(i + 1) % points.Length], outline);
+                        canvas.DrawRect(SKRect.Create(points[i].X - 3 * unit, points[i].Y - 3 * unit, 6 * unit, 6 * unit), handle);
+                    }
+                }
+            }
+            if (vm.ActiveTool == DrawingTool.Select || vm.IsShapeEditing)
             {
                 using var parameterPaint = new SKPaint { Color = new SKColor(251, 191, 36), IsAntialias = true };
                 foreach (var parameter in ShapeParameterGesture.GetHandles(vm))
@@ -214,7 +226,7 @@ public sealed class VectorCanvasControl : Decorator
         _pointer = e.Pointer;
         _panning = current.Properties.IsMiddleButtonPressed || _space || vm.ActiveTool == DrawingTool.Pan;
         if (_panning) { vm.CancelInteraction(); _panStart = current.Position; _offsetBeforePan = _offset; }
-        else vm.BeginInteraction(ToDocument(current.Position), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+        else vm.BeginInteraction(ToDocument(current.Position), e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Control));
         e.Pointer.Capture(this);
         e.Handled = true;
     }

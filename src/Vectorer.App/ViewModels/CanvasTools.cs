@@ -71,8 +71,8 @@ public sealed partial class MainWindowViewModel
         DrawingTool.Node => "点・ハンドルをドラッグ · Shift: 複数選択 · ダブルクリック: 点追加",
         DrawingTool.Bezier => "クリック: 頂点 · ドラッグ: 制御点 · Enter: 確定 · 始点クリック: 閉じる",
         DrawingTool.Text => "クリック: テキスト入力 · Ctrl+Enter: 確定 · Esc: 取消",
-        DrawingTool.Polygon or DrawingTool.Star => "中心からドラッグして描画 · Esc: キャンセル",
-        _ => "ドラッグ: 描画 · Shift: 縦横比固定 · Alt: 中心から描画 · Esc: キャンセル"
+        DrawingTool.Polygon or DrawingTool.Star => "同種の図形をクリック: 編集 · 中心からドラッグ: 描画 · Ctrl: 新規描画",
+        _ => "同種の図形をクリック: 編集 · ドラッグ: 描画 · Ctrl: 新規描画 · Shift: 比率固定 · Alt: 中心基準"
     };
 
     private ICanvasTool? _canvasTool;
@@ -114,7 +114,11 @@ public sealed partial class MainWindowViewModel
         return bounds;
     }
 
-    public void BeginInteraction(SKPoint point, bool shift) => CanvasTool.Begin(point, shift);
+    public void BeginInteraction(SKPoint point, bool shift, bool forceNew = false)
+    {
+        if (CanvasTool is ShapeDrawingTool shapes) shapes.Begin(point, shift, forceNew);
+        else CanvasTool.Begin(point, shift);
+    }
     public void UpdateInteraction(SKPoint point, bool shift, bool alt)
     {
         CursorPosition = $"{point.X:0.0}, {point.Y:0.0}";
