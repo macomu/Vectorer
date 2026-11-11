@@ -99,6 +99,8 @@
           <MenuItem Header="180°" Command="{Binding RotateLayerCommand}" CommandParameter="180" />
           <MenuItem Header="左右反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-x" />
           <MenuItem Header="上下反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-y" />
+          <Separator />
+          <MenuItem Header="角度を指定して回転…" Command="{Binding OpenRotateLayerDialogCommand}" />
         </MenuItem>
         <MenuItem Header="合成モード">
           <MenuItem Header="Normal" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Normal}" />
@@ -526,18 +528,72 @@
         <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="#30363D" />
 
         <DockPanel Grid.Row="2" Margin="4,6,4,0">
-          <TextBlock DockPanel.Dock="Top" Text="レイヤー＆オブジェクト" FontWeight="SemiBold" Margin="0,0,0,6" />
-          <TextBlock DockPanel.Dock="Bottom" Text="Ctrl + ホイール: ズーム · Space + ドラッグ: パン · Esc: キャンセル" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
-          <ListBox ItemsSource="{Binding Layers}" SelectedItem="{Binding ActiveLayer}" Background="Transparent">
-            <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="docs:LayerNode">
-                <StackPanel Spacing="4" Margin="2">
-                  <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
-                  <TextBlock Text="{Binding BlendMode}" FontSize="11" Foreground="#94A3B8" />
-                </StackPanel>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
+          <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="レイヤー＆オブジェクト" FontWeight="SemiBold" FontSize="13" />
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="3">
+                <Button Content="＋" Padding="6,2" ToolTip.Tip="新規レイヤー (Ctrl+Shift+N)" Command="{Binding NewLayerCommand}" />
+                <Button Content="複製" Padding="6,2" ToolTip.Tip="レイヤーを複製" Command="{Binding DuplicateLayerCommand}" />
+                <Button Content="回転" Padding="6,2" ToolTip.Tip="レイヤー回転・反転">
+                  <Button.Flyout>
+                    <MenuFlyout>
+                      <MenuItem Header="時計回りに 90° 回転" Command="{Binding RotateLayerCommand}" CommandParameter="90" />
+                      <MenuItem Header="反時計回りに 90° 回転" Command="{Binding RotateLayerCommand}" CommandParameter="-90" />
+                      <MenuItem Header="180° 回転" Command="{Binding RotateLayerCommand}" CommandParameter="180" />
+                      <MenuItem Header="左右反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-x" />
+                      <MenuItem Header="上下反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-y" />
+                      <Separator />
+                      <MenuItem Header="角度を指定して回転…" Command="{Binding OpenRotateLayerDialogCommand}" />
+                    </MenuFlyout>
+                  </Button.Flyout>
+                </Button>
+                <Button Content="結合" Padding="6,2" ToolTip.Tip="下のレイヤーと結合 (Ctrl+E)" Command="{Binding MergeLayerDownCommand}" />
+                <Button Content="🗑" Padding="6,2" ToolTip.Tip="選択要素またはレイヤーを削除" Command="{Binding DeleteTreeTargetCommand}" />
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,105,Auto,*" Margin="0,2,0,0">
+              <TextBlock Text="合成:" FontSize="11" Foreground="#94A3B8" Margin="0,0,4,0" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding BlendModes}" SelectedItem="{Binding EffectBlendMode}" PlaceholderText="混在" FontSize="11" HorizontalAlignment="Stretch" />
+              <TextBlock Grid.Column="2" Text="不透明:" FontSize="11" Foreground="#94A3B8" Margin="8,0,4,0" />
+              <Slider Grid.Column="3" Minimum="0" Maximum="100" Value="{Binding EffectOpacity}" VerticalAlignment="Center" />
+            </Grid>
+          </StackPanel>
+
+          <TreeView x:Name="SceneHierarchyTree"
+                    ItemsSource="{Binding SceneTree}"
+                    SelectedItem="{Binding SelectedTreeItem, Mode=TwoWay}"
+                    Background="Transparent"
+                    DragDrop.AllowDrop="True">
+            <TreeView.ItemContainerTheme>
+              <ControlTheme TargetType="TreeViewItem" BasedOn="{StaticResource {x:Type TreeViewItem}}" x:DataType="vm:SceneTreeItem">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+              </ControlTheme>
+            </TreeView.ItemContainerTheme>
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate x:DataType="vm:SceneTreeItem" ItemsSource="{Binding Children}">
+                <Border Background="Transparent" Padding="2,1" DragDrop.AllowDrop="True">
+                  <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+                    <Button Grid.Column="0" Content="{Binding VisibilityIcon}" Padding="4,1" Background="Transparent" FontSize="11"
+                            ToolTip.Tip="表示/非表示を切替"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleNodeVisibilityCommand}"
+                            CommandParameter="{Binding}" />
+                    <Button Grid.Column="1" Content="{Binding LockIcon}" Padding="4,1" Background="Transparent" FontSize="11"
+                            ToolTip.Tip="ロックを切替"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleNodeLockCommand}"
+                            CommandParameter="{Binding}" />
+                    <TextBlock Grid.Column="2" Text="{Binding KindIcon}" Margin="4,0" FontSize="12" />
+                    <Panel Grid.Column="3">
+                      <TextBlock Text="{Binding Name}" IsVisible="{Binding !IsEditingName}" TextTrimming="CharacterEllipsis"
+                                 ToolTip.Tip="ダブルクリックで名前変更 · ドラッグで並び替え/階層移動" />
+                      <TextBox Text="{Binding EditingNameText, Mode=TwoWay}" IsVisible="{Binding IsEditingName}" Padding="3,1" MinHeight="22" FontSize="12" />
+                    </Panel>
+                    <TextBlock Grid.Column="4" Text="{Binding EffectBadge}" IsVisible="{Binding HasEffectBadge}" Foreground="#F59E0B" FontSize="11" Margin="4,0,0,0" />
+                    <TextBlock Grid.Column="5" Text="{Binding BlendBadge}" IsVisible="{Binding HasBlendBadge}" Foreground="#38BDF8" FontSize="11" Margin="4,0,0,0" />
+                  </Grid>
+                </Border>
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
         </DockPanel>
       </Grid>
     </Border>

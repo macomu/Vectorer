@@ -99,6 +99,7 @@ public sealed partial class MainWindowViewModel
     {
         MergeLayerDownCommand.NotifyCanExecuteChanged();
         SyncEffectsInspector();
+        SyncTreeSelectionFromWorkspace();
     }
     [RelayCommand] private void ExecutePluginMenu(Vectorer.Abstractions.Plugins.IMenuContribution? contribution)
     { if (!IsInteracting && contribution is not null) contribution.Execute(this); }

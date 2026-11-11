@@ -88,6 +88,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         _selectedNodes.AddRange(selection);
         if (_canvasTool is Vectorer.App.Tools.NodeEditTool nodesTool) nodesTool.Synchronize();
         SyncSelectionEditors();
+        SyncSceneTree();
         OnPropertyChanged(nameof(SelectionSummary));
         RequestRedraw();
         StatusMessage = $"Selected {_selectedNodes.Count} item(s).";
@@ -322,6 +323,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         if (_layerDisplayState.SequenceEqual(display))
         {
             if (ActiveLayer is null || !Layers.Contains(ActiveLayer)) ActiveLayer = Layers.FirstOrDefault();
+            SyncSceneTree();
             return;
         }
         _layerDisplayState = display;
@@ -333,6 +335,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         ActiveLayer = previousActiveLayer is not null && Layers.Contains(previousActiveLayer)
             ? previousActiveLayer : Layers.FirstOrDefault();
+        SyncSceneTree();
     }
 
     private void LoadBuiltInAndExternalPlugins()

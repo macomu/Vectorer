@@ -19,6 +19,7 @@ public interface IEditorFileDialogs
     Task<bool> ConfirmDiscardAsync();
     async Task<UnsavedDecision> ConfirmUnsavedAsync() => await ConfirmDiscardAsync() ? UnsavedDecision.Discard : UnsavedDecision.Cancel;
     Task<DocumentSettings?> EditDocumentAsync(DocumentSettings current, bool isNew) => Task.FromResult<DocumentSettings?>(current);
+    Task<bool> ShowRotateLayerDialogAsync(RotateLayerViewModel viewModel) => Task.FromResult(true);
     Task ShowErrorAsync(string message) => Task.CompletedTask;
 }
 
@@ -70,6 +71,54 @@ public sealed class EditorFileDialogs(Window owner) : IEditorFileDialogs
         cancel.Click += (_, _) => dialog.Close(null); apply.Click += (_, _) => { if (vm.IsValid) dialog.Close(new DocumentSettings((float)vm.Width, (float)vm.Height, vm.BackgroundColor, vm.Title)); };
         return await dialog.ShowDialog<DocumentSettings?>(owner);
     }
+
+    public async Task<bool> ShowRotateLayerDialogAsync(RotateLayerViewModel vm)
+    {
+        var dialog = new Window
+        {
+            Title = "レイヤーの角度指定回転",
+            Width = 420,
+            Height = 290,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            DataContext = vm
+        };
+
+        var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 12 };
+        content.Children.Add(new TextBlock { Text = "回転角度 (-360° 〜 +360°)" });
+
+        var angleRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,110") };
+        var slider = new Slider { Minimum = -360, Maximum = 360, Margin = new Avalonia.Thickness(0, 0, 8, 0) };
+        slider.Bind(Slider.ValueProperty, new Binding(nameof(vm.Degrees)) { Mode = BindingMode.TwoWay });
+        var numeric = new NumericUpDown { Minimum = -360, Maximum = 360, Increment = 5 };
+        numeric.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.Degrees)) { Mode = BindingMode.TwoWay });
+        Grid.SetColumn(numeric, 1);
+        angleRow.Children.Add(slider);
+        angleRow.Children.Add(numeric);
+        content.Children.Add(angleRow);
+
+        content.Children.Add(new TextBlock { Text = "回転中心" });
+        var centerCombo = new ComboBox { ItemsSource = vm.CenterOptions, HorizontalAlignment = HorizontalAlignment.Stretch };
+        centerCombo.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(vm.SelectedCenterOption)) { Mode = BindingMode.TwoWay });
+        content.Children.Add(centerCombo);
+
+        var liveCheck = new CheckBox { Content = "リアルタイムプレビュー" };
+        liveCheck.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.LivePreview)) { Mode = BindingMode.TwoWay });
+        content.Children.Add(liveCheck);
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right };
+        var cancel = new Button { Content = "キャンセル" };
+        var apply = new Button { Content = "回転を適用" };
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(apply);
+        content.Children.Add(buttons);
+        dialog.Content = content;
+
+        cancel.Click += (_, _) => dialog.Close(false);
+        apply.Click += (_, _) => dialog.Close(true);
+        return await dialog.ShowDialog<bool>(owner);
+    }
+
     public async Task ShowErrorAsync(string message)
     {
         var dialog = new Window { Title = "ファイル操作エラー", Width = 520, Height = 210, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner };
