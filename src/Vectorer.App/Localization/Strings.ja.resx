@@ -242,4 +242,105 @@
     <value>履歴・表示設定を保存できませんでした: {0}</value>
     <comment>{0}: error message</comment>
   </data>
+  <data name="Status_Ready" xml:space="preserve">
+    <value>準備完了 — Vectorer (.NET 10 + Avalonia + SkiaSharp)</value>
+  </data>
+  <data name="Status_SelectedItems" xml:space="preserve">
+    <value>{0} 個のアイテムを選択しました。</value>
+    <comment>{0}: selected count</comment>
+  </data>
+  <data name="Status_SelectionSummary" xml:space="preserve">
+    <value>選択: {0} 個</value>
+    <comment>{0}: selected count</comment>
+  </data>
+  <data name="Tool_Select_Title" xml:space="preserve">
+    <value>選択</value>
+  </data>
+  <data name="Tool_Select_Hint" xml:space="preserve">
+    <value>選択・移動 (V / S)</value>
+  </data>
+  <data name="Tool_Node_Title" xml:space="preserve">
+    <value>ノード</value>
+  </data>
+  <data name="Tool_Node_Hint" xml:space="preserve">
+    <value>ノード編集 (N / A)</value>
+  </data>
+  <data name="Tool_Rectangle_Title" xml:space="preserve">
+    <value>四角形</value>
+  </data>
+  <data name="Tool_Rectangle_Hint" xml:space="preserve">
+    <value>四角形・角丸 (R)</value>
+  </data>
+  <data name="Tool_Ellipse_Title" xml:space="preserve">
+    <value>楕円</value>
+  </data>
+  <data name="Tool_Ellipse_Hint" xml:space="preserve">
+    <value>円・楕円 (E)</value>
+  </data>
+  <data name="Tool_Arc_Title" xml:space="preserve">
+    <value>円弧</value>
+  </data>
+  <data name="Tool_Arc_Hint" xml:space="preserve">
+    <value>円弧・扇形</value>
+  </data>
+  <data name="Tool_Polygon_Title" xml:space="preserve">
+    <value>多角形</value>
+  </data>
+  <data name="Tool_Polygon_Hint" xml:space="preserve">
+    <value>正多角形 (Y)</value>
+  </data>
+  <data name="Tool_Star_Title" xml:space="preserve">
+    <value>星形</value>
+  </data>
+  <data name="Tool_Star_Hint" xml:space="preserve">
+    <value>星形</value>
+  </data>
+  <data name="Tool_Freehand_Title" xml:space="preserve">
+    <value>鉛筆</value>
+  </data>
+  <data name="Tool_Freehand_Hint" xml:space="preserve">
+    <value>フリーハンド (P)</value>
+  </data>
+  <data name="Tool_Bezier_Title" xml:space="preserve">
+    <value>ベジェ</value>
+  </data>
+  <data name="Tool_Bezier_Hint" xml:space="preserve">
+    <value>ベジェペン (B)</value>
+  </data>
+  <data name="Tool_Text_Title" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="Tool_Text_Hint" xml:space="preserve">
+    <value>テキスト (T)</value>
+  </data>
+  <data name="Tool_Pan_Title" xml:space="preserve">
+    <value>パン</value>
+  </data>
+  <data name="Tool_Pan_Hint" xml:space="preserve">
+    <value>視点移動 (H) / Space + ドラッグ / 中ボタン</value>
+  </data>
+  <data name="ToolHint_Select" xml:space="preserve">
+    <value>Shift: 複数選択 · ドラッグ: 移動/範囲選択 · ハンドル: 拡縮 · 上の丸: 回転</value>
+  </data>
+  <data name="ToolHint_Pan" xml:space="preserve">
+    <value>ドラッグ: 視点移動 · Ctrl + ホイール: ズーム</value>
+  </data>
+  <data name="ToolHint_Freehand" xml:space="preserve">
+    <value>ドラッグ: 自由線 · Esc: キャンセル</value>
+  </data>
+  <data name="ToolHint_Node" xml:space="preserve">
+    <value>点・ハンドルをドラッグ · Shift: 複数選択 · ダブルクリック: 点追加</value>
+  </data>
+  <data name="ToolHint_Bezier" xml:space="preserve">
+    <value>クリック: 頂点 · ドラッグ: 制御点 · Enter: 確定 · 始点クリック: 閉じる</value>
+  </data>
+  <data name="ToolHint_Text" xml:space="preserve">
+    <value>クリック: テキスト入力 · Ctrl+Enter: 確定 · Esc: 取消</value>
+  </data>
+  <data name="ToolHint_Polygon" xml:space="preserve">
+    <value>同種の図形をクリック: 編集 · 中心からドラッグ: 描画 · Ctrl: 新規描画</value>
+  </data>
+  <data name="ToolHint_Shape" xml:space="preserve">
+    <value>同種の図形をクリック: 編集 · ドラッグ: 描画 · Ctrl: 新規描画 · Shift: 比率固定 · Alt: 中心基準</value>
+  </data>
 </root>

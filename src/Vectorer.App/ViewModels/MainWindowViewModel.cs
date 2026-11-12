@@ -44,8 +44,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [ObservableProperty]
     private int _renderVersion;
 
-    [ObservableProperty]
-    private string _statusMessage = "Ready — Vectorer (.NET 10 + Avalonia + SkiaSharp)";
+    private LocalizedMessage _status = new(nameof(Strings.Status_Ready));
+
+    public string StatusMessage
+    {
+        get => L10n.Format(_status);
+        set => SetStatus(LocalizedMessage.Literal(value));
+    }
+
+    public void SetStatus(LocalizedMessage message)
+    {
+        if (Equals(_status, message)) return;
+        _status = message;
+        OnPropertyChanged(nameof(StatusMessage));
+    }
+
+    public void SetStatus(string key, params object?[] arguments) =>
+        SetStatus(new LocalizedMessage(key, arguments));
 
     public IDocumentRenderer DocumentRenderer { get; }
     public AppLocalization L10n { get; }
@@ -65,7 +80,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             canApplyNow: () => !IsInteracting,
             onCultureApplied: (_, _) => OnLanguageApplied(),
             saveSettingsAsync: SaveLanguageSettingAsync,
-            onSaveFailed: ex => StatusMessage = L10n.Format(new LocalizedMessage(nameof(Strings.Status_LanguageSavedFailed), ex.Message)));
+            onSaveFailed: ex => SetStatus(nameof(Strings.Status_LanguageSavedFailed), ex.Message));
 
         _undoRedoService = new UndoRedoService();
         _booleanService = new PathBooleanService();
@@ -102,7 +117,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         SyncSceneTree();
         OnPropertyChanged(nameof(SelectionSummary));
         RequestRedraw();
-        StatusMessage = $"Selected {_selectedNodes.Count} item(s).";
+        SetStatus(nameof(Strings.Status_SelectedItems), _selectedNodes.Count);
     }
 
     public void RequestRedraw() => RequestRedraw(true);

@@ -181,6 +181,26 @@ public sealed partial class LocalizationTests
         Assert.Equal("system", savedLanguages.Last());
     }
 
+    [Fact]
+    public void LanguageChange_RetainsActiveToolInstance_AndRetranslatesStatusAndHints()
+    {
+        var l10n = new AppLocalization(CultureInfo.GetCultureInfo("ja-JP"), CultureInfo.InvariantCulture, "ja");
+        var vm = new MainWindowViewModel(l10n);
+        var originalTool = vm.ActiveToolItem!;
+
+        Assert.Equal("選択", originalTool.Title);
+        Assert.Equal("準備完了 — Vectorer (.NET 10 + Avalonia + SkiaSharp)", vm.StatusMessage);
+        Assert.Equal("選択: 0 個", vm.SelectionSummary);
+
+        vm.SetLanguageCommand.Execute("en");
+
+        Assert.Same(originalTool, vm.ActiveToolItem);
+        Assert.Equal("Select", originalTool.Title);
+        Assert.Equal("Ready — Vectorer (.NET 10 + Avalonia + SkiaSharp)", vm.StatusMessage);
+        Assert.Equal("Selected: 0", vm.SelectionSummary);
+        Assert.Contains("Multi-select", vm.ToolHint);
+    }
+
     private static string FindLocalizationDirectory()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

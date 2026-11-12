@@ -242,4 +242,105 @@
     <value>Could not save history or display settings: {0}</value>
     <comment>{0}: error message</comment>
   </data>
+  <data name="Status_Ready" xml:space="preserve">
+    <value>Ready — Vectorer (.NET 10 + Avalonia + SkiaSharp)</value>
+  </data>
+  <data name="Status_SelectedItems" xml:space="preserve">
+    <value>Selected {0} item(s).</value>
+    <comment>{0}: selected count</comment>
+  </data>
+  <data name="Status_SelectionSummary" xml:space="preserve">
+    <value>Selected: {0}</value>
+    <comment>{0}: selected count</comment>
+  </data>
+  <data name="Tool_Select_Title" xml:space="preserve">
+    <value>Select</value>
+  </data>
+  <data name="Tool_Select_Hint" xml:space="preserve">
+    <value>Select / Move (V / S)</value>
+  </data>
+  <data name="Tool_Node_Title" xml:space="preserve">
+    <value>Node</value>
+  </data>
+  <data name="Tool_Node_Hint" xml:space="preserve">
+    <value>Edit Nodes (N / A)</value>
+  </data>
+  <data name="Tool_Rectangle_Title" xml:space="preserve">
+    <value>Rectangle</value>
+  </data>
+  <data name="Tool_Rectangle_Hint" xml:space="preserve">
+    <value>Rectangle / Rounded (R)</value>
+  </data>
+  <data name="Tool_Ellipse_Title" xml:space="preserve">
+    <value>Ellipse</value>
+  </data>
+  <data name="Tool_Ellipse_Hint" xml:space="preserve">
+    <value>Circle / Ellipse (E)</value>
+  </data>
+  <data name="Tool_Arc_Title" xml:space="preserve">
+    <value>Arc</value>
+  </data>
+  <data name="Tool_Arc_Hint" xml:space="preserve">
+    <value>Arc / Pie</value>
+  </data>
+  <data name="Tool_Polygon_Title" xml:space="preserve">
+    <value>Polygon</value>
+  </data>
+  <data name="Tool_Polygon_Hint" xml:space="preserve">
+    <value>Regular Polygon (Y)</value>
+  </data>
+  <data name="Tool_Star_Title" xml:space="preserve">
+    <value>Star</value>
+  </data>
+  <data name="Tool_Star_Hint" xml:space="preserve">
+    <value>Star</value>
+  </data>
+  <data name="Tool_Freehand_Title" xml:space="preserve">
+    <value>Pencil</value>
+  </data>
+  <data name="Tool_Freehand_Hint" xml:space="preserve">
+    <value>Freehand (P)</value>
+  </data>
+  <data name="Tool_Bezier_Title" xml:space="preserve">
+    <value>Bezier</value>
+  </data>
+  <data name="Tool_Bezier_Hint" xml:space="preserve">
+    <value>Bezier Pen (B)</value>
+  </data>
+  <data name="Tool_Text_Title" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Tool_Text_Hint" xml:space="preserve">
+    <value>Text (T)</value>
+  </data>
+  <data name="Tool_Pan_Title" xml:space="preserve">
+    <value>Pan</value>
+  </data>
+  <data name="Tool_Pan_Hint" xml:space="preserve">
+    <value>Pan View (H) / Space + Drag / Middle Button</value>
+  </data>
+  <data name="ToolHint_Select" xml:space="preserve">
+    <value>Shift: Multi-select · Drag: Move / Marquee · Handles: Scale · Top circle: Rotate</value>
+  </data>
+  <data name="ToolHint_Pan" xml:space="preserve">
+    <value>Drag: Pan view · Ctrl + Wheel: Zoom</value>
+  </data>
+  <data name="ToolHint_Freehand" xml:space="preserve">
+    <value>Drag: Freehand stroke · Esc: Cancel</value>
+  </data>
+  <data name="ToolHint_Node" xml:space="preserve">
+    <value>Drag nodes/handles · Shift: Multi-select · Double-click: Add node</value>
+  </data>
+  <data name="ToolHint_Bezier" xml:space="preserve">
+    <value>Click: Vertex · Drag: Control handle · Enter: Commit · Click start: Close</value>
+  </data>
+  <data name="ToolHint_Text" xml:space="preserve">
+    <value>Click: Enter text · Ctrl+Enter: Commit · Esc: Cancel</value>
+  </data>
+  <data name="ToolHint_Polygon" xml:space="preserve">
+    <value>Click matching shape: Edit · Drag from center: Draw · Ctrl: Force new</value>
+  </data>
+  <data name="ToolHint_Shape" xml:space="preserve">
+    <value>Click matching shape: Edit · Drag: Draw · Ctrl: Force new · Shift: Lock ratio · Alt: From center</value>
+  </data>
 </root>

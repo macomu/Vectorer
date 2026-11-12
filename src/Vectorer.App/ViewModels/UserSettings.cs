@@ -50,7 +50,7 @@ public sealed partial class MainWindowViewModel
         if (_userSettingsStore is null) return;
         try { await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray(), L10n.RequestedLanguage)); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { StatusMessage = L10n.Format(new Localization.LocalizedMessage(nameof(Localization.Strings.Status_SettingsSaveFailed), ex.Message)); }
+        { SetStatus(nameof(Localization.Strings.Status_SettingsSaveFailed), ex.Message); }
     }
 
     private async Task SaveLanguageSettingAsync(string language)
@@ -61,7 +61,14 @@ public sealed partial class MainWindowViewModel
 
     private void OnLanguageApplied()
     {
+        foreach (var tool in Tools)
+        {
+            tool.NotifyLocalizationChanged();
+        }
         OnPropertyChanged(nameof(RecentFileMenuItems));
+        OnPropertyChanged(nameof(StatusMessage));
+        OnPropertyChanged(nameof(SelectionSummary));
+        OnPropertyChanged(nameof(ToolHint));
     }
 
     [RelayCommand] private void SetLanguage(string? language) =>

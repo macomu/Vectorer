@@ -3,31 +3,57 @@ using CommunityToolkit.Mvvm.Input;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
 using Vectorer.Abstractions.Styling;
+using Vectorer.App.Localization;
 using Vectorer.App.Tools;
 using Vectorer.Core.Commands;
 using Vectorer.Core.Geometry;
 
 namespace Vectorer.App.ViewModels;
 
-public sealed record ToolItem(DrawingTool Tool, string Title, string Icon, string Hint)
+public sealed class ToolItem : ObservableObject
 {
+    private readonly AppLocalization _l10n;
+    private readonly string _titleKey;
+    private readonly string _hintKey;
+
+    public DrawingTool Tool { get; }
+    public string Icon { get; }
+    public string Title => _l10n.Get(_titleKey);
+    public string Hint => _l10n.Get(_hintKey);
+
+    public ToolItem(DrawingTool tool, string titleKey, string icon, string hintKey, AppLocalization l10n)
+    {
+        Tool = tool;
+        _titleKey = titleKey;
+        Icon = icon;
+        _hintKey = hintKey;
+        _l10n = l10n;
+    }
+
+    public void NotifyLocalizationChanged()
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Hint));
+    }
+
     public override string ToString() => Hint;
 }
 
 public sealed partial class MainWindowViewModel
 {
-    public IReadOnlyList<ToolItem> Tools { get; } = [
-        new(DrawingTool.Select, "選択", "select", "選択・移動 (V / S)"),
-        new(DrawingTool.Node, "ノード", "node", "ノード編集 (N / A)"),
-        new(DrawingTool.Rectangle, "四角形", "rectangle", "四角形・角丸 (R)"),
-        new(DrawingTool.Ellipse, "楕円", "ellipse", "円・楕円 (E)"),
-        new(DrawingTool.Arc, "円弧", "arc", "円弧・扇形"),
-        new(DrawingTool.Polygon, "多角形", "polygon", "正多角形 (Y)"),
-        new(DrawingTool.Star, "星形", "star", "星形"),
-        new(DrawingTool.Freehand, "鉛筆", "pencil", "フリーハンド (P)"),
-        new(DrawingTool.Bezier, "ベジェ", "bezier", "ベジェペン (B)"),
-        new(DrawingTool.Text, "テキスト", "text", "テキスト (T)"),
-        new(DrawingTool.Pan, "パン", "hand", "視点移動 (H) / Space + ドラッグ / 中ボタン")];
+    private IReadOnlyList<ToolItem>? _tools;
+    public IReadOnlyList<ToolItem> Tools => _tools ??= [
+        new(DrawingTool.Select, nameof(Strings.Tool_Select_Title), "select", nameof(Strings.Tool_Select_Hint), L10n),
+        new(DrawingTool.Node, nameof(Strings.Tool_Node_Title), "node", nameof(Strings.Tool_Node_Hint), L10n),
+        new(DrawingTool.Rectangle, nameof(Strings.Tool_Rectangle_Title), "rectangle", nameof(Strings.Tool_Rectangle_Hint), L10n),
+        new(DrawingTool.Ellipse, nameof(Strings.Tool_Ellipse_Title), "ellipse", nameof(Strings.Tool_Ellipse_Hint), L10n),
+        new(DrawingTool.Arc, nameof(Strings.Tool_Arc_Title), "arc", nameof(Strings.Tool_Arc_Hint), L10n),
+        new(DrawingTool.Polygon, nameof(Strings.Tool_Polygon_Title), "polygon", nameof(Strings.Tool_Polygon_Hint), L10n),
+        new(DrawingTool.Star, nameof(Strings.Tool_Star_Title), "star", nameof(Strings.Tool_Star_Hint), L10n),
+        new(DrawingTool.Freehand, nameof(Strings.Tool_Freehand_Title), "pencil", nameof(Strings.Tool_Freehand_Hint), L10n),
+        new(DrawingTool.Bezier, nameof(Strings.Tool_Bezier_Title), "bezier", nameof(Strings.Tool_Bezier_Hint), L10n),
+        new(DrawingTool.Text, nameof(Strings.Tool_Text_Title), "text", nameof(Strings.Tool_Text_Hint), L10n),
+        new(DrawingTool.Pan, nameof(Strings.Tool_Pan_Title), "hand", nameof(Strings.Tool_Pan_Hint), L10n)];
 
     [ObservableProperty] private ToolItem? _activeToolItem;
     [ObservableProperty] private double _zoom = 1;
@@ -61,19 +87,19 @@ public sealed partial class MainWindowViewModel
     public bool IsFreehandTool => ActiveTool == DrawingTool.Freehand;
     public bool IsTextTool => ActiveTool == DrawingTool.Text;
     public IReadOnlyList<ArcCloseMode> ArcModes { get; } = Enum.GetValues<ArcCloseMode>();
-    public string SelectionSummary => $"選択: {_selectedNodes.Count} 個";
+    public string SelectionSummary => L10n.Format(new LocalizedMessage(nameof(Strings.Status_SelectionSummary), _selectedNodes.Count));
     public string ZoomLabel => $"{Zoom:P0}";
-    public string ToolHint => ActiveTool switch
+    public string ToolHint => L10n.Get(ActiveTool switch
     {
-        DrawingTool.Select => "Shift: 複数選択 · ドラッグ: 移動/範囲選択 · ハンドル: 拡縮 · 上の丸: 回転",
-        DrawingTool.Pan => "ドラッグ: 視点移動 · Ctrl + ホイール: ズーム",
-        DrawingTool.Freehand => "ドラッグ: 自由線 · Esc: キャンセル",
-        DrawingTool.Node => "点・ハンドルをドラッグ · Shift: 複数選択 · ダブルクリック: 点追加",
-        DrawingTool.Bezier => "クリック: 頂点 · ドラッグ: 制御点 · Enter: 確定 · 始点クリック: 閉じる",
-        DrawingTool.Text => "クリック: テキスト入力 · Ctrl+Enter: 確定 · Esc: 取消",
-        DrawingTool.Polygon or DrawingTool.Star => "同種の図形をクリック: 編集 · 中心からドラッグ: 描画 · Ctrl: 新規描画",
-        _ => "同種の図形をクリック: 編集 · ドラッグ: 描画 · Ctrl: 新規描画 · Shift: 比率固定 · Alt: 中心基準"
-    };
+        DrawingTool.Select => nameof(Strings.ToolHint_Select),
+        DrawingTool.Pan => nameof(Strings.ToolHint_Pan),
+        DrawingTool.Freehand => nameof(Strings.ToolHint_Freehand),
+        DrawingTool.Node => nameof(Strings.ToolHint_Node),
+        DrawingTool.Bezier => nameof(Strings.ToolHint_Bezier),
+        DrawingTool.Text => nameof(Strings.ToolHint_Text),
+        DrawingTool.Polygon or DrawingTool.Star => nameof(Strings.ToolHint_Polygon),
+        _ => nameof(Strings.ToolHint_Shape)
+    });
 
     private ICanvasTool? _canvasTool;
     public ICanvasTool CanvasTool => _canvasTool ??= new SelectionTool(this);
