@@ -12,15 +12,14 @@ public sealed partial class MainWindowViewModel
     public ObservableCollection<RecentEditorFile> RecentFiles { get; } = [];
     public bool HasRecentFiles => RecentFiles.Count > 0;
     public IEnumerable<RecentFileMenuEntry> RecentFileMenuItems => RecentFiles.Count == 0
-        ? [new("履歴はありません", null, null, false)]
+        ? [new(L10n.Menu_File_Recent_Empty, null, null, false)]
         : RecentFiles.Select(f => new RecentFileMenuEntry(f.DisplayName, OpenRecentFileCommand, f))
-            .Append(new("履歴を消去", ClearRecentFilesCommand, null));
+            .Append(new(L10n.Menu_File_Recent_Clear, ClearRecentFilesCommand, null));
     public double InspectorWidth { get; private set; } = 300;
 
-    public async Task LoadUserSettingsAsync(IEditorUserSettingsStore store)
+    public void ApplyLoadedSettings(EditorUserSettings settings, IEditorUserSettingsStore store)
     {
         _userSettingsStore = store;
-        var settings = await store.LoadAsync();
         InspectorWidth = double.IsFinite(settings.InspectorWidth) ? Math.Clamp(settings.InspectorWidth, 240, 650) : 300;
         RecentFiles.Clear();
         foreach (var file in settings.RecentFiles ?? [])
@@ -28,6 +27,12 @@ public sealed partial class MainWindowViewModel
                 && !RecentFiles.Any(f => SameLocation(f.Location, file.Location)) && RecentFiles.Count < 10)
                 RecentFiles.Add(file);
         OnPropertyChanged(nameof(HasRecentFiles)); OnPropertyChanged(nameof(RecentFileMenuItems));
+    }
+
+    public async Task LoadUserSettingsAsync(IEditorUserSettingsStore store)
+    {
+        var settings = await store.LoadAsync();
+        ApplyLoadedSettings(settings, store);
     }
 
     private static bool SameLocation(string a, string b)
@@ -43,10 +48,24 @@ public sealed partial class MainWindowViewModel
     {
         if (inspectorWidth is { } width && double.IsFinite(width)) InspectorWidth = Math.Clamp(width, 240, 650);
         if (_userSettingsStore is null) return;
-        try { await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray())); }
+        try { await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray(), L10n.RequestedLanguage)); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { StatusMessage = $"履歴・表示設定を保存できませんでした: {ex.Message}"; }
+        { StatusMessage = L10n.Format(new Localization.LocalizedMessage(nameof(Localization.Strings.Status_SettingsSaveFailed), ex.Message)); }
     }
+
+    private async Task SaveLanguageSettingAsync(string language)
+    {
+        if (_userSettingsStore is null) return;
+        await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray(), language));
+    }
+
+    private void OnLanguageApplied()
+    {
+        OnPropertyChanged(nameof(RecentFileMenuItems));
+    }
+
+    [RelayCommand] private void SetLanguage(string? language) =>
+        _ = LanguageCoordinator.RequestLanguageAsync(language);
 
     private async Task RememberFileAsync(EditorFile file)
     {

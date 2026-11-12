@@ -8,6 +8,7 @@ using Vectorer.Abstractions.Geometry;
 using Vectorer.Abstractions.Plugins;
 using Vectorer.Abstractions.Services;
 using Vectorer.Abstractions.Styling;
+using Vectorer.App.Localization;
 using Vectorer.Core.Commands;
 using Vectorer.Core.Geometry;
 using Vectorer.Plugins;
@@ -47,6 +48,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     private string _statusMessage = "Ready — Vectorer (.NET 10 + Avalonia + SkiaSharp)";
 
     public IDocumentRenderer DocumentRenderer { get; }
+    public AppLocalization L10n { get; }
+    public LanguageChangeCoordinator LanguageCoordinator { get; }
 
     public ObservableCollection<LayerNode> Layers { get; } = [];
     public ObservableCollection<IMenuContribution> PluginMenus { get; } = [];
@@ -54,8 +57,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     public IReadOnlyList<SceneNode> SelectedNodes => _selectedNodes;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(AppLocalization? localization = null)
     {
+        L10n = localization ?? new AppLocalization();
+        LanguageCoordinator = new LanguageChangeCoordinator(
+            L10n,
+            canApplyNow: () => !IsInteracting,
+            onCultureApplied: (_, _) => OnLanguageApplied(),
+            saveSettingsAsync: SaveLanguageSettingAsync,
+            onSaveFailed: ex => StatusMessage = L10n.Format(new LocalizedMessage(nameof(Strings.Status_LanguageSavedFailed), ex.Message)));
+
         _undoRedoService = new UndoRedoService();
         _booleanService = new PathBooleanService();
         _svgSerializer = new SvgSerializer();
@@ -104,6 +115,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         OnPropertyChanged(nameof(ScopePath));
         OnPropertyChanged(nameof(IsInGroup));
         RenderVersion++;
+        if (!IsInteracting && LanguageCoordinator.PendingLanguage is not null)
+        {
+            _ = LanguageCoordinator.FlushPendingAsync();
+        }
     }
 
     [RelayCommand]

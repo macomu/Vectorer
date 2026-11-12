@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Menu_File" xml:space="preserve">
+    <value>ファイル(_F)</value>
+  </data>
+  <data name="Menu_File_New" xml:space="preserve">
+    <value>新規作成(_N)</value>
+  </data>
+  <data name="Menu_File_Open" xml:space="preserve">
+    <value>開く(_O)…</value>
+  </data>
+  <data name="Menu_File_Recent" xml:space="preserve">
+    <value>最近使ったファイル(_R)</value>
+  </data>
+  <data name="Menu_File_Recent_Empty" xml:space="preserve">
+    <value>履歴はありません</value>
+  </data>
+  <data name="Menu_File_Recent_Clear" xml:space="preserve">
+    <value>履歴を消去</value>
+  </data>
+  <data name="Menu_File_Save" xml:space="preserve">
+    <value>保存(_S)</value>
+  </data>
+  <data name="Menu_File_SaveAs" xml:space="preserve">
+    <value>名前を付けて保存(_A)…</value>
+  </data>
+  <data name="Menu_File_ExportPng" xml:space="preserve">
+    <value>PNG エクスポート(_P)…</value>
+  </data>
+  <data name="Menu_File_DocumentSettings" xml:space="preserve">
+    <value>ドキュメント設定(_D)…</value>
+  </data>
+  <data name="Menu_File_Exit" xml:space="preserve">
+    <value>終了(_X)</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>表示(_V)</value>
+  </data>
+  <data name="Menu_View_Language" xml:space="preserve">
+    <value>言語 / Language</value>
+  </data>
+  <data name="Menu_View_Language_System" xml:space="preserve">
+    <value>システムに従う</value>
+  </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>編集(_E)</value>
+  </data>
+  <data name="Menu_Edit_Undo" xml:space="preserve">
+    <value>元に戻す(_U)</value>
+  </data>
+  <data name="Menu_Edit_Redo" xml:space="preserve">
+    <value>やり直し(_R)</value>
+  </data>
+  <data name="Menu_Edit_Cut" xml:space="preserve">
+    <value>切り取り(_T)</value>
+  </data>
+  <data name="Menu_Edit_Copy" xml:space="preserve">
+    <value>コピー(_C)</value>
+  </data>
+  <data name="Menu_Edit_Paste" xml:space="preserve">
+    <value>貼り付け(_P)</value>
+  </data>
+  <data name="Menu_Edit_Duplicate" xml:space="preserve">
+    <value>複製(_D)</value>
+  </data>
+  <data name="Menu_Edit_Delete" xml:space="preserve">
+    <value>削除(_L)</value>
+  </data>
+  <data name="Menu_Edit_SelectAll" xml:space="preserve">
+    <value>すべて選択(_A)</value>
+  </data>
+  <data name="Menu_View_ZoomIn" xml:space="preserve">
+    <value>拡大(_I)</value>
+  </data>
+  <data name="Menu_View_ZoomOut" xml:space="preserve">
+    <value>縮小(_O)</value>
+  </data>
+  <data name="Menu_View_Zoom100" xml:space="preserve">
+    <value>100%</value>
+  </data>
+  <data name="Menu_View_FitCanvas" xml:space="preserve">
+    <value>キャンバス全体を表示(_F)</value>
+  </data>
+  <data name="Menu_View_ToggleGrid" xml:space="preserve">
+    <value>グリッド表示切替(_G)</value>
+  </data>
+  <data name="Menu_View_ToggleSnap" xml:space="preserve">
+    <value>スナップ切替(_S)</value>
+  </data>
+  <data name="Menu_Object" xml:space="preserve">
+    <value>オブジェクト(_O)</value>
+  </data>
+  <data name="Menu_Object_Group" xml:space="preserve">
+    <value>グループ化(_G)</value>
+  </data>
+  <data name="Menu_Object_Ungroup" xml:space="preserve">
+    <value>グループ解除(_U)</value>
+  </data>
+  <data name="Menu_Object_EnterGroup" xml:space="preserve">
+    <value>グループ内を編集(_E)</value>
+  </data>
+  <data name="Menu_Object_ExitGroup" xml:space="preserve">
+    <value>親階層へ戻る(_X)</value>
+  </data>
+  <data name="Menu_Object_FlipHorizontal" xml:space="preserve">
+    <value>左右反転(_H)</value>
+  </data>
+  <data name="Menu_Object_FlipVertical" xml:space="preserve">
+    <value>上下反転(_V)</value>
+  </data>
+  <data name="Menu_Object_Order" xml:space="preserve">
+    <value>重ね順(_O)</value>
+  </data>
+  <data name="Menu_Object_Order_Front" xml:space="preserve">
+    <value>最前面(_F)</value>
+  </data>
+  <data name="Menu_Object_Order_Forward" xml:space="preserve">
+    <value>前面へ(_W)</value>
+  </data>
+  <data name="Menu_Object_Order_Backward" xml:space="preserve">
+    <value>背面へ(_B)</value>
+  </data>
+  <data name="Menu_Object_Order_Back" xml:space="preserve">
+    <value>最背面(_K)</value>
+  </data>
+  <data name="Menu_Object_Align" xml:space="preserve">
+    <value>整列と分布(_A)</value>
+  </data>
+  <data name="Menu_Object_Align_Left" xml:space="preserve">
+    <value>左揃え(_L)</value>
+  </data>
+  <data name="Menu_Object_Align_CenterX" xml:space="preserve">
+    <value>左右中央(_H)</value>
+  </data>
+  <data name="Menu_Object_Align_Right" xml:space="preserve">
+    <value>右揃え(_R)</value>
+  </data>
+  <data name="Menu_Object_Align_Top" xml:space="preserve">
+    <value>上揃え(_T)</value>
+  </data>
+  <data name="Menu_Object_Align_CenterY" xml:space="preserve">
+    <value>上下中央(_V)</value>
+  </data>
+  <data name="Menu_Object_Align_Bottom" xml:space="preserve">
+    <value>下揃え(_B)</value>
+  </data>
+  <data name="Menu_Object_Align_DistributeX" xml:space="preserve">
+    <value>横に等間隔(_X)</value>
+  </data>
+  <data name="Menu_Object_Align_DistributeY" xml:space="preserve">
+    <value>縦に等間隔(_Y)</value>
+  </data>
+  <data name="Menu_Path" xml:space="preserve">
+    <value>パス(_P)</value>
+  </data>
+  <data name="Menu_Path_ObjectToPath" xml:space="preserve">
+    <value>オブジェクトをパスに変換(_O)</value>
+  </data>
+  <data name="Menu_Path_StrokeToPath" xml:space="preserve">
+    <value>ストロークをパスに変換(_S)</value>
+  </data>
+  <data name="Menu_Path_Union" xml:space="preserve">
+    <value>統合(_U)</value>
+  </data>
+  <data name="Menu_Path_Difference" xml:space="preserve">
+    <value>差分(_D)</value>
+  </data>
+  <data name="Menu_Path_Intersection" xml:space="preserve">
+    <value>交差(_I)</value>
+  </data>
+  <data name="Menu_Path_Xor" xml:space="preserve">
+    <value>排他的論理和(_X)</value>
+  </data>
+  <data name="Menu_Path_ReverseDifference" xml:space="preserve">
+    <value>逆差分(_R)</value>
+  </data>
+  <data name="Menu_Path_ToggleClosed" xml:space="preserve">
+    <value>開く/閉じる(_O)</value>
+  </data>
+  <data name="Menu_Path_Join" xml:space="preserve">
+    <value>端点を結合(_J)</value>
+  </data>
+  <data name="Menu_Path_Simplify" xml:space="preserve">
+    <value>シンプル化(_M)</value>
+  </data>
+  <data name="Menu_Layer" xml:space="preserve">
+    <value>レイヤー(_L)</value>
+  </data>
+  <data name="Menu_Layer_New" xml:space="preserve">
+    <value>新規レイヤー(_N)</value>
+  </data>
+  <data name="Menu_Layer_Duplicate" xml:space="preserve">
+    <value>レイヤーを複製(_D)</value>
+  </data>
+  <data name="Menu_Layer_Delete" xml:space="preserve">
+    <value>レイヤーを削除(_L)</value>
+  </data>
+  <data name="Menu_Layer_RotateFlip" xml:space="preserve">
+    <value>回転・反転(_R)</value>
+  </data>
+  <data name="Menu_Layer_Rotate90CW" xml:space="preserve">
+    <value>時計回り90°(_C)</value>
+  </data>
+  <data name="Menu_Layer_Rotate90CCW" xml:space="preserve">
+    <value>反時計回り90°(_W)</value>
+  </data>
+  <data name="Menu_Layer_Rotate180" xml:space="preserve">
+    <value>180°(_1)</value>
+  </data>
+  <data name="Menu_Layer_RotateCustom" xml:space="preserve">
+    <value>角度を指定して回転(_R)…</value>
+  </data>
+  <data name="Menu_Layer_BlendMode" xml:space="preserve">
+    <value>合成モード(_B)</value>
+  </data>
+  <data name="Menu_Layer_Order" xml:space="preserve">
+    <value>順序(_O)</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Status_LanguageSavedFailed" xml:space="preserve">
+    <value>言語は変更されましたが、設定を保存できませんでした: {0}</value>
+    <comment>{0}: error message</comment>
+  </data>
+  <data name="Status_SettingsSaveFailed" xml:space="preserve">
+    <value>履歴・表示設定を保存できませんでした: {0}</value>
+    <comment>{0}: error message</comment>
+  </data>
+</root>

@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Menu_File" xml:space="preserve">
+    <value>_File</value>
+  </data>
+  <data name="Menu_File_New" xml:space="preserve">
+    <value>_New</value>
+  </data>
+  <data name="Menu_File_Open" xml:space="preserve">
+    <value>_Open…</value>
+  </data>
+  <data name="Menu_File_Recent" xml:space="preserve">
+    <value>Open _Recent</value>
+  </data>
+  <data name="Menu_File_Recent_Empty" xml:space="preserve">
+    <value>No recent files</value>
+  </data>
+  <data name="Menu_File_Recent_Clear" xml:space="preserve">
+    <value>Clear Recent</value>
+  </data>
+  <data name="Menu_File_Save" xml:space="preserve">
+    <value>_Save</value>
+  </data>
+  <data name="Menu_File_SaveAs" xml:space="preserve">
+    <value>Save _As…</value>
+  </data>
+  <data name="Menu_File_ExportPng" xml:space="preserve">
+    <value>Export _PNG…</value>
+  </data>
+  <data name="Menu_File_DocumentSettings" xml:space="preserve">
+    <value>_Document Settings…</value>
+  </data>
+  <data name="Menu_File_Exit" xml:space="preserve">
+    <value>E_xit</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>_View</value>
+  </data>
+  <data name="Menu_View_Language" xml:space="preserve">
+    <value>Language / 言語</value>
+  </data>
+  <data name="Menu_View_Language_System" xml:space="preserve">
+    <value>Follow System</value>
+  </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>_Edit</value>
+  </data>
+  <data name="Menu_Edit_Undo" xml:space="preserve">
+    <value>_Undo</value>
+  </data>
+  <data name="Menu_Edit_Redo" xml:space="preserve">
+    <value>_Redo</value>
+  </data>
+  <data name="Menu_Edit_Cut" xml:space="preserve">
+    <value>Cu_t</value>
+  </data>
+  <data name="Menu_Edit_Copy" xml:space="preserve">
+    <value>_Copy</value>
+  </data>
+  <data name="Menu_Edit_Paste" xml:space="preserve">
+    <value>_Paste</value>
+  </data>
+  <data name="Menu_Edit_Duplicate" xml:space="preserve">
+    <value>_Duplicate</value>
+  </data>
+  <data name="Menu_Edit_Delete" xml:space="preserve">
+    <value>De_lete</value>
+  </data>
+  <data name="Menu_Edit_SelectAll" xml:space="preserve">
+    <value>Select _All</value>
+  </data>
+  <data name="Menu_View_ZoomIn" xml:space="preserve">
+    <value>Zoom _In</value>
+  </data>
+  <data name="Menu_View_ZoomOut" xml:space="preserve">
+    <value>Zoom _Out</value>
+  </data>
+  <data name="Menu_View_Zoom100" xml:space="preserve">
+    <value>100%</value>
+  </data>
+  <data name="Menu_View_FitCanvas" xml:space="preserve">
+    <value>_Fit Canvas</value>
+  </data>
+  <data name="Menu_View_ToggleGrid" xml:space="preserve">
+    <value>Toggle _Grid</value>
+  </data>
+  <data name="Menu_View_ToggleSnap" xml:space="preserve">
+    <value>Toggle _Snap</value>
+  </data>
+  <data name="Menu_Object" xml:space="preserve">
+    <value>_Object</value>
+  </data>
+  <data name="Menu_Object_Group" xml:space="preserve">
+    <value>_Group</value>
+  </data>
+  <data name="Menu_Object_Ungroup" xml:space="preserve">
+    <value>_Ungroup</value>
+  </data>
+  <data name="Menu_Object_EnterGroup" xml:space="preserve">
+    <value>_Enter Group</value>
+  </data>
+  <data name="Menu_Object_ExitGroup" xml:space="preserve">
+    <value>E_xit Group</value>
+  </data>
+  <data name="Menu_Object_FlipHorizontal" xml:space="preserve">
+    <value>Flip _Horizontal</value>
+  </data>
+  <data name="Menu_Object_FlipVertical" xml:space="preserve">
+    <value>Flip _Vertical</value>
+  </data>
+  <data name="Menu_Object_Order" xml:space="preserve">
+    <value>_Order</value>
+  </data>
+  <data name="Menu_Object_Order_Front" xml:space="preserve">
+    <value>Bring to _Front</value>
+  </data>
+  <data name="Menu_Object_Order_Forward" xml:space="preserve">
+    <value>Bring For_ward</value>
+  </data>
+  <data name="Menu_Object_Order_Backward" xml:space="preserve">
+    <value>Send _Backward</value>
+  </data>
+  <data name="Menu_Object_Order_Back" xml:space="preserve">
+    <value>Send to Bac_k</value>
+  </data>
+  <data name="Menu_Object_Align" xml:space="preserve">
+    <value>_Align &amp; Distribute</value>
+  </data>
+  <data name="Menu_Object_Align_Left" xml:space="preserve">
+    <value>Align _Left</value>
+  </data>
+  <data name="Menu_Object_Align_CenterX" xml:space="preserve">
+    <value>Align Center _Horizontal</value>
+  </data>
+  <data name="Menu_Object_Align_Right" xml:space="preserve">
+    <value>Align _Right</value>
+  </data>
+  <data name="Menu_Object_Align_Top" xml:space="preserve">
+    <value>Align _Top</value>
+  </data>
+  <data name="Menu_Object_Align_CenterY" xml:space="preserve">
+    <value>Align Center _Vertical</value>
+  </data>
+  <data name="Menu_Object_Align_Bottom" xml:space="preserve">
+    <value>Align _Bottom</value>
+  </data>
+  <data name="Menu_Object_Align_DistributeX" xml:space="preserve">
+    <value>Distribute _Horizontally</value>
+  </data>
+  <data name="Menu_Object_Align_DistributeY" xml:space="preserve">
+    <value>Distribute _Vertically</value>
+  </data>
+  <data name="Menu_Path" xml:space="preserve">
+    <value>_Path</value>
+  </data>
+  <data name="Menu_Path_ObjectToPath" xml:space="preserve">
+    <value>_Object to Path</value>
+  </data>
+  <data name="Menu_Path_StrokeToPath" xml:space="preserve">
+    <value>_Stroke to Path</value>
+  </data>
+  <data name="Menu_Path_Union" xml:space="preserve">
+    <value>_Union</value>
+  </data>
+  <data name="Menu_Path_Difference" xml:space="preserve">
+    <value>_Difference</value>
+  </data>
+  <data name="Menu_Path_Intersection" xml:space="preserve">
+    <value>_Intersection</value>
+  </data>
+  <data name="Menu_Path_Xor" xml:space="preserve">
+    <value>E_xclusion (Xor)</value>
+  </data>
+  <data name="Menu_Path_ReverseDifference" xml:space="preserve">
+    <value>_Reverse Difference</value>
+  </data>
+  <data name="Menu_Path_ToggleClosed" xml:space="preserve">
+    <value>_Open / Close Path</value>
+  </data>
+  <data name="Menu_Path_Join" xml:space="preserve">
+    <value>_Join Endpoints</value>
+  </data>
+  <data name="Menu_Path_Simplify" xml:space="preserve">
+    <value>Si_mplify</value>
+  </data>
+  <data name="Menu_Layer" xml:space="preserve">
+    <value>_Layer</value>
+  </data>
+  <data name="Menu_Layer_New" xml:space="preserve">
+    <value>_New Layer</value>
+  </data>
+  <data name="Menu_Layer_Duplicate" xml:space="preserve">
+    <value>_Duplicate Layer</value>
+  </data>
+  <data name="Menu_Layer_Delete" xml:space="preserve">
+    <value>De_lete Layer</value>
+  </data>
+  <data name="Menu_Layer_RotateFlip" xml:space="preserve">
+    <value>_Rotate &amp; Flip</value>
+  </data>
+  <data name="Menu_Layer_Rotate90CW" xml:space="preserve">
+    <value>Rotate 90° _CW</value>
+  </data>
+  <data name="Menu_Layer_Rotate90CCW" xml:space="preserve">
+    <value>Rotate 90° _CCW</value>
+  </data>
+  <data name="Menu_Layer_Rotate180" xml:space="preserve">
+    <value>Rotate _180°</value>
+  </data>
+  <data name="Menu_Layer_RotateCustom" xml:space="preserve">
+    <value>_Rotate by Angle…</value>
+  </data>
+  <data name="Menu_Layer_BlendMode" xml:space="preserve">
+    <value>_Blend Mode</value>
+  </data>
+  <data name="Menu_Layer_Order" xml:space="preserve">
+    <value>_Order</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Status_LanguageSavedFailed" xml:space="preserve">
+    <value>Language changed, but settings could not be saved: {0}</value>
+    <comment>{0}: error message</comment>
+  </data>
+  <data name="Status_SettingsSaveFailed" xml:space="preserve">
+    <value>Could not save history or display settings: {0}</value>
+    <comment>{0}: error message</comment>
+  </data>
+</root>

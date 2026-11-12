@@ -25,10 +25,10 @@
   </Window.KeyBindings>
   <DockPanel IsEnabled="{Binding !IsBusy}">
     <Menu DockPanel.Dock="Top" Background="#161B22">
-      <MenuItem Header="ファイル">
-        <MenuItem Header="新規" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
-        <MenuItem Header="開く…" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
-        <MenuItem Header="最近開いたファイル" ItemsSource="{Binding RecentFileMenuItems}">
+      <MenuItem Header="{Binding L10n.Menu_File, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_File_New, Mode=OneWay}" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_Open, Mode=OneWay}" InputGesture="Ctrl+O" Command="{Binding OpenDocumentCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_Recent, Mode=OneWay}" ItemsSource="{Binding RecentFileMenuItems}">
           <MenuItem.ItemContainerTheme>
             <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:RecentFileMenuEntry">
               <Setter Property="Header" Value="{Binding Header}" />
@@ -39,83 +39,101 @@
             </ControlTheme>
           </MenuItem.ItemContainerTheme>
         </MenuItem>
-        <MenuItem Header="保存" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
-        <MenuItem Header="名前を付けて保存…" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
-        <MenuItem Header="エクスポート (PNG)…" InputGesture="Ctrl+Shift+E" Command="{Binding ExportPngCommand}" />
-        <Separator /><MenuItem Header="ドキュメント設定…" InputGesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
-        <MenuItem Header="終了" InputGesture="Alt+F4" Command="{Binding ExitApplicationCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_Save, Mode=OneWay}" InputGesture="Ctrl+S" Command="{Binding SaveDocumentCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_SaveAs, Mode=OneWay}" InputGesture="Ctrl+Shift+S" Command="{Binding SaveDocumentAsCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_ExportPng, Mode=OneWay}" InputGesture="Ctrl+Shift+E" Command="{Binding ExportPngCommand}" />
+        <Separator /><MenuItem Header="{Binding L10n.Menu_File_DocumentSettings, Mode=OneWay}" InputGesture="Ctrl+Shift+P" Command="{Binding DocumentPropertiesCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_File_Exit, Mode=OneWay}" InputGesture="Alt+F4" Command="{Binding ExitApplicationCommand}" />
       </MenuItem>
-      <MenuItem Header="編集">
-        <MenuItem Header="元に戻す" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
-        <MenuItem Header="やり直し" InputGesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
+      <MenuItem Header="{Binding L10n.Menu_Edit, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_Edit_Undo, Mode=OneWay}" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Redo, Mode=OneWay}" InputGesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}" />
         <Separator />
-        <MenuItem Header="切り取り" InputGesture="Ctrl+X" Command="{Binding CutSelectionCommand}" />
-        <MenuItem Header="コピー" InputGesture="Ctrl+C" Command="{Binding CopySelectionCommand}" />
-        <MenuItem Header="貼り付け" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
-        <MenuItem Header="複製" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectionCommand}" />
-        <MenuItem Header="削除" InputGesture="Delete" Command="{Binding DeleteSelectionCommand}" />
-        <Separator /><MenuItem Header="すべて選択" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Cut, Mode=OneWay}" InputGesture="Ctrl+X" Command="{Binding CutSelectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Copy, Mode=OneWay}" InputGesture="Ctrl+C" Command="{Binding CopySelectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Paste, Mode=OneWay}" InputGesture="Ctrl+V" Command="{Binding PasteCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Duplicate, Mode=OneWay}" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Edit_Delete, Mode=OneWay}" InputGesture="Delete" Command="{Binding DeleteSelectionCommand}" />
+        <Separator /><MenuItem Header="{Binding L10n.Menu_Edit_SelectAll, Mode=OneWay}" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}" />
       </MenuItem>
-      <MenuItem Header="表示">
-        <MenuItem Header="拡大" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
-        <MenuItem Header="縮小" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
-        <MenuItem Header="100%" InputGesture="Ctrl+1" Command="{Binding ResetZoomCommand}" />
-        <MenuItem Header="キャンバス全体を表示" InputGesture="Ctrl+0" Command="{Binding FitCanvasCommand}" />
-        <MenuItem Header="グリッド表示切替" Command="{Binding ToggleGridCommand}" />
-        <MenuItem Header="スナップ切替" Command="{Binding ToggleSnapCommand}" />
-      </MenuItem>
-      <MenuItem Header="オブジェクト">
-        <MenuItem Header="グループ化" InputGesture="Ctrl+G" Command="{Binding GroupSelectionCommand}" />
-        <MenuItem Header="グループ解除" InputGesture="Ctrl+Shift+G" Command="{Binding UngroupSelectionCommand}" />
-        <MenuItem Header="グループ内を編集" InputGesture="Enter" Command="{Binding EnterGroupCommand}" />
-        <MenuItem Header="親階層へ戻る" Command="{Binding ExitGroupCommand}" />
+      <MenuItem Header="{Binding L10n.Menu_View, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_View_ZoomIn, Mode=OneWay}" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_View_ZoomOut, Mode=OneWay}" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_View_Zoom100, Mode=OneWay}" InputGesture="Ctrl+1" Command="{Binding ResetZoomCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_View_FitCanvas, Mode=OneWay}" InputGesture="Ctrl+0" Command="{Binding FitCanvasCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_View_ToggleGrid, Mode=OneWay}" Command="{Binding ToggleGridCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_View_ToggleSnap, Mode=OneWay}" Command="{Binding ToggleSnapCommand}" />
         <Separator />
-        <MenuItem Header="左右反転" InputGesture="Shift+H" Command="{Binding FlipHorizontalCommand}" />
-        <MenuItem Header="上下反転" InputGesture="Shift+V" Command="{Binding FlipVerticalCommand}" />
-        <MenuItem Header="重ね順">
-          <MenuItem Header="最前面" InputGesture="Home" Command="{Binding ChangeOrderCommand}" CommandParameter="front" />
-          <MenuItem Header="前面へ" InputGesture="PageUp" Command="{Binding ChangeOrderCommand}" CommandParameter="forward" />
-          <MenuItem Header="背面へ" InputGesture="PageDown" Command="{Binding ChangeOrderCommand}" CommandParameter="backward" />
-          <MenuItem Header="最背面" InputGesture="End" Command="{Binding ChangeOrderCommand}" CommandParameter="back" />
-        </MenuItem>
-        <MenuItem Header="整列と分布">
-          <MenuItem Header="左揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="left" />
-          <MenuItem Header="左右中央" Command="{Binding AlignSelectionCommand}" CommandParameter="center-x" />
-          <MenuItem Header="右揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="right" />
-          <MenuItem Header="上揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="top" />
-          <MenuItem Header="上下中央" Command="{Binding AlignSelectionCommand}" CommandParameter="center-y" />
-          <MenuItem Header="下揃え" Command="{Binding AlignSelectionCommand}" CommandParameter="bottom" />
-          <MenuItem Header="横に等間隔" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-x" />
-          <MenuItem Header="縦に等間隔" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-y" />
+        <MenuItem Header="{Binding L10n.Menu_View_Language, Mode=OneWay}">
+          <MenuItem Header="{Binding L10n.Menu_View_Language_System, Mode=OneWay}"
+                    ToggleType="Radio"
+                    IsChecked="{Binding L10n.IsSystemLanguage, Mode=OneWay}"
+                    Command="{Binding SetLanguageCommand}"
+                    CommandParameter="system" />
+          <MenuItem Header="日本語"
+                    ToggleType="Radio"
+                    IsChecked="{Binding L10n.IsJapaneseLanguage, Mode=OneWay}"
+                    Command="{Binding SetLanguageCommand}"
+                    CommandParameter="ja" />
+          <MenuItem Header="English"
+                    ToggleType="Radio"
+                    IsChecked="{Binding L10n.IsEnglishLanguage, Mode=OneWay}"
+                    Command="{Binding SetLanguageCommand}"
+                    CommandParameter="en" />
         </MenuItem>
       </MenuItem>
-      <MenuItem Header="パス">
-        <MenuItem Header="オブジェクトをパスに変換" InputGesture="Ctrl+Shift+C" Command="{Binding ObjectToPathCommand}" />
-        <MenuItem Header="ストロークをパスに変換" InputGesture="Ctrl+Alt+C" Command="{Binding StrokeToPathCommand}" />
+      <MenuItem Header="{Binding L10n.Menu_Object, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_Object_Group, Mode=OneWay}" InputGesture="Ctrl+G" Command="{Binding GroupSelectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_Ungroup, Mode=OneWay}" InputGesture="Ctrl+Shift+G" Command="{Binding UngroupSelectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_EnterGroup, Mode=OneWay}" InputGesture="Enter" Command="{Binding EnterGroupCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_ExitGroup, Mode=OneWay}" Command="{Binding ExitGroupCommand}" />
         <Separator />
-        <MenuItem Header="統合" InputGesture="Ctrl+Shift+U" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
-        <MenuItem Header="差分" InputGesture="Ctrl+Shift+D" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
-        <MenuItem Header="交差" InputGesture="Ctrl+Shift+I" Command="{Binding BooleanIntersectionCommand}" />
-        <MenuItem Header="排他的論理和" InputGesture="Ctrl+Shift+X" Command="{Binding BooleanXorCommand}" />
-        <MenuItem Header="逆差分" InputGesture="Ctrl+Shift+R" Command="{Binding BooleanReverseDifferenceCommand}" />
-        <MenuItem Header="開く/閉じる" InputGesture="Ctrl+K" Command="{Binding TogglePathClosedCommand}" />
-        <MenuItem Header="端点を結合" Command="{Binding JoinPathCommand}" />
-        <MenuItem Header="シンプル化" InputGesture="Ctrl+L" Command="{Binding SimplifyPathCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_FlipHorizontal, Mode=OneWay}" InputGesture="Shift+H" Command="{Binding FlipHorizontalCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_FlipVertical, Mode=OneWay}" InputGesture="Shift+V" Command="{Binding FlipVerticalCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Object_Order, Mode=OneWay}">
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Front, Mode=OneWay}" InputGesture="Home" Command="{Binding ChangeOrderCommand}" CommandParameter="front" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Forward, Mode=OneWay}" InputGesture="PageUp" Command="{Binding ChangeOrderCommand}" CommandParameter="forward" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Backward, Mode=OneWay}" InputGesture="PageDown" Command="{Binding ChangeOrderCommand}" CommandParameter="backward" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Back, Mode=OneWay}" InputGesture="End" Command="{Binding ChangeOrderCommand}" CommandParameter="back" />
+        </MenuItem>
+        <MenuItem Header="{Binding L10n.Menu_Object_Align, Mode=OneWay}">
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_Left, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="left" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_CenterX, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="center-x" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_Right, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="right" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_Top, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="top" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_CenterY, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="center-y" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_Bottom, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="bottom" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_DistributeX, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-x" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Align_DistributeY, Mode=OneWay}" Command="{Binding AlignSelectionCommand}" CommandParameter="distribute-y" />
+        </MenuItem>
       </MenuItem>
-      <MenuItem Header="レイヤー">
-        <MenuItem Header="新規レイヤー" InputGesture="Ctrl+Shift+N" Command="{Binding NewLayerCommand}" />
-        <MenuItem Header="レイヤーを複製" Command="{Binding DuplicateLayerCommand}" />
-        <MenuItem Header="レイヤーを削除" Command="{Binding DeleteLayerCommand}" />
-        <MenuItem Header="回転・反転">
-          <MenuItem Header="時計回り90°" Command="{Binding RotateLayerCommand}" CommandParameter="90" />
-          <MenuItem Header="反時計回り90°" Command="{Binding RotateLayerCommand}" CommandParameter="-90" />
-          <MenuItem Header="180°" Command="{Binding RotateLayerCommand}" CommandParameter="180" />
-          <MenuItem Header="左右反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-x" />
-          <MenuItem Header="上下反転" Command="{Binding RotateLayerCommand}" CommandParameter="flip-y" />
+      <MenuItem Header="{Binding L10n.Menu_Path, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_Path_ObjectToPath, Mode=OneWay}" InputGesture="Ctrl+Shift+C" Command="{Binding ObjectToPathCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_StrokeToPath, Mode=OneWay}" InputGesture="Ctrl+Alt+C" Command="{Binding StrokeToPathCommand}" />
+        <Separator />
+        <MenuItem Header="{Binding L10n.Menu_Path_Union, Mode=OneWay}" InputGesture="Ctrl+Shift+U" Command="{Binding BooleanUnionActiveLayerShapesCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_Difference, Mode=OneWay}" InputGesture="Ctrl+Shift+D" Command="{Binding BooleanDifferenceActiveLayerShapesCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_Intersection, Mode=OneWay}" InputGesture="Ctrl+Shift+I" Command="{Binding BooleanIntersectionCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_Xor, Mode=OneWay}" InputGesture="Ctrl+Shift+X" Command="{Binding BooleanXorCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_ReverseDifference, Mode=OneWay}" InputGesture="Ctrl+Shift+R" Command="{Binding BooleanReverseDifferenceCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_ToggleClosed, Mode=OneWay}" InputGesture="Ctrl+K" Command="{Binding TogglePathClosedCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_Join, Mode=OneWay}" Command="{Binding JoinPathCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Path_Simplify, Mode=OneWay}" InputGesture="Ctrl+L" Command="{Binding SimplifyPathCommand}" />
+      </MenuItem>
+      <MenuItem Header="{Binding L10n.Menu_Layer, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_Layer_New, Mode=OneWay}" InputGesture="Ctrl+Shift+N" Command="{Binding NewLayerCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Layer_Duplicate, Mode=OneWay}" Command="{Binding DuplicateLayerCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Layer_Delete, Mode=OneWay}" Command="{Binding DeleteLayerCommand}" />
+        <MenuItem Header="{Binding L10n.Menu_Layer_RotateFlip, Mode=OneWay}">
+          <MenuItem Header="{Binding L10n.Menu_Layer_Rotate90CW, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="90" />
+          <MenuItem Header="{Binding L10n.Menu_Layer_Rotate90CCW, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="-90" />
+          <MenuItem Header="{Binding L10n.Menu_Layer_Rotate180, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="180" />
+          <MenuItem Header="{Binding L10n.Menu_Object_FlipHorizontal, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="flip-x" />
+          <MenuItem Header="{Binding L10n.Menu_Object_FlipVertical, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="flip-y" />
           <Separator />
-          <MenuItem Header="角度を指定して回転…" Command="{Binding OpenRotateLayerDialogCommand}" />
+          <MenuItem Header="{Binding L10n.Menu_Layer_RotateCustom, Mode=OneWay}" Command="{Binding OpenRotateLayerDialogCommand}" />
         </MenuItem>
-        <MenuItem Header="合成モード">
+        <MenuItem Header="{Binding L10n.Menu_Layer_BlendMode, Mode=OneWay}">
           <MenuItem Header="Normal" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Normal}" />
           <MenuItem Header="Multiply" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Multiply}" />
           <MenuItem Header="Screen" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Screen}" />
@@ -126,11 +144,11 @@
           <MenuItem Header="Darken" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Darken}" />
           <MenuItem Header="Lighten" Command="{Binding SetLayerBlendCommand}" CommandParameter="{x:Static styling:LayerBlendMode.Lighten}" />
         </MenuItem>
-        <MenuItem Header="順序">
-          <MenuItem Header="最前面" Command="{Binding OrderLayerCommand}" CommandParameter="front" />
-          <MenuItem Header="前面へ" Command="{Binding OrderLayerCommand}" CommandParameter="forward" />
-          <MenuItem Header="背面へ" Command="{Binding OrderLayerCommand}" CommandParameter="backward" />
-          <MenuItem Header="最背面" Command="{Binding OrderLayerCommand}" CommandParameter="back" />
+        <MenuItem Header="{Binding L10n.Menu_Layer_Order, Mode=OneWay}">
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Front, Mode=OneWay}" Command="{Binding OrderLayerCommand}" CommandParameter="front" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Forward, Mode=OneWay}" Command="{Binding OrderLayerCommand}" CommandParameter="forward" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Backward, Mode=OneWay}" Command="{Binding OrderLayerCommand}" CommandParameter="backward" />
+          <MenuItem Header="{Binding L10n.Menu_Object_Order_Back, Mode=OneWay}" Command="{Binding OrderLayerCommand}" CommandParameter="back" />
         </MenuItem>
         <MenuItem Header="下のレイヤーと結合" InputGesture="Ctrl+E" Command="{Binding MergeLayerDownCommand}" />
         <MenuItem Header="表示切替" Command="{Binding ToggleLayerVisibilityCommand}" />

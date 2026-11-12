@@ -8,7 +8,7 @@ public sealed record RecentEditorFile(string Name, string Location)
         ? $"{Name} — {Path.GetDirectoryName(uri.LocalPath)}" : $"{Name} — {Location}";
 }
 
-public sealed record EditorUserSettings(double InspectorWidth = 300, IReadOnlyList<RecentEditorFile>? RecentFiles = null);
+public sealed record EditorUserSettings(double InspectorWidth = 300, IReadOnlyList<RecentEditorFile>? RecentFiles = null, string UiLanguage = "system");
 
 public interface IEditorUserSettingsStore
 {
