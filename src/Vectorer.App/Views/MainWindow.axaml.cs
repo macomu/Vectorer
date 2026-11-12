@@ -23,7 +23,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainWindowViewModel vm)
             {
-                vm.FileDialogs = new EditorFileDialogs(this);
+                vm.FileDialogs = new EditorFileDialogs(this, vm.L10n);
                 vm.Clipboard = new EditorClipboard(this);
                 vm.CloseRequested += Close;
             }
@@ -64,6 +64,7 @@ public partial class MainWindow : Window
                 if (await vm.CanCloseAsync())
                 {
                     await vm.SaveUserSettingsAsync(EditorLayout.ColumnDefinitions[2].ActualWidth);
+                    await vm.LanguageCoordinator.WaitForPendingSavesAsync();
                     _allowClose = true; Close();
                 }
             }

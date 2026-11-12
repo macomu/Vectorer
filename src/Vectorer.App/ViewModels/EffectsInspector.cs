@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,8 +9,23 @@ using Vectorer.Rendering.Shaders;
 
 namespace Vectorer.App.ViewModels;
 
-public sealed record ShaderOptionItem(string Id, string DisplayName)
+public sealed class ShaderOptionItem : ObservableObject
 {
+    private readonly Func<string> _getDisplayName;
+    public string Id { get; }
+    public string DisplayName { get; private set; }
+    public ShaderOptionItem(string id, string displayName) : this(id, () => displayName) { }
+    public ShaderOptionItem(string id, Func<string> getDisplayName)
+    {
+        Id = id;
+        _getDisplayName = getDisplayName;
+        DisplayName = getDisplayName();
+    }
+    public void RefreshTranslation()
+    {
+        try { var name = _getDisplayName(); DisplayName = name; OnPropertyChanged(nameof(DisplayName)); }
+        catch { /* Keep the previous plugin display name. */ }
+    }
     public override string ToString() => DisplayName;
 }
 
@@ -91,8 +107,10 @@ public sealed partial class MainWindowViewModel
     public ObservableCollection<ShaderUniformItem> ShaderUniforms { get; } = [];
 
     public string EffectTargetLabel => SelectedNodes.Count > 0
-        ? $"選択要素 ({SelectedNodes.Count} 個)"
-        : ActiveLayer is not null ? $"レイヤー: {ActiveLayer.Name}" : "対象なし";
+        ? L10n.Format(new LocalizedMessage(nameof(Strings.Ui_SelectedElements), SelectedNodes.Count))
+        : ActiveLayer is not null ? L10n.Format(new LocalizedMessage(nameof(Strings.Ui_TargetLayer), ActiveLayer.Name)) : L10n.Ui_NoTarget;
+
+    public string EffectTargetDisplay => L10n.Format(new LocalizedMessage(nameof(Strings.Ui_EditingTarget), EffectTargetLabel));
 
     public bool HasActiveShader => SelectedShaderOption is { Id: not NoShaderId };
     public bool HasSkslError => !string.IsNullOrWhiteSpace(SkslCompileError);
@@ -118,12 +136,12 @@ public sealed partial class MainWindowViewModel
     private void RebuildShaderOptions()
     {
         ShaderOptions.Clear();
-        ShaderOptions.Add(new ShaderOptionItem(NoShaderId, "なし"));
+        ShaderOptions.Add(new ShaderOptionItem(NoShaderId, () => L10n.Ui_None));
         foreach (var provider in _shaderRegistry.Providers)
         {
-            ShaderOptions.Add(new ShaderOptionItem(provider.ShaderId, provider.DisplayName));
+            ShaderOptions.Add(new ShaderOptionItem(provider.ShaderId, () => provider.DisplayName));
         }
-        ShaderOptions.Add(new ShaderOptionItem(CustomShaderId, "カスタム SkSL"));
+        ShaderOptions.Add(new ShaderOptionItem(CustomShaderId, () => L10n.Ui_CustomSksl));
     }
 
     public SceneNode[] GetEffectTargets()
@@ -216,6 +234,7 @@ public sealed partial class MainWindowViewModel
             }
 
             OnPropertyChanged(nameof(EffectTargetLabel));
+            OnPropertyChanged(nameof(EffectTargetDisplay));
             OnPropertyChanged(nameof(HasActiveShader));
             OnPropertyChanged(nameof(HasSkslError));
             OnPropertyChanged(nameof(SelectedShaderId));
@@ -444,7 +463,7 @@ public sealed partial class MainWindowViewModel
         {
             SkslCompileError = error;
             OnPropertyChanged(nameof(HasSkslError));
-            StatusMessage = $"SkSL compile error: {error}";
+            SetStatus(nameof(Strings.Status_SkslFailed), error);
             return;
         }
 
@@ -484,7 +503,7 @@ public sealed partial class MainWindowViewModel
             "Compile SkSL shader",
             () => { foreach (var s in snapshots) s.Node.ShaderEffect = CloneDescriptor(s.After); },
             () => { foreach (var s in snapshots) s.Node.ShaderEffect = s.Before is null ? null : CloneDescriptor(s.Before); }));
-        StatusMessage = "Compiled and applied SkSL shader.";
+        SetStatus(nameof(Strings.Status_SkslApplied));
     }
 
     [RelayCommand]

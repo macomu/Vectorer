@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
@@ -14,7 +15,7 @@ public sealed partial class MainWindowViewModel
     {
         try { InstalledFontFamilies = await catalog.GetFamiliesAsync(); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        { StatusMessage = $"フォント一覧を取得できませんでした: {ex.Message}"; }
+        { SetStatus(nameof(Strings.Status_FontFailed), ex.Message); }
     }
     [ObservableProperty] private decimal _fontSize = 32;
     [ObservableProperty] private bool _textBold;

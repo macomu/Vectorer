@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using CommunityToolkit.Mvvm.Input;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
@@ -17,7 +18,7 @@ public sealed partial class MainWindowViewModel
     private readonly List<(GroupNode Group, SKMatrix Parent)> _scope = [];
     public GroupNode? EditingGroup => _scope.Count > 0 ? _scope[^1].Group : null;
     public SKMatrix ScopeParent => _scope.Count > 0 ? _scope[^1].Parent : SKMatrix.CreateIdentity();
-    public string ScopePath => _scope.Count == 0 ? "ドキュメント" : string.Join(" > ", _scope.Select(s => s.Group.Name));
+    public string ScopePath => _scope.Count == 0 ? L10n.Ui_Document : string.Join(" > ", _scope.Select(s => s.Group.Name));
     public bool IsInGroup => _scope.Count > 0;
 
     public IEnumerable<(SceneNode Node, SKMatrix Parent)> GetEditableNodes()
@@ -46,7 +47,7 @@ public sealed partial class MainWindowViewModel
         ContainerNode container = EditingGroup ?? (ContainerNode)EnsureActiveLayer();
         var world = EditingGroup is null ? SKMatrix.Concat(CurrentDocument.GetViewportTransform(), container.Transform) : SKMatrix.Concat(ScopeParent, container.Transform);
         if (container.IsLocked || !container.IsVisible || !world.TryInvert(out _))
-        { StatusMessage = "描画先が非表示・ロック中、または変換できません。"; return null; }
+        { SetStatus(nameof(Strings.Status_CannotDraw)); return null; }
         return (container, world);
     }
     private void ValidateScope()

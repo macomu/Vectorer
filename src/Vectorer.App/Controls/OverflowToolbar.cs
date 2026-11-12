@@ -1,3 +1,5 @@
+using Vectorer.App.Localization;
+using Avalonia.Data;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -8,6 +10,10 @@ namespace Vectorer.App.Controls;
 /// <summary>Moves whole editor groups into a flyout only when they cannot fit.</summary>
 public sealed class OverflowToolbar : UserControl
 {
+    public static readonly StyledProperty<AppLocalization?> LocalizationProperty =
+        AvaloniaProperty.Register<OverflowToolbar, AppLocalization?>(nameof(Localization));
+    public AppLocalization? Localization { get => GetValue(LocalizationProperty); set => SetValue(LocalizationProperty, value); }
+
     private readonly StackPanel _primary = new() { Orientation = Orientation.Horizontal, Spacing = 8 };
     private readonly StackPanel _overflow = new() { Spacing = 10, Margin = new Thickness(4) };
     private readonly Button _more = new() { Content = "⋯", Width = 36, VerticalAlignment = VerticalAlignment.Center };
@@ -19,7 +25,7 @@ public sealed class OverflowToolbar : UserControl
         var popup = new Flyout { Content = new ScrollViewer { Content = _overflow, MaxHeight = 500,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto } };
         _more.Flyout = popup;
-        ToolTip.SetTip(_more, "その他のツール設定");
+        _more.Bind(ToolTip.TipProperty, new Binding("Localization.Ui_MoreSettings") { Source = this });
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         Grid.SetColumn(_more, 1);
         grid.Children.Add(_primary);

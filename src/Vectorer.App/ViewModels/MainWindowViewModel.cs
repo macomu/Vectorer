@@ -67,8 +67,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     public LanguageChangeCoordinator LanguageCoordinator { get; }
 
     public ObservableCollection<LayerNode> Layers { get; } = [];
-    public ObservableCollection<IMenuContribution> PluginMenus { get; } = [];
-    public ObservableCollection<IToolbarContribution> PluginToolbarItems { get; } = [];
+    public ObservableCollection<PluginMenuItem> PluginMenus { get; } = [];
+    public ObservableCollection<PluginToolbarItem> PluginToolbarItems { get; } = [];
 
     public IReadOnlyList<SceneNode> SelectedNodes => _selectedNodes;
 
@@ -147,7 +147,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         ExecuteCommand(new AddNodeCommand(layer, hex, "Add Convex Hexagon"));
         SelectNodes([hex]);
-        StatusMessage = "Added Convex Polygon (Hexagon).";
+        SetStatus(nameof(Strings.Status_AddedHexagon));
     }
 
     [RelayCommand]
@@ -164,7 +164,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         ExecuteCommand(new AddNodeCommand(layer, star, "Add Concave Star"));
         SelectNodes([star]);
-        StatusMessage = "Added Concave Polygon with Checkerboard Texture Fill.";
+        SetStatus(nameof(Strings.Status_AddedStar));
     }
 
     [RelayCommand]
@@ -183,7 +183,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         ExecuteCommand(new AddNodeCommand(layer, circle, "Add Circle"));
         SelectNodes([circle]);
-        StatusMessage = "Added Circle.";
+        SetStatus(nameof(Strings.Status_AddedCircle));
     }
 
     [RelayCommand]
@@ -209,7 +209,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         ExecuteCommand(new AddNodeCommand(layer, arc, "Add Arc"));
         SelectNodes([arc]);
-        StatusMessage = "Added Pie Arc with Diagonal Stripe Texture.";
+        SetStatus(nameof(Strings.Status_AddedArc));
     }
 
     [RelayCommand]
@@ -236,9 +236,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var after = before is { HasActiveFilter: true } ? null : new FilterSettings(BlurSigmaX: 6f, BlurSigmaY: 6f);
         ExecuteCommand(new DelegateDocumentCommand("Layer blur", () => layer.Filter = after, () => layer.Filter = before));
         RequestRedraw();
-        StatusMessage = layer.Filter is not null
-            ? $"Applied Gaussian Blur (σ=6) to '{layer.Name}'."
-            : $"Cleared blur filter on '{layer.Name}'.";
+        SetStatus(layer.Filter is not null ? nameof(Strings.Status_BlurApplied) : nameof(Strings.Status_BlurCleared), layer.Name);
     }
 
     [RelayCommand]
@@ -251,7 +249,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var after = modes[nextIndex];
         ExecuteCommand(new DelegateDocumentCommand("Layer blend mode", () => layer.BlendMode = after, () => layer.BlendMode = before));
         RequestRedraw();
-        StatusMessage = $"Layer '{layer.Name}' blend mode set to {layer.BlendMode}.";
+        SetStatus(nameof(Strings.Status_BlendChanged), layer.Name, layer.BlendMode);
     }
 
     [RelayCommand]
@@ -265,7 +263,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
-            StatusMessage = "Undo executed.";
+            SetStatus(nameof(Strings.Status_Undo));
         }
     }
 
@@ -280,7 +278,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             SelectNodes([]);
             SyncLayersCollection();
             RequestRedraw();
-            StatusMessage = "Redo executed.";
+            SetStatus(nameof(Strings.Status_Redo));
         }
     }
 
@@ -293,7 +291,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         }
 
         item.Execute(this);
-        StatusMessage = $"Executed plugin tool: {item.Title}";
+        SetStatus(nameof(Strings.Status_PluginExecuted), item.Id);
     }
 
     private void ApplyBooleanOnSelection(BooleanOperationType op)
@@ -302,14 +300,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var selected = GetEditableEntries().Where(e => SelectedNodes.Contains(e.Node)).ToArray();
         if (selected.Length < 2 || selected.Length != SelectedNodes.Count || selected.Any(e => e.Node is not ShapeNode)
             || selected.Select(e => e.Container).Distinct().Count() != 1)
-        { StatusMessage = "同じ階層の図形を2つ以上選択してください。"; return; }
+        { SetStatus(nameof(Strings.Status_NeedShapes)); return; }
         var layer = selected[0].Container;
         var shapes = selected.Select(e => (ShapeNode)e.Node).ToList();
         var positions = selected.Select(e => (e.Node, e.Index)).ToArray();
         var combined = _booleanService.CombineMany(shapes, op);
         if (combined is null)
         {
-            StatusMessage = $"Boolean {op} produced an empty shape.";
+            SetStatus(nameof(Strings.Status_BooleanEmpty), op);
             return;
         }
 
@@ -328,7 +326,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
             }));
 
         SelectNodes(hasGeometry ? [combined] : []);
-        StatusMessage = $"Applied Boolean {op} on '{shapes[0].Name}' and '{shapes[1].Name}'.";
+        SetStatus(nameof(Strings.Status_BooleanApplied), op, shapes[0].Name, shapes[1].Name);
     }
 
     private LayerNode EnsureActiveLayer()
@@ -382,12 +380,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         foreach (var menu in _pluginHost.MenuContributions)
         {
-            PluginMenus.Add(menu);
+            PluginMenus.Add(new PluginMenuItem(menu));
         }
 
         foreach (var tool in _pluginHost.ToolbarContributions)
         {
-            PluginToolbarItems.Add(tool);
+            PluginToolbarItems.Add(new PluginToolbarItem(tool));
         }
     }
 

@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using CommunityToolkit.Mvvm.Input;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
@@ -37,7 +38,7 @@ public sealed partial class MainWindowViewModel
             return true;
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
-        { StatusMessage = $"コピーできませんでした: {ex.Message}"; return false; }
+        { SetStatus(nameof(Strings.Status_CopyFailed), ex.Message); return false; }
         finally { IsBusy = false; }
     }
     [RelayCommand] private async Task CutSelectionAsync()
@@ -65,7 +66,7 @@ public sealed partial class MainWindowViewModel
             SelectNodes(nodes);
         }
         catch (Exception ex) when (ex is System.Xml.XmlException or ArgumentException or FormatException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        { StatusMessage = $"貼り付けできませんでした: {ex.Message}"; }
+        { SetStatus(nameof(Strings.Status_PasteFailed), ex.Message); }
         finally { IsBusy = false; }
     }
     [RelayCommand] private void DuplicateSelection()

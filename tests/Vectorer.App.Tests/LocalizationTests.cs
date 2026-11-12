@@ -8,8 +8,17 @@ using Xunit;
 
 namespace Vectorer.App.Tests;
 
-public sealed partial class LocalizationTests
+[Collection("Localization")]
+public sealed partial class LocalizationTests : IDisposable
 {
+    private readonly CultureInfo _originalUiCulture = CultureInfo.CurrentUICulture;
+    private readonly CultureInfo? _originalDefaultUiCulture = CultureInfo.DefaultThreadCurrentUICulture;
+
+    public void Dispose()
+    {
+        CultureInfo.CurrentUICulture = _originalUiCulture;
+        CultureInfo.DefaultThreadCurrentUICulture = _originalDefaultUiCulture;
+    }
     [GeneratedRegex(@"\{(\d+)(?:,[^}:]+)?(?::[^}]+)?\}")]
     private static partial Regex FormatPlaceholderRegex();
 
@@ -217,6 +226,34 @@ public sealed partial class LocalizationTests
 
         Assert.Equal("Apply Sunset Wave Shader to Selection", menu.Title);
         Assert.Equal("Starburst (Plugin)", tool.Title);
+    }
+
+    [Fact]
+    public void ExportPresentation_RetranslatesWithoutRegeneratingPreviewOrChangingDimensions()
+    {
+        var l10n = new AppLocalization(CultureInfo.GetCultureInfo("ja-JP"), CultureInfo.InvariantCulture, "ja");
+        var vm = new MainWindowViewModel(l10n);
+        using var export = vm.CreatePngExportViewModel();
+        export.Mode = PngExportMode.Selection;
+        var preview = export.PreviewPngBytes;
+        var width = export.TargetWidth;
+        var height = export.TargetHeight;
+        var notifications = new List<string?>();
+        export.PropertyChanged += (_, e) => notifications.Add(e.PropertyName);
+
+        vm.SetLanguageCommand.Execute("en");
+
+        Assert.Equal("No selected objects to export", export.BaseDimensionsLabel);
+        Assert.Equal("No selected objects to export", export.OutputSizeLabel);
+        Assert.Contains(nameof(PngExportViewModel.OutputSizeLabel), notifications);
+        Assert.Same(preview, export.PreviewPngBytes);
+        Assert.Equal(width, export.TargetWidth);
+        Assert.Equal(height, export.TargetHeight);
+
+        export.Dispose();
+        notifications.Clear();
+        vm.SetLanguageCommand.Execute("ja");
+        Assert.Empty(notifications);
     }
 
     private static string FindLocalizationDirectory()

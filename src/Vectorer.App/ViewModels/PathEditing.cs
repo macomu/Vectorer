@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vectorer.Abstractions.Documents;
@@ -32,12 +33,12 @@ public sealed partial class MainWindowViewModel
         var entries = GetEditableEntries().Where(e => SelectedNodes.Contains(e.Node)).ToArray();
         if (entries.Length < 2 || entries.Length != SelectedNodes.Count || entries.Any(e => e.Node is not PathShapeNode)
             || entries.Select(e => e.Container).Distinct().Count() != 1)
-        { StatusMessage = "同じ階層の開いたパスを2つ以上選択してください。"; return; }
+        { SetStatus(nameof(Strings.Status_NeedPaths)); return; }
         var result = (PathShapeNode)entries[0].Node;
         foreach (var entry in entries.Skip(1))
         {
             var joined = PathEditingService.Join(result, (PathShapeNode)entry.Node);
-            if (joined is null) { StatusMessage = "結合できる開いた端点がありません。"; return; }
+            if (joined is null) { SetStatus(nameof(Strings.Status_NoEndpoints)); return; }
             result = joined;
         }
         var container = entries[0].Container;

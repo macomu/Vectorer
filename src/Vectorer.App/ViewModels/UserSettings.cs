@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using Vectorer.App.Services;
@@ -62,6 +63,11 @@ public sealed partial class MainWindowViewModel
     private void OnLanguageApplied()
     {
         _pluginHost.NotifyUiCultureChanged(L10n.UiCulture);
+        foreach (var menu in PluginMenus) menu.RefreshTranslation();
+        foreach (var item in PluginToolbarItems) item.RefreshTranslation();
+        foreach (var option in ShaderOptions) option.RefreshTranslation();
+        foreach (var choices in _localizedChoices.Values)
+            foreach (var choice in choices) choice.RefreshTranslation();
         foreach (var tool in Tools)
         {
             tool.NotifyLocalizationChanged();
@@ -70,6 +76,11 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(SelectionSummary));
         OnPropertyChanged(nameof(ToolHint));
+        OnPropertyChanged(nameof(StyleTarget));
+        OnPropertyChanged(nameof(StyleTargetDisplay));
+        OnPropertyChanged(nameof(EffectTargetLabel));
+        OnPropertyChanged(nameof(EffectTargetDisplay));
+        OnPropertyChanged(nameof(ScopePath));
     }
 
     [RelayCommand] private void SetLanguage(string? language) =>
@@ -105,7 +116,7 @@ public sealed partial class MainWindowViewModel
             await OpenFileCoreAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException or FormatException or ArgumentException)
-        { StatusMessage = $"開けませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
+        { SetStatus(nameof(Strings.Status_RecentFailed), ex.Message); await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage); }
         finally { IsBusy = false; }
     }
 }

@@ -46,7 +46,7 @@ public sealed partial class MainWindowViewModel
             await OpenFileCoreAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException or FormatException or ArgumentException)
-        { SetStatus(nameof(Strings.Status_FileOpenFailed), ex.Message); await FileDialogs.ShowErrorAsync(StatusMessage); }
+        { SetStatus(nameof(Strings.Status_FileOpenFailed), ex.Message); await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage); }
         finally { IsBusy = false; }
     }
     private async Task OpenFileCoreAsync(EditorFile file)
@@ -80,7 +80,7 @@ public sealed partial class MainWindowViewModel
             await RememberFileAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
-        { SetStatus(nameof(Strings.Status_FileSaveFailed), ex.Message); await FileDialogs.ShowErrorAsync(StatusMessage); }
+        { SetStatus(nameof(Strings.Status_FileSaveFailed), ex.Message); await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage); }
         finally { IsBusy = false; }
     }
     private async Task<bool> ProtectUnsavedAsync()
@@ -110,7 +110,7 @@ public sealed partial class MainWindowViewModel
     [RelayCommand] private void ExitApplication() => CloseRequested?.Invoke();
 
     public PngExportViewModel CreatePngExportViewModel() =>
-        new(CurrentDocument, SelectedNodes, (Vectorer.Rendering.Export.PngExportService)_pngExportService);
+        new(CurrentDocument, SelectedNodes, (Vectorer.Rendering.Export.PngExportService)_pngExportService, L10n);
 
     [RelayCommand]
     private async Task ExportPngAsync()
@@ -154,7 +154,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             SetStatus(nameof(Strings.Status_PngExportFailed), ex.Message);
-            await FileDialogs.ShowErrorAsync(StatusMessage);
+            await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage);
         }
         finally
         {

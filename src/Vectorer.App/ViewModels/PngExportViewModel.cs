@@ -1,3 +1,4 @@
+using Vectorer.App.Localization;
 using System.Globalization;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +21,8 @@ public sealed partial class PngExportViewModel : ObservableObject, IDisposable
 {
     private readonly PngExportService _exportService;
     private bool _updatingDimensions;
+
+    public AppLocalization L10n { get; }
 
     public SvgDocument Document { get; }
     public IReadOnlyList<SceneNode> SelectedNodes { get; }
@@ -72,14 +75,14 @@ public sealed partial class PngExportViewModel : ObservableObject, IDisposable
     };
 
     public string BaseDimensionsLabel => Mode == PngExportMode.Selection && SelectionBounds is null
-        ? "出力可能な選択要素がありません"
+        ? L10n.Ui_NoSelectionExport
         : $"{MathF.Round(BaseWidth)} × {MathF.Round(BaseHeight)} px";
 
     public string ScaleStatusLabel => ActivePresetScale is { } preset
         ? $"{preset.ToString("0.##", CultureInfo.InvariantCulture)}x"
         : BaseWidth > 0f
-            ? $"カスタム ({(TargetWidth / BaseWidth).ToString("0.##", CultureInfo.InvariantCulture)}x)"
-            : "カスタム";
+            ? L10n.Format(new LocalizedMessage(nameof(Strings.Ui_CustomScale), (TargetWidth / BaseWidth).ToString("0.##", CultureInfo.InvariantCulture)))
+            : L10n.Ui_Custom;
 
     public string OutputSizeLabel
     {
@@ -89,26 +92,28 @@ public sealed partial class PngExportViewModel : ObservableObject, IDisposable
             {
                 if (Mode == PngExportMode.Selection)
                 {
-                    return "出力可能な選択要素がありません";
+                    return L10n.Ui_NoSelectionExport;
                 }
                 if (Mode == PngExportMode.LayersBatch && ExportableLayerCount == 0)
                 {
-                    return "出力対象レイヤーがありません";
+                    return L10n.Ui_NoLayersExport;
                 }
-                return "出力設定が無効です";
+                return L10n.Ui_InvalidExport;
             }
 
-            return $"出力サイズ: {TargetWidth} × {TargetHeight} px";
+            return L10n.Format(new LocalizedMessage(nameof(Strings.Ui_OutputSize), TargetWidth, TargetHeight));
         }
     }
 
-    public PngExportViewModel(SvgDocument document, IReadOnlyList<SceneNode> selectedNodes, PngExportService exportService)
+    public PngExportViewModel(SvgDocument document, IReadOnlyList<SceneNode> selectedNodes, PngExportService exportService, AppLocalization? localization = null)
     {
+        L10n = localization ?? new AppLocalization();
         Document = document ?? throw new ArgumentNullException(nameof(document));
         SelectedNodes = selectedNodes ?? throw new ArgumentNullException(nameof(selectedNodes));
         _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
 
         RecalculateBaseDimensionsAndScale(1.0f);
+        L10n.PropertyChanged += OnLocalizationChanged;
     }
 
     public PngExportOptions CreateExportOptions() => new(
@@ -375,8 +380,16 @@ public sealed partial class PngExportViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(BaseDimensionsLabel));
+        OnPropertyChanged(nameof(ScaleStatusLabel));
+        OnPropertyChanged(nameof(OutputSizeLabel));
+    }
+
     public void Dispose()
     {
+        L10n.PropertyChanged -= OnLocalizationChanged;
         PreviewBitmap?.Dispose();
         PreviewBitmap = null;
     }

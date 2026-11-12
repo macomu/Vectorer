@@ -1,4 +1,5 @@
 using System.Globalization;
+using Vectorer.App.Localization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SkiaSharp;
@@ -46,7 +47,9 @@ public sealed partial class MainWindowViewModel
     public bool IsSolidFill => FillKind == "単色";
     public bool IsTextureFill => FillKind == "テクスチャ";
     public bool HasParametricPolygon => SelectedNodes.Count == 1 && SelectedNodes[0] is PolygonShapeNode { PolygonKind: not PolygonKind.Freeform };
-    public string StyleTarget => SelectedNodes.OfType<ShapeNode>().Any() ? "選択図形" : "次の図形";
+    public string StyleTarget => SelectedNodes.OfType<ShapeNode>().Any() ? L10n.Ui_SelectedShapes : L10n.Ui_NextShape;
+
+    public string StyleTargetDisplay => L10n.Format(new LocalizedMessage(nameof(Strings.Ui_EditingTarget), StyleTarget));
 
     private void SyncSelectionEditors()
     {
@@ -156,6 +159,7 @@ public sealed partial class MainWindowViewModel
             OnPropertyChanged(nameof(HasParametricPolygon));
             OnPropertyChanged(nameof(IsRectangleTool));
             OnPropertyChanged(nameof(StyleTarget));
+            OnPropertyChanged(nameof(StyleTargetDisplay));
         }
         finally { _syncingEditors = false; }
     }

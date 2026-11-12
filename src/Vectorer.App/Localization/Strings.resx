@@ -364,4 +364,245 @@
   <data name="ToolHint_Shape" xml:space="preserve">
     <value>Click matching shape: Edit · Drag: Draw · Ctrl: Force new · Shift: Lock ratio · Alt: From center</value>
   </data>
+  <data name="Ui_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Ui_Rotate180" xml:space="preserve"><value>Rotate 180°</value></data>
+  <data name="Ui_MiterLimit" xml:space="preserve"><value>Miter limit</value></data>
+  <data name="Ui_LinkRadii" xml:space="preserve"><value>Link Rx / Ry</value></data>
+  <data name="Ui_CompileSksl" xml:space="preserve"><value>Compile and apply SkSL</value></data>
+  <data name="Ui_Sksl" xml:space="preserve"><value>SkSL shader (SKRuntimeEffect)</value></data>
+  <data name="Ui_ApplySksl" xml:space="preserve"><value>Apply SkSL shader…</value></data>
+  <data name="Ui_Uniforms" xml:space="preserve"><value>Uniform parameters</value></data>
+  <data name="Ui_Parent" xml:space="preserve"><value>← Parent</value></data>
+  <data name="Ui_BlurDialog" xml:space="preserve"><value>Gaussian blur…</value></data>
+  <data name="Ui_EnableBlur" xml:space="preserve"><value>Enable blur filter</value></data>
+  <data name="Ui_GaussianBlur" xml:space="preserve"><value>Gaussian blur</value></data>
+  <data name="Ui_Grid" xml:space="preserve"><value>Grid</value></data>
+  <data name="Ui_SnapHint" xml:space="preserve"><value>Snap to grid, nodes and bounds</value></data>
+  <data name="Ui_Corner" xml:space="preserve"><value>Corner</value></data>
+  <data name="Ui_Secondary" xml:space="preserve"><value>Secondary color</value></data>
+  <data name="Ui_Shader" xml:space="preserve"><value>Shader</value></data>
+  <data name="Ui_Simplify" xml:space="preserve"><value>Simplify</value></data>
+  <data name="Ui_TextureScale" xml:space="preserve"><value>Scale (4–128 px)</value></data>
+  <data name="Ui_StrokeDetails" xml:space="preserve"><value>Stroke details</value></data>
+  <data name="Ui_Snap" xml:space="preserve"><value>Snap</value></data>
+  <data name="Ui_Smoothing" xml:space="preserve"><value>Smoothing (%)</value></data>
+  <data name="Ui_Smooth" xml:space="preserve"><value>Smooth</value></data>
+  <data name="Ui_TreeHint" xml:space="preserve"><value>Double-click to rename · Drag to reorder or reparent</value></data>
+  <data name="Ui_Pattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="Ui_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Ui_Extensions" xml:space="preserve"><value>Filters and extensions</value></data>
+  <data name="Ui_PluginCommands" xml:space="preserve"><value>Plugin commands</value></data>
+  <data name="Ui_Primary" xml:space="preserve"><value>Primary color</value></data>
+  <data name="Ui_LiveSksl" xml:space="preserve"><value>Live SkSL editor</value></data>
+  <data name="Ui_ToggleLayerBlur" xml:space="preserve"><value>Toggle layer blur</value></data>
+  <data name="Ui_RotateLayer" xml:space="preserve"><value>Rotate layer</value></data>
+  <data name="Ui_DuplicateLayer" xml:space="preserve"><value>Duplicate layer</value></data>
+  <data name="Ui_LayerTransforms" xml:space="preserve"><value>Rotate or flip layer</value></data>
+  <data name="Ui_LayerAngle" xml:space="preserve"><value>Layer angle °</value></data>
+  <data name="Ui_Layers" xml:space="preserve"><value>Layers and objects</value></data>
+  <data name="Ui_ToggleLock" xml:space="preserve"><value>Toggle lock</value></data>
+  <data name="Ui_Lock" xml:space="preserve"><value>Toggle lock</value></data>
+  <data name="Ui_FlipVertical" xml:space="preserve"><value>Flip vertical</value></data>
+  <data name="Ui_MergeLayer" xml:space="preserve"><value>Merge with layer below</value></data>
+  <data name="Ui_MergeLayerHint" xml:space="preserve"><value>Merge with layer below (Ctrl+E)</value></data>
+  <data name="Ui_OpacityShort" xml:space="preserve"><value>Opacity:</value></data>
+  <data name="Ui_Opacity" xml:space="preserve"><value>Opacity (%)</value></data>
+  <data name="Ui_CenterX" xml:space="preserve"><value>Center X</value></data>
+  <data name="Ui_AddMidpoint" xml:space="preserve"><value>Add midpoint</value></data>
+  <data name="Ui_DashExample" xml:space="preserve"><value>Example: 8, 4, 2, 4</value></data>
+  <data name="Ui_SkewX" xml:space="preserve"><value>Skew X °</value></data>
+  <data name="Ui_SkewY" xml:space="preserve"><value>Skew Y °</value></data>
+  <data name="Ui_InnerRatio" xml:space="preserve"><value>Inner radius ratio</value></data>
+  <data name="Ui_StarRatio" xml:space="preserve"><value>Inner radius ratio (star)</value></data>
+  <data name="Ui_Effects" xml:space="preserve"><value>Effects / SkSL</value></data>
+  <data name="Ui_Tolerance" xml:space="preserve"><value>Simplification tolerance (px)</value></data>
+  <data name="Ui_SolidHex" xml:space="preserve"><value>Solid HEX</value></data>
+  <data name="Ui_RotateCCW" xml:space="preserve"><value>Rotate 90° counterclockwise</value></data>
+  <data name="Ui_BlendShort" xml:space="preserve"><value>Blend:</value></data>
+  <data name="Ui_BlendMode" xml:space="preserve"><value>Blend mode</value></data>
+  <data name="Ui_Compositing" xml:space="preserve"><value>Compositing and opacity</value></data>
+  <data name="Ui_Rotate" xml:space="preserve"><value>Rotate</value></data>
+  <data name="Ui_BlurY" xml:space="preserve"><value>Vertical blur σY (0–100)</value></data>
+  <data name="Ui_Fill" xml:space="preserve"><value>Fill</value></data>
+  <data name="Ui_FillHex" xml:space="preserve"><value>Fill (#RRGGBB / #AARRGGBB)</value></data>
+  <data name="Ui_FillDetails" xml:space="preserve"><value>Fill</value></data>
+  <data name="Ui_NoFill" xml:space="preserve"><value>No fill</value></data>
+  <data name="Ui_FillOpacity" xml:space="preserve"><value>Fill opacity (%)</value></data>
+  <data name="Ui_FillKind" xml:space="preserve"><value>Fill type</value></data>
+  <data name="Ui_FillColor" xml:space="preserve"><value>Fill color</value></data>
+  <data name="Ui_FillStroke" xml:space="preserve"><value>Fill and stroke</value></data>
+  <data name="Ui_Transform" xml:space="preserve"><value>Transform</value></data>
+  <data name="Ui_ApplyTransform" xml:space="preserve"><value>Apply transform</value></data>
+  <data name="Ui_OuterRadius" xml:space="preserve"><value>Outer radius</value></data>
+  <data name="Ui_PolygonParams" xml:space="preserve"><value>Polygon parameters</value></data>
+  <data name="Ui_Bold" xml:space="preserve"><value>Bold</value></data>
+  <data name="Ui_LetterSpacing" xml:space="preserve"><value>Letter spacing (px)</value></data>
+  <data name="Ui_Symmetric" xml:space="preserve"><value>Symmetric</value></data>
+  <data name="Ui_Sweep" xml:space="preserve"><value>Sweep angle °</value></data>
+  <data name="Ui_FlipHorizontal" xml:space="preserve"><value>Flip horizontal</value></data>
+  <data name="Ui_Width" xml:space="preserve"><value>Width</value></data>
+  <data name="Ui_Shape" xml:space="preserve"><value>Shape</value></data>
+  <data name="Ui_ApplyShape" xml:space="preserve"><value>Apply shape</value></data>
+  <data name="Ui_CloseAfterDraw" xml:space="preserve"><value>Close path after drawing</value></data>
+  <data name="Ui_Italic" xml:space="preserve"><value>Italic</value></data>
+  <data name="Ui_NewLayerHint" xml:space="preserve"><value>New layer (Ctrl+Shift+N)</value></data>
+  <data name="Ui_RotateCW" xml:space="preserve"><value>Rotate 90° clockwise</value></data>
+  <data name="Ui_Curve" xml:space="preserve"><value>Make curved</value></data>
+  <data name="Ui_BlurX" xml:space="preserve"><value>Horizontal blur σX (0–100)</value></data>
+  <data name="Ui_LinkBlur" xml:space="preserve"><value>Link horizontal and vertical blur (σX = σY)</value></data>
+  <data name="Ui_Mixed" xml:space="preserve"><value>Mixed</value></data>
+  <data name="Ui_MixedHex" xml:space="preserve"><value>Mixed (#RRGGBB / #AARRGGBB)</value></data>
+  <data name="Ui_MixedNone" xml:space="preserve"><value>Mixed / none</value></data>
+  <data name="Ui_MixedCustom" xml:space="preserve"><value>Mixed / custom</value></data>
+  <data name="Ui_DeleteNode" xml:space="preserve"><value>Delete node</value></data>
+  <data name="Ui_Polyline" xml:space="preserve"><value>Straight polyline</value></data>
+  <data name="Ui_Straight" xml:space="preserve"><value>Make straight</value></data>
+  <data name="Ui_DashPhase" xml:space="preserve"><value>Dash offset</value></data>
+  <data name="Ui_DashKind" xml:space="preserve"><value>Dash pattern</value></data>
+  <data name="Ui_DashArray" xml:space="preserve"><value>Dash array</value></data>
+  <data name="Ui_JoinEndpoints" xml:space="preserve"><value>Join endpoints</value></data>
+  <data name="Ui_Merge" xml:space="preserve"><value>Merge</value></data>
+  <data name="Ui_Stroke" xml:space="preserve"><value>Stroke</value></data>
+  <data name="Ui_NoStroke" xml:space="preserve"><value>No stroke</value></data>
+  <data name="Ui_StrokeOpacity" xml:space="preserve"><value>Stroke opacity (%)</value></data>
+  <data name="Ui_StrokeWidth" xml:space="preserve"><value>Stroke width (px)</value></data>
+  <data name="Ui_StrokeWidthHint" xml:space="preserve"><value>Stroke width (px) / blank means mixed</value></data>
+  <data name="Ui_LineStyle" xml:space="preserve"><value>Line style</value></data>
+  <data name="Ui_Cap" xml:space="preserve"><value>Line cap</value></data>
+  <data name="Ui_StrokeColor" xml:space="preserve"><value>Stroke color</value></data>
+  <data name="Ui_LockAspect" xml:space="preserve"><value>Lock aspect ratio</value></data>
+  <data name="Ui_Color" xml:space="preserve"><value>Color</value></data>
+  <data name="Ui_ToggleVisibility" xml:space="preserve"><value>Toggle visibility</value></data>
+  <data name="Ui_Visibility" xml:space="preserve"><value>Toggle visibility</value></data>
+  <data name="Ui_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Ui_Join" xml:space="preserve"><value>Line join</value></data>
+  <data name="Ui_RadiusX" xml:space="preserve"><value>Corner Rx</value></data>
+  <data name="Ui_RadiusY" xml:space="preserve"><value>Corner Ry</value></data>
+  <data name="Ui_ResetCorners" xml:space="preserve"><value>Reset corners</value></data>
+  <data name="Ui_Angle" xml:space="preserve"><value>Angle (°)</value></data>
+  <data name="Ui_RotateCustom" xml:space="preserve"><value>Rotate by angle…</value></data>
+  <data name="Ui_Sides" xml:space="preserve"><value>Sides</value></data>
+  <data name="Ui_ExtraRotation" xml:space="preserve"><value>Additional rotation °</value></data>
+  <data name="Ui_CutNodes" xml:space="preserve"><value>Cut at selected nodes</value></data>
+  <data name="Ui_DeleteTarget" xml:space="preserve"><value>Delete selection or layer</value></data>
+  <data name="Ui_CloseFinish" xml:space="preserve"><value>Close and finish</value></data>
+  <data name="Ui_FinishOpen" xml:space="preserve"><value>Finish as open path (Enter)</value></data>
+  <data name="Ui_ToggleClosed" xml:space="preserve"><value>Open / close</value></data>
+  <data name="Ui_StartAngle" xml:space="preserve"><value>Start angle °</value></data>
+  <data name="Ui_VertexCount" xml:space="preserve"><value>Vertices (3–64)</value></data>
+  <data name="Ui_Height" xml:space="preserve"><value>Height</value></data>
+  <data name="Ui_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
+  <data name="Ui_SavePng" xml:space="preserve"><value>Save PNG</value></data>
+  <data name="Ui_SaveSvg" xml:space="preserve"><value>Save SVG</value></data>
+  <data name="Ui_OpenSvg" xml:space="preserve"><value>Open SVG</value></data>
+  <data name="Ui_Export" xml:space="preserve"><value>Export…</value></data>
+  <data name="Ui_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Ui_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Ui_WholeDocument" xml:space="preserve"><value>Whole document</value></data>
+  <data name="Ui_DocumentSettings" xml:space="preserve"><value>Document settings</value></data>
+  <data name="Ui_FilePrefix" xml:space="preserve"><value>File name prefix:</value></data>
+  <data name="Ui_FileError" xml:space="preserve"><value>File operation error</value></data>
+  <data name="Ui_Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Ui_LivePreview" xml:space="preserve"><value>Live preview</value></data>
+  <data name="Ui_LayerRotation" xml:space="preserve"><value>Rotate layer by angle</value></data>
+  <data name="Ui_ExportFolder" xml:space="preserve"><value>Choose folder for layer exports</value></data>
+  <data name="Ui_BatchLayers" xml:space="preserve"><value>Export layers in batch</value></data>
+  <data name="Ui_Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Ui_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Ui_Discard" xml:space="preserve"><value>Don&#x27;t save</value></data>
+  <data name="Ui_Scale" xml:space="preserve"><value>Scale:</value></data>
+  <data name="Ui_ExportMode" xml:space="preserve"><value>Export mode:</value></data>
+  <data name="Ui_ExportSettings" xml:space="preserve"><value>Export settings</value></data>
+  <data name="Ui_ApplyRotation" xml:space="preserve"><value>Apply rotation</value></data>
+  <data name="Ui_RotationCenter" xml:space="preserve"><value>Rotation center</value></data>
+  <data name="Ui_RotationRange" xml:space="preserve"><value>Rotation angle (−360° to +360°)</value></data>
+  <data name="Ui_BaseSize" xml:space="preserve"><value>Base size:</value></data>
+  <data name="Ui_WidthPx" xml:space="preserve"><value>Width (px)</value></data>
+  <data name="Ui_NewDocument" xml:space="preserve"><value>New document</value></data>
+  <data name="Ui_Unsaved" xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="Ui_SaveQuestion" xml:space="preserve"><value>Save your unsaved changes?</value></data>
+  <data name="Ui_SwapDimensions" xml:space="preserve"><value>Swap width and height</value></data>
+  <data name="Ui_Transparent" xml:space="preserve"><value>Transparent background</value></data>
+  <data name="Ui_TransparentBackground" xml:space="preserve"><value>Transparent background</value></data>
+  <data name="Ui_SelectionOnly" xml:space="preserve"><value>Selected objects only</value></data>
+  <data name="Ui_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Ui_VisibleLayersOnly" xml:space="preserve"><value>Exclude hidden layers</value></data>
+  <data name="Ui_HeightPx" xml:space="preserve"><value>Height (px)</value></data>
+  <data name="Ui_AspectLocked" xml:space="preserve"><value>🔒 Lock aspect ratio</value></data>
+  <data name="Ui_None" xml:space="preserve"><value>None</value></data>
+  <data name="Ui_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Ui_CustomSksl" xml:space="preserve"><value>Custom SkSL</value></data>
+  <data name="Ui_CanvasCenter" xml:space="preserve"><value>Canvas center</value></data>
+  <data name="Ui_LayerCenter" xml:space="preserve"><value>Center of layer object bounds</value></data>
+  <data name="Ui_PresetPortrait" xml:space="preserve"><value>A4 portrait (96 dpi)</value></data>
+  <data name="Ui_PresetLandscape" xml:space="preserve"><value>A4 landscape (96 dpi)</value></data>
+  <data name="Ui_SelectedShapes" xml:space="preserve"><value>Selected shapes</value></data>
+  <data name="Ui_NextShape" xml:space="preserve"><value>Next shape</value></data>
+  <data name="Ui_Document" xml:space="preserve"><value>Document</value></data>
+  <data name="Ui_NoSelectionExport" xml:space="preserve"><value>No selected objects to export</value></data>
+  <data name="Ui_NoLayersExport" xml:space="preserve"><value>No layers to export</value></data>
+  <data name="Ui_InvalidExport" xml:space="preserve"><value>Invalid export settings</value></data>
+  <data name="Ui_NoTarget" xml:space="preserve"><value>No target</value></data>
+  <data name="Status_CannotDraw" xml:space="preserve"><value>The drawing target is hidden, locked, or cannot be transformed.</value></data>
+  <data name="Status_SkslApplied" xml:space="preserve"><value>Compiled and applied SkSL shader.</value></data>
+  <data name="Status_SkslFailed" xml:space="preserve"><value>SkSL compile error: {0}</value></data>
+  <data name="Status_AddedHexagon" xml:space="preserve"><value>Added Convex Polygon (Hexagon).</value></data>
+  <data name="Status_AddedStar" xml:space="preserve"><value>Added Concave Polygon with Checkerboard Texture Fill.</value></data>
+  <data name="Status_AddedCircle" xml:space="preserve"><value>Added Circle.</value></data>
+  <data name="Status_AddedArc" xml:space="preserve"><value>Added Pie Arc with Diagonal Stripe Texture.</value></data>
+  <data name="Status_Undo" xml:space="preserve"><value>Undo executed.</value></data>
+  <data name="Status_Redo" xml:space="preserve"><value>Redo executed.</value></data>
+  <data name="Status_NeedShapes" xml:space="preserve"><value>Select at least two shapes in the same container.</value></data>
+  <data name="Status_BlendChanged" xml:space="preserve"><value>Layer &#x27;{0}&#x27; blend mode set to {1}.</value></data>
+  <data name="Status_BooleanEmpty" xml:space="preserve"><value>Boolean {0} produced an empty shape.</value></data>
+  <data name="Status_BooleanApplied" xml:space="preserve"><value>Applied Boolean {0} on &#x27;{1}&#x27; and &#x27;{2}&#x27;.</value></data>
+  <data name="Status_CopyFailed" xml:space="preserve"><value>Could not copy: {0}</value></data>
+  <data name="Status_PasteFailed" xml:space="preserve"><value>Could not paste: {0}</value></data>
+  <data name="Status_NeedPaths" xml:space="preserve"><value>Select at least two open paths in the same container.</value></data>
+  <data name="Status_NoEndpoints" xml:space="preserve"><value>There are no open endpoints to join.</value></data>
+  <data name="Status_FontFailed" xml:space="preserve"><value>Could not load the font list: {0}</value></data>
+  <data name="Status_RecentFailed" xml:space="preserve"><value>Could not open the file: {0}</value></data>
+  <data name="Status_BlurApplied" xml:space="preserve"><value>Applied Gaussian Blur (σ=6) to &#x27;{0}&#x27;.</value></data>
+  <data name="Status_BlurCleared" xml:space="preserve"><value>Cleared blur filter on &#x27;{0}&#x27;.</value></data>
+  <data name="Status_PluginExecuted" xml:space="preserve"><value>Executed plugin tool: {0}</value></data>
+  <data name="Ui_EditingTarget" xml:space="preserve"><value>Editing: {0}</value></data>
+  <data name="Ui_SelectedElements" xml:space="preserve"><value>Selection ({0} objects)</value></data>
+  <data name="Ui_TargetLayer" xml:space="preserve"><value>Layer: {0}</value></data>
+  <data name="Ui_CustomScale" xml:space="preserve"><value>Custom ({0}x)</value></data>
+  <data name="Ui_OutputSize" xml:space="preserve"><value>Output size: {0} × {1} px</value></data>
+  <data name="Choice_Solid" xml:space="preserve"><value>Solid</value></data>
+  <data name="Choice_Texture" xml:space="preserve"><value>Texture</value></data>
+  <data name="Choice_SolidLine" xml:space="preserve"><value>Solid</value></data>
+  <data name="Choice_Dashed" xml:space="preserve"><value>Dashed</value></data>
+  <data name="Choice_Dotted" xml:space="preserve"><value>Dotted</value></data>
+  <data name="Choice_DashDot" xml:space="preserve"><value>Dash-dot</value></data>
+  <data name="Choice_PieSlice" xml:space="preserve"><value>Pie slice</value></data>
+  <data name="Choice_Chord" xml:space="preserve"><value>Chord</value></data>
+  <data name="Choice_Open" xml:space="preserve"><value>Open arc</value></data>
+  <data name="Choice_Blend_Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Choice_Blend_Multiply" xml:space="preserve"><value>Multiply</value></data>
+  <data name="Choice_Blend_Screen" xml:space="preserve"><value>Screen</value></data>
+  <data name="Choice_Blend_Overlay" xml:space="preserve"><value>Overlay</value></data>
+  <data name="Choice_Blend_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Choice_Blend_Subtract" xml:space="preserve"><value>Subtract</value></data>
+  <data name="Choice_Blend_Difference" xml:space="preserve"><value>Difference</value></data>
+  <data name="Choice_Blend_Darken" xml:space="preserve"><value>Darken</value></data>
+  <data name="Choice_Blend_Lighten" xml:space="preserve"><value>Lighten</value></data>
+  <data name="Choice_Texture_Checkerboard" xml:space="preserve"><value>Checkerboard</value></data>
+  <data name="Choice_Texture_DiagonalStripes" xml:space="preserve"><value>Diagonal stripes</value></data>
+  <data name="Choice_Texture_Crosshatch" xml:space="preserve"><value>Crosshatch</value></data>
+  <data name="Choice_Texture_Dots" xml:space="preserve"><value>Dots</value></data>
+  <data name="Choice_Cap_Butt" xml:space="preserve"><value>Butt</value></data>
+  <data name="Choice_Cap_Round" xml:space="preserve"><value>Round</value></data>
+  <data name="Choice_Cap_Square" xml:space="preserve"><value>Square</value></data>
+  <data name="Choice_Join_Miter" xml:space="preserve"><value>Miter</value></data>
+  <data name="Choice_Join_Round" xml:space="preserve"><value>Round</value></data>
+  <data name="Choice_Join_Bevel" xml:space="preserve"><value>Bevel</value></data>
+  <data name="Choice_Align_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Choice_Align_Center" xml:space="preserve"><value>Center</value></data>
+  <data name="Choice_Align_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Ui_FontSearch" xml:space="preserve"><value>Search fonts</value></data>
+  <data name="Ui_FontName" xml:space="preserve"><value>Font family (you can also type a name)</value></data>
+  <data name="Ui_FontSelect" xml:space="preserve"><value>Choose an installed font</value></data>
+  <data name="Ui_MoreSettings" xml:space="preserve"><value>More tool settings</value></data>
 </root>
