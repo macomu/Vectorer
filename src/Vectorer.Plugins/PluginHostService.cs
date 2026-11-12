@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.Loader;
 using Vectorer.Abstractions.Plugins;
@@ -33,6 +34,7 @@ public sealed class PluginHostService : IPluginContext
     private readonly List<IMenuContribution> _menuContributions = [];
     private readonly List<IToolbarContribution> _toolbarContributions = [];
     private readonly List<IShaderEffectProvider> _shaderProviders = [];
+    private CultureInfo _uiCulture = CultureInfo.CurrentUICulture;
 
     public IReadOnlyList<IVectorerPlugin> LoadedPlugins => _loadedPlugins;
     public IReadOnlyList<IMenuContribution> MenuContributions => _menuContributions;
@@ -47,8 +49,28 @@ public sealed class PluginHostService : IPluginContext
             return;
         }
 
+        if (plugin is IUiCultureAwarePlugin aware)
+        {
+            try { aware.OnUiCultureChanged(_uiCulture); }
+            catch { /* Keep host responsive if a plugin fails during culture notification */ }
+        }
+
         plugin.Initialize(this);
         _loadedPlugins.Add(plugin);
+    }
+
+    public void NotifyUiCultureChanged(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        _uiCulture = culture;
+        foreach (var plugin in _loadedPlugins)
+        {
+            if (plugin is IUiCultureAwarePlugin aware)
+            {
+                try { aware.OnUiCultureChanged(culture); }
+                catch { /* Keep host and other plugins updating */ }
+            }
+        }
     }
 
     public int LoadFromAssemblyFile(string assemblyFilePath)

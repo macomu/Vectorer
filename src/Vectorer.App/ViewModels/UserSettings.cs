@@ -61,6 +61,7 @@ public sealed partial class MainWindowViewModel
 
     private void OnLanguageApplied()
     {
+        _pluginHost.NotifyUiCultureChanged(L10n.UiCulture);
         foreach (var tool in Tools)
         {
             tool.NotifyLocalizationChanged();

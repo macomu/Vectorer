@@ -86,3 +86,11 @@ public interface IShaderEffectProvider
     /// </summary>
     SKShader? CreateShader(SKRect objectBounds, IReadOnlyDictionary<string, float>? customUniforms = null);
 }
+
+/// <summary>
+/// Optional contract for plugins that support runtime UI language switching.
+/// </summary>
+public interface IUiCultureAwarePlugin
+{
+    void OnUiCultureChanged(System.Globalization.CultureInfo culture);
+}

@@ -89,6 +89,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         DocumentRenderer = new SkiaDocumentRenderer(_shaderRegistry);
         _pngExportService = new PngExportService(DocumentRenderer);
         _pluginHost = new PluginHostService();
+        _pluginHost.NotifyUiCultureChanged(L10n.UiCulture);
 
         _currentDocument = SvgDocument.CreateDefault();
         SyncLayersCollection();

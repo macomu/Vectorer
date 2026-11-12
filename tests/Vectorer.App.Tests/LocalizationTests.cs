@@ -201,6 +201,24 @@ public sealed partial class LocalizationTests
         Assert.Contains("Multi-select", vm.ToolHint);
     }
 
+    [Fact]
+    public void LanguageChange_NotifiesSamplePluginContributions()
+    {
+        var l10n = new AppLocalization(CultureInfo.GetCultureInfo("ja-JP"), CultureInfo.InvariantCulture, "ja");
+        var vm = new MainWindowViewModel(l10n);
+
+        var menu = Assert.Single(vm.PluginMenus, m => m.Id == "sample.menu.apply_sunset_shader");
+        var tool = Assert.Single(vm.PluginToolbarItems, t => t.Id == "sample.toolbar.add_starburst");
+
+        Assert.Equal("選択にサンセットウェーブ シェーダーを適用", menu.Title);
+        Assert.Equal("スターバースト (プラグイン)", tool.Title);
+
+        vm.SetLanguageCommand.Execute("en");
+
+        Assert.Equal("Apply Sunset Wave Shader to Selection", menu.Title);
+        Assert.Equal("Starburst (Plugin)", tool.Title);
+    }
+
     private static string FindLocalizationDirectory()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

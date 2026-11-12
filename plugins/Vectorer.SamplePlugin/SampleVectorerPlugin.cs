@@ -1,3 +1,4 @@
+using System.Globalization;
 using SkiaSharp;
 using Vectorer.Abstractions.Commands;
 using Vectorer.Abstractions.Documents;
@@ -11,9 +12,12 @@ namespace Vectorer.SamplePlugin;
 /// Demonstrates adding menu items, toolbar actions, manipulating the SVG scene graph,
 /// and registering a custom SkiaSharp SkSL shader effect.
 /// </summary>
-public sealed class SampleVectorerPlugin : IVectorerPlugin
+public sealed class SampleVectorerPlugin : IVectorerPlugin, IUiCultureAwarePlugin
 {
     public const string SunsetWaveShaderId = "sample.sunset_wave";
+    private CultureInfo _uiCulture = CultureInfo.CurrentUICulture;
+
+    private bool IsJapanese => string.Equals(_uiCulture.TwoLetterISOLanguageName, "ja", StringComparison.OrdinalIgnoreCase);
 
     public PluginMetadata Metadata { get; } = new(
         Id: "vectorer.sample.plugin",
@@ -22,22 +26,27 @@ public sealed class SampleVectorerPlugin : IVectorerPlugin
         Author: "Vectorer Team",
         Description: "Adds a Sunset Wave Skia shader and quick star-burst generator tools.");
 
+    public void OnUiCultureChanged(CultureInfo culture)
+    {
+        _uiCulture = culture;
+    }
+
     public void Initialize(IPluginContext context)
     {
-        var shaderProvider = new SunsetWaveShaderProvider();
+        var shaderProvider = new SunsetWaveShaderProvider(() => IsJapanese);
         context.RegisterShaderProvider(shaderProvider);
-        context.RegisterMenuContribution(new ApplySunsetShaderMenuContribution());
-        context.RegisterToolbarContribution(new AddStarburstToolbarContribution());
+        context.RegisterMenuContribution(new ApplySunsetShaderMenuContribution(() => IsJapanese));
+        context.RegisterToolbarContribution(new AddStarburstToolbarContribution(() => IsJapanese));
     }
 }
 
 /// <summary>
 /// Custom SkiaSharp runtime shader (SkSL) that renders a smooth procedural gradient wave per-object.
 /// </summary>
-public sealed class SunsetWaveShaderProvider : IShaderEffectProvider
+public sealed class SunsetWaveShaderProvider(Func<bool>? isJapanese = null) : IShaderEffectProvider
 {
     public string ShaderId => SampleVectorerPlugin.SunsetWaveShaderId;
-    public string DisplayName => "Sunset Wave (SkSL)";
+    public string DisplayName => isJapanese?.Invoke() == true ? "サンセットウェーブ (SkSL)" : "Sunset Wave (SkSL)";
 
     public string SkslSource => """
         uniform float4 u_bounds;
@@ -79,11 +88,11 @@ public sealed class SunsetWaveShaderProvider : IShaderEffectProvider
     }
 }
 
-internal sealed class ApplySunsetShaderMenuContribution : IMenuContribution
+internal sealed class ApplySunsetShaderMenuContribution(Func<bool>? isJapanese = null) : IMenuContribution
 {
     public string Id => "sample.menu.apply_sunset_shader";
     public string MenuPath => "Extensions/Shaders";
-    public string Title => "Apply Sunset Wave Shader to Selection";
+    public string Title => isJapanese?.Invoke() == true ? "選択にサンセットウェーブ シェーダーを適用" : "Apply Sunset Wave Shader to Selection";
     public string? ShortcutGesture => "Ctrl+Shift+W";
 
     public void Execute(IEditorWorkspace workspace)
@@ -123,11 +132,11 @@ internal sealed class ApplySunsetShaderMenuContribution : IMenuContribution
     }
 }
 
-internal sealed class AddStarburstToolbarContribution : IToolbarContribution
+internal sealed class AddStarburstToolbarContribution(Func<bool>? isJapanese = null) : IToolbarContribution
 {
     public string Id => "sample.toolbar.add_starburst";
-    public string Title => "Starburst (Plugin)";
-    public string? Tooltip => "Adds a concave 8-point starburst with the Sunset Wave SkSL shader";
+    public string Title => isJapanese?.Invoke() == true ? "スターバースト (プラグイン)" : "Starburst (Plugin)";
+    public string? Tooltip => isJapanese?.Invoke() == true ? "サンセットウェーブ SkSL シェーダー付きの8角星形を追加" : "Adds a concave 8-point starburst with the Sunset Wave SkSL shader";
     public string? IconPathData => "M 12 2 L 15 9 L 22 12 L 15 15 L 12 22 L 9 15 L 2 12 L 9 9 Z";
 
     public void Execute(IEditorWorkspace workspace)
