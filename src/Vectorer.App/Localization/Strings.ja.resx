@@ -242,6 +242,27 @@
     <value>履歴・表示設定を保存できませんでした: {0}</value>
     <comment>{0}: error message</comment>
   </data>
+  <data name="Status_FileOpenFailed" xml:space="preserve">
+    <value>開けませんでした: {0}</value>
+  </data>
+  <data name="Status_FileOpened" xml:space="preserve">
+    <value>開きました: {0}</value>
+  </data>
+  <data name="Status_FileSaved" xml:space="preserve">
+    <value>保存しました: {0}</value>
+  </data>
+  <data name="Status_FileSaveFailed" xml:space="preserve">
+    <value>保存できませんでした: {0}</value>
+  </data>
+  <data name="Status_PngBatchExported" xml:space="preserve">
+    <value>PNG一括出力完了: {0} 枚 ({1})</value>
+  </data>
+  <data name="Status_PngExported" xml:space="preserve">
+    <value>PNGを書き出しました: {0} ({1}×{2})</value>
+  </data>
+  <data name="Status_PngExportFailed" xml:space="preserve">
+    <value>PNG出力に失敗しました: {0}</value>
+  </data>
   <data name="Status_Ready" xml:space="preserve">
     <value>準備完了 — Vectorer (.NET 10 + Avalonia + SkiaSharp)</value>
   </data>

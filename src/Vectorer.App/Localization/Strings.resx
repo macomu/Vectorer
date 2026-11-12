@@ -242,6 +242,27 @@
     <value>Could not save history or display settings: {0}</value>
     <comment>{0}: error message</comment>
   </data>
+  <data name="Status_FileOpenFailed" xml:space="preserve">
+    <value>Could not open the file: {0}</value>
+  </data>
+  <data name="Status_FileOpened" xml:space="preserve">
+    <value>Opened: {0}</value>
+  </data>
+  <data name="Status_FileSaved" xml:space="preserve">
+    <value>Saved: {0}</value>
+  </data>
+  <data name="Status_FileSaveFailed" xml:space="preserve">
+    <value>Could not save the file: {0}</value>
+  </data>
+  <data name="Status_PngBatchExported" xml:space="preserve">
+    <value>Batch PNG export complete: {0} file(s) ({1})</value>
+  </data>
+  <data name="Status_PngExported" xml:space="preserve">
+    <value>Exported PNG: {0} ({1}×{2})</value>
+  </data>
+  <data name="Status_PngExportFailed" xml:space="preserve">
+    <value>PNG export failed: {0}</value>
+  </data>
   <data name="Status_Ready" xml:space="preserve">
     <value>Ready — Vectorer (.NET 10 + Avalonia + SkiaSharp)</value>
   </data>

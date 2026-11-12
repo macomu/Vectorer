@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vectorer.Abstractions.Commands;
 using Vectorer.Abstractions.Documents;
+using Vectorer.App.Localization;
 using Vectorer.App.Services;
 
 namespace Vectorer.App.ViewModels;
@@ -45,7 +46,7 @@ public sealed partial class MainWindowViewModel
             await OpenFileCoreAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException or FormatException or ArgumentException)
-        { StatusMessage = $"開けませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
+        { SetStatus(nameof(Strings.Status_FileOpenFailed), ex.Message); await FileDialogs.ShowErrorAsync(StatusMessage); }
         finally { IsBusy = false; }
     }
     private async Task OpenFileCoreAsync(EditorFile file)
@@ -53,7 +54,7 @@ public sealed partial class MainWindowViewModel
         await using var stream = await file.OpenRead();
         var document = await Task.Run(() => _svgSerializer.LoadFromStream(stream));
         ReplaceDocument(document, file);
-        StatusMessage = $"開きました: {file.Name}";
+        SetStatus(nameof(Strings.Status_FileOpened), file.Name);
         await RememberFileAsync(file);
     }
     [RelayCommand] private Task SaveDocumentAsync() => SaveDocumentCoreAsync(false);
@@ -75,11 +76,11 @@ public sealed partial class MainWindowViewModel
                 await stream.FlushAsync();
             }
             _currentFile = file; _savedCommand = _undoRedoService.UndoStack.LastOrDefault(); _untrackedChanges = false;
-            NotifyDocumentState(); StatusMessage = $"保存しました: {file.Name}";
+            NotifyDocumentState(); SetStatus(nameof(Strings.Status_FileSaved), file.Name);
             await RememberFileAsync(file);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
-        { StatusMessage = $"保存できませんでした: {ex.Message}"; await FileDialogs.ShowErrorAsync(StatusMessage); }
+        { SetStatus(nameof(Strings.Status_FileSaveFailed), ex.Message); await FileDialogs.ShowErrorAsync(StatusMessage); }
         finally { IsBusy = false; }
     }
     private async Task<bool> ProtectUnsavedAsync()
@@ -133,7 +134,7 @@ public sealed partial class MainWindowViewModel
                 var prefix = exportVm.BatchFilePrefix.Trim();
                 var visibleOnly = exportVm.VisibleLayersOnly;
                 var files = await Task.Run(() => _pngExportService.ExportLayersBatchAsync(CurrentDocument, folder, prefix, visibleOnly, options));
-                StatusMessage = $"PNG一括出力完了: {files.Count} 枚 ({folder})";
+                SetStatus(nameof(Strings.Status_PngBatchExported), files.Count, folder);
             }
             else
             {
@@ -147,12 +148,12 @@ public sealed partial class MainWindowViewModel
                     await stream.WriteAsync(bytes);
                     await stream.FlushAsync();
                 }
-                StatusMessage = $"PNGを書き出しました: {file.Name} ({exportVm.TargetWidth}×{exportVm.TargetHeight})";
+                SetStatus(nameof(Strings.Status_PngExported), file.Name, exportVm.TargetWidth, exportVm.TargetHeight);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            StatusMessage = $"PNG出力に失敗しました: {ex.Message}";
+            SetStatus(nameof(Strings.Status_PngExportFailed), ex.Message);
             await FileDialogs.ShowErrorAsync(StatusMessage);
         }
         finally
