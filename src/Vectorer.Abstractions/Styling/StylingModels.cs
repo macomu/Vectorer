@@ -61,9 +61,10 @@ public sealed record StrokeStyle(
     SKStrokeJoin Join = SKStrokeJoin.Round,
     float MiterLimit = 4f,
     float[]? DashArray = null,
-    float DashPhase = 0f)
+    float DashPhase = 0f,
+    ShapeFill? Paint = null)
 {
-    public bool IsVisible => Width > 0f && Color.Alpha > 0;
+    public bool IsVisible => Width > 0f && (Paint is null ? Color.Alpha > 0 : PaintVisibility.IsVisible(Paint));
 }
 
 /// <summary>

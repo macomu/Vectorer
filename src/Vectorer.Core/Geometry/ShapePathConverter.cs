@@ -19,7 +19,7 @@ public static class ShapePathConverter
             using var paint = new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = stroke.Width,
                 StrokeCap = stroke.Cap, StrokeJoin = stroke.Join, StrokeMiter = stroke.MiterLimit, PathEffect = dash };
             if (!paint.GetFillPath(path, outline) || outline.IsEmpty) return null;
-            style.Fill = new SolidColorFill(stroke.Color);
+            style.Fill = GradientGeometry.ToUserSpace(stroke.Paint ?? new SolidColorFill(stroke.Color), path.TightBounds);
             style.Stroke = null;
         }
         var result = new PathShapeNode((strokeOnly ? outline : path).ToSvgPathData())

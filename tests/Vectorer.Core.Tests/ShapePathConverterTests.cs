@@ -63,4 +63,19 @@ public sealed class ShapePathConverterTests
         source.Style.Stroke = null;
         Assert.Null(ShapePathConverter.Convert(source, true));
     }
+
+    [Fact]
+    public void StrokeToPath_RetainsGradientPaintAndOriginalBounds()
+    {
+        var gradient = new LinearGradientFill([new(0, SKColors.Red), new(1, SKColors.Blue)], new(0, 0), new(1, 0));
+        var source = new RectangleShapeNode { Rect = new(10, 20, 110, 70) };
+        source.Style.Stroke = new StrokeStyle(SKColors.Transparent, 10, Paint: gradient);
+        var converted = ShapePathConverter.Convert(source, true)!;
+        var fill = Assert.IsType<LinearGradientFill>(converted.Style.Fill);
+        Assert.False(fill.UseObjectBoundingBox);
+        Assert.Equal(new SKPoint(10, 20), fill.GradientTransform!.Value.MapPoint(fill.Start));
+        Assert.Equal(new SKPoint(110, 20), fill.GradientTransform!.Value.MapPoint(fill.End));
+        Assert.Same(gradient.Stops, fill.Stops);
+        Assert.Null(converted.Style.Stroke);
+    }
 }

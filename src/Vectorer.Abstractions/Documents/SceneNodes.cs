@@ -15,6 +15,11 @@ public sealed class SvgDocument
     public string PreserveAspectRatio { get; set; } = "xMidYMid meet";
     public SKColor BackgroundColor { get; set; } = SKColors.Transparent;
     public List<LayerNode> Layers { get; } = [];
+    public List<ColorPreset> ColorPresets { get; } = new[]
+    {
+        "#FFFFFF", "#0F172A", "#64748B", "#EF4444", "#F97316", "#EAB308",
+        "#22C55E", "#14B8A6", "#0EA5E9", "#3B82F6", "#8B5CF6", "#EC4899"
+    }.Select(value => new ColorPreset(SKColor.Parse(value))).ToList();
 
     public SKMatrix GetViewportTransform()
     {

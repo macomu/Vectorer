@@ -350,12 +350,7 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
             return null;
         }
 
-        var hasFill = activeShader is not null || shape.Style.Fill switch
-        {
-            SolidColorFill solid => solid.Color.Alpha > 0,
-            TextureFill => true,
-            _ => false
-        };
+        var hasFill = activeShader is not null || PaintVisibility.IsVisible(shape.Style.Fill);
 
         var stroke = shape.Style.Stroke;
         var hasStroke = stroke is { IsVisible: true };

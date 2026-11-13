@@ -66,20 +66,27 @@ public sealed class SvgSerializer : ISvgSerializer
             root.Add(new XAttribute(VectorerNs + "background", FormatColor(document.BackgroundColor)));
         }
 
+        root.Add(new XElement(SvgNs + "metadata",
+            new XElement(VectorerNs + "palette", document.ColorPresets.Select(preset =>
+                new XElement(VectorerNs + "color", new XAttribute("value", FormatColor(preset.Color)),
+                    preset.Name is null ? null : new XAttribute("name", preset.Name))))));
+
+        var context = new WriteContext(document);
         foreach (var layer in document.Layers)
         {
-            root.Add(SerializeNode(layer));
+            root.Add(SerializeNode(layer, context));
         }
+        if (context.Definitions.HasElements) root.AddFirst(context.Definitions);
 
         return new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
     }
 
-    private static XElement SerializeNode(SceneNode node)
+    private static XElement SerializeNode(SceneNode node, WriteContext context)
     {
         XElement element = node switch
         {
-            LayerNode layer => SerializeLayer(layer),
-            GroupNode group => SerializeGroup(group),
+            LayerNode layer => SerializeLayer(layer, context),
+            GroupNode group => SerializeGroup(group, context),
             RectangleShapeNode rect => SerializeRectangle(rect),
             EllipseShapeNode ellipse => SerializeEllipse(ellipse),
             PolygonShapeNode polygon => SerializePolygon(polygon),
@@ -140,13 +147,13 @@ public sealed class SvgSerializer : ISvgSerializer
 
         if (node is ShapeNode shapeNode)
         {
-            WriteShapeStyleAttributes(element, shapeNode.Style);
+            WriteShapeStyleAttributes(element, shapeNode.Style, context);
         }
 
         return element;
     }
 
-    private static XElement SerializeLayer(LayerNode layer)
+    private static XElement SerializeLayer(LayerNode layer, WriteContext context)
     {
         var g = new XElement(
             SvgNs + "g",
@@ -154,18 +161,18 @@ public sealed class SvgSerializer : ISvgSerializer
 
         foreach (var child in layer.Children)
         {
-            g.Add(SerializeNode(child));
+            g.Add(SerializeNode(child, context));
         }
 
         return g;
     }
 
-    private static XElement SerializeGroup(GroupNode group)
+    private static XElement SerializeGroup(GroupNode group, WriteContext context)
     {
         var g = new XElement(SvgNs + "g");
         foreach (var child in group.Children)
         {
-            g.Add(SerializeNode(child));
+            g.Add(SerializeNode(child, context));
         }
 
         return g;
@@ -270,13 +277,16 @@ public sealed class SvgSerializer : ISvgSerializer
             new XAttribute(VectorerNs + "node-kinds", path.NodeKinds));
     }
 
-    private static void WriteShapeStyleAttributes(XElement element, ShapeStyle style)
+    private static void WriteShapeStyleAttributes(XElement element, ShapeStyle style, WriteContext context)
     {
         switch (style.Fill)
         {
             case SolidColorFill solid:
                 element.SetAttributeValue("fill", Rgb(solid.Color));
                 if (solid.Color.Alpha < 255) element.SetAttributeValue("fill-opacity", FormatFloat(solid.Color.Alpha / 255f));
+                break;
+            case LinearGradientFill gradient:
+                WriteGradientPaint(element, "fill", gradient, context);
                 break;
             case TextureFill texture:
                 element.SetAttributeValue("fill", FormatColor(texture.PrimaryColor));
@@ -291,10 +301,17 @@ public sealed class SvgSerializer : ISvgSerializer
                 break;
         }
 
-        if (style.Stroke is { IsVisible: true } stroke)
+        // Preserve editable paints even when the current width or alpha makes them invisible.
+        if (style.Stroke is { } stroke)
         {
-            element.SetAttributeValue("stroke", Rgb(stroke.Color));
-            if (stroke.Color.Alpha < 255) element.SetAttributeValue("stroke-opacity", FormatFloat(stroke.Color.Alpha / 255f));
+            if (stroke.Paint is LinearGradientFill gradient)
+                WriteGradientPaint(element, "stroke", gradient, context);
+            else
+            {
+                var color = stroke.Paint is SolidColorFill solid ? solid.Color : stroke.Color;
+                element.SetAttributeValue("stroke", Rgb(color));
+                if (color.Alpha < 255) element.SetAttributeValue("stroke-opacity", FormatFloat(color.Alpha / 255f));
+            }
             element.SetAttributeValue("stroke-width", FormatFloat(stroke.Width));
             element.SetAttributeValue("stroke-linecap", stroke.Cap.ToString().ToLowerInvariant());
             element.SetAttributeValue("stroke-linejoin", stroke.Join.ToString().ToLowerInvariant());
@@ -336,6 +353,17 @@ public sealed class SvgSerializer : ISvgSerializer
             doc.BackgroundColor = bgColor;
         }
 
+        var palette = root.Elements().Where(e => e.Name.LocalName == "metadata")
+            .SelectMany(e => e.Elements(VectorerNs + "palette")).FirstOrDefault();
+        if (palette is not null)
+        {
+            doc.ColorPresets.Clear();
+            foreach (var color in palette.Elements(VectorerNs + "color"))
+                if (SKColor.TryParse(color.Attribute("value")?.Value, out var parsed))
+                    doc.ColorPresets.Add(new ColorPreset(parsed, color.Attribute("name")?.Value));
+        }
+        var context = new ReadContext(root, doc.ViewBox);
+
         LayerNode? fallbackLayer = null;
 
         foreach (var childEl in root.Elements())
@@ -347,7 +375,7 @@ public sealed class SvgSerializer : ISvgSerializer
                 ApplyCommonAttributes(childEl, layer);
                 foreach (var grandChild in childEl.Elements())
                 {
-                    var parsedChild = ParseElement(grandChild);
+                    var parsedChild = ParseElement(grandChild, context);
                     if (parsedChild is not null)
                     {
                         layer.Children.Add(parsedChild);
@@ -358,7 +386,7 @@ public sealed class SvgSerializer : ISvgSerializer
             }
             else
             {
-                var parsedNode = ParseElement(childEl);
+                var parsedNode = ParseElement(childEl, context);
                 if (parsedNode is not null)
                 {
                     fallbackLayer ??= new LayerNode { Name = "Layer 1" };
@@ -380,12 +408,12 @@ public sealed class SvgSerializer : ISvgSerializer
         return doc;
     }
 
-    private static SceneNode? ParseElement(XElement el)
+    private static SceneNode? ParseElement(XElement el, ReadContext context)
     {
         var localName = el.Name.LocalName;
         SceneNode? node = localName switch
         {
-            "g" => ParseGroup(el),
+            "g" => ParseGroup(el, context),
             "rect" => ParseRectangle(el),
             "ellipse" => ParseEllipse(el),
             "circle" => ParseCircle(el),
@@ -401,19 +429,19 @@ public sealed class SvgSerializer : ISvgSerializer
             ApplyCommonAttributes(el, node);
             if (node is ShapeNode shapeNode)
             {
-                ReadShapeStyleAttributes(el, shapeNode.Style);
+                ReadShapeStyleAttributes(el, shapeNode.Style, context);
             }
         }
 
         return node;
     }
 
-    private static GroupNode ParseGroup(XElement el)
+    private static GroupNode ParseGroup(XElement el, ReadContext context)
     {
         var group = new GroupNode();
         foreach (var child in el.Elements())
         {
-            var parsed = ParseElement(child);
+            var parsed = ParseElement(child, context);
             if (parsed is not null)
             {
                 group.Children.Add(parsed);
@@ -572,7 +600,7 @@ public sealed class SvgSerializer : ISvgSerializer
         return dict.Count > 0 ? dict : null;
     }
 
-    private static void ReadShapeStyleAttributes(XElement el, ShapeStyle style)
+    private static void ReadShapeStyleAttributes(XElement el, ShapeStyle style, ReadContext context)
     {
         var textureKindStr = el.Attribute(VectorerNs + "texture-kind")?.Value;
         if (!string.IsNullOrWhiteSpace(textureKindStr) && Enum.TryParse<TexturePatternKind>(textureKindStr, ignoreCase: true, out var patternKind))
@@ -586,15 +614,7 @@ public sealed class SvgSerializer : ISvgSerializer
         else
         {
             var fillAttr = el.Attribute("fill")?.Value;
-            if (string.Equals(fillAttr, "none", StringComparison.OrdinalIgnoreCase))
-            {
-                style.Fill = null;
-            }
-            else if (!string.IsNullOrWhiteSpace(fillAttr))
-            {
-                var color = ParseSvgColor(fillAttr, new SKColor(66, 133, 244));
-                style.Fill = new SolidColorFill(color.WithAlpha((byte)Math.Clamp(color.Alpha * ParseFloat(el.Attribute("fill-opacity")?.Value, 1), 0, 255)));
-            }
+            style.Fill = ReadPaint(fillAttr, ParseUnitInterval(el.Attribute("fill-opacity")?.Value, 1), context);
         }
 
         var strokeAttr = el.Attribute("stroke")?.Value;
@@ -604,8 +624,9 @@ public sealed class SvgSerializer : ISvgSerializer
         }
         else
         {
-            var strokeColor = ParseSvgColor(strokeAttr, SKColors.Black);
-            strokeColor = strokeColor.WithAlpha((byte)Math.Clamp(strokeColor.Alpha * ParseFloat(el.Attribute("stroke-opacity")?.Value, 1), 0, 255));
+            var paint = ReadPaint(strokeAttr, ParseUnitInterval(el.Attribute("stroke-opacity")?.Value, 1), context);
+            if (paint is null) { style.Stroke = null; return; }
+            var strokeColor = paint is SolidColorFill solid ? solid.Color : SKColors.Black;
             var strokeWidth = ParseFloat(el.Attribute("stroke-width")?.Value, 1f);
             _ = Enum.TryParse<SKStrokeCap>(el.Attribute("stroke-linecap")?.Value, true, out var cap);
             _ = Enum.TryParse<SKStrokeJoin>(el.Attribute("stroke-linejoin")?.Value, true, out var join);
@@ -613,7 +634,7 @@ public sealed class SvgSerializer : ISvgSerializer
             if (dash.Length % 2 == 1) dash = dash.Concat(dash).ToArray();
             style.Stroke = new StrokeStyle(strokeColor, strokeWidth, cap, join,
                 ParseFloat(el.Attribute("stroke-miterlimit")?.Value, 4), dash.Length > 0 && dash.Any(n => n > 0) ? dash : null,
-                ParseFloat(el.Attribute("stroke-dashoffset")?.Value, 0));
+                ParseFloat(el.Attribute("stroke-dashoffset")?.Value, 0), paint is LinearGradientFill ? paint : null);
         }
     }
 
@@ -624,7 +645,7 @@ public sealed class SvgSerializer : ISvgSerializer
         {
             var colon = declaration.IndexOf(':'); if (colon < 0) continue;
             var name = declaration[..colon].Trim();
-            if (InheritedProperties.Contains(name) || name is "opacity" or "display") element.SetAttributeValue(name, declaration[(colon + 1)..].Trim());
+            if (InheritedProperties.Contains(name) || name is "opacity" or "display" or "stop-color" or "stop-opacity") element.SetAttributeValue(name, declaration[(colon + 1)..].Trim());
         }
         var current = new Dictionary<string, string>(inherited);
         foreach (var property in InheritedProperties)
@@ -633,7 +654,7 @@ public sealed class SvgSerializer : ISvgSerializer
             if (value is null or "inherit") { if (inherited.TryGetValue(property, out var parent)) element.SetAttributeValue(property, parent); }
             else current[property] = value;
         }
-        foreach (var property in new[] { "fill", "stroke" })
+        foreach (var property in new[] { "fill", "stroke", "stop-color" })
             if (element.Attribute(property)?.Value == "currentColor") element.SetAttributeValue(property, current.GetValueOrDefault("color", "#000000"));
         foreach (var child in element.Elements()) ExpandInheritedStyles(child, current);
     }
@@ -661,6 +682,138 @@ public sealed class SvgSerializer : ISvgSerializer
             result = SKMatrix.Concat(result, next);
         }
         return result;
+    }
+
+    private sealed class WriteContext
+    {
+        public XElement Definitions { get; } = new(SvgNs + "defs");
+        private readonly HashSet<string> _ids;
+        private int _nextId;
+
+        public WriteContext(SvgDocument document)
+        {
+            _ids = [];
+            foreach (var layer in document.Layers) RegisterIds(layer);
+        }
+
+        private void RegisterIds(SceneNode node)
+        {
+            _ids.Add(node.Id);
+            if (node is ContainerNode container)
+                foreach (var child in container.Children) RegisterIds(child);
+        }
+
+        public string AddGradient(LinearGradientFill gradient)
+        {
+            string id;
+            do { id = $"vectorer_gradient_{++_nextId}"; } while (!_ids.Add(id));
+            var definition = new XElement(SvgNs + "linearGradient", new XAttribute("id", id),
+                new XAttribute("x1", FormatFloat(gradient.Start.X)), new XAttribute("y1", FormatFloat(gradient.Start.Y)),
+                new XAttribute("x2", FormatFloat(gradient.End.X)), new XAttribute("y2", FormatFloat(gradient.End.Y)),
+                new XAttribute("gradientUnits", gradient.UseObjectBoundingBox ? "objectBoundingBox" : "userSpaceOnUse"),
+                new XAttribute("spreadMethod", gradient.SpreadMethod.ToString().ToLowerInvariant()));
+            if (gradient.GradientTransform is { } transform && !transform.IsIdentity)
+                definition.SetAttributeValue("gradientTransform", $"matrix({FormatFloat(transform.ScaleX)} {FormatFloat(transform.SkewY)} {FormatFloat(transform.SkewX)} {FormatFloat(transform.ScaleY)} {FormatFloat(transform.TransX)} {FormatFloat(transform.TransY)})");
+            foreach (var stop in gradient.Stops)
+                definition.Add(new XElement(SvgNs + "stop", new XAttribute("offset", FormatFloat(stop.Offset)),
+                    new XAttribute("stop-color", Rgb(stop.Color)), new XAttribute("stop-opacity", FormatFloat(stop.Color.Alpha / 255f))));
+            Definitions.Add(definition);
+            return id;
+        }
+    }
+
+    private static void WriteGradientPaint(XElement element, string property, LinearGradientFill gradient, WriteContext context)
+    {
+        element.SetAttributeValue(property, $"url(#{context.AddGradient(gradient)})");
+        if (gradient.Opacity < 1f) element.SetAttributeValue(property + "-opacity", FormatFloat(gradient.Opacity));
+    }
+
+    private sealed class ReadContext
+    {
+        private readonly Dictionary<string, XElement> _gradients;
+        private readonly SKRect _viewBox;
+        private static readonly XNamespace XLinkNs = "http://www.w3.org/1999/xlink";
+
+        public ReadContext(XElement root, SKRect viewBox)
+        {
+            _viewBox = viewBox;
+            _gradients = root.Descendants().Where(e => e.Name.LocalName == "linearGradient"
+                    && (e.Name.Namespace == SvgNs || e.Name.Namespace == XNamespace.None)
+                    && e.Attribute("id") is not null)
+                .GroupBy(e => e.Attribute("id")!.Value, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        }
+
+        public LinearGradientFill? ReadGradient(string id)
+        {
+            var chain = new List<XElement>();
+            var visited = new HashSet<string>(StringComparer.Ordinal);
+            while (_gradients.TryGetValue(id, out var definition))
+            {
+                // Invalid circular template references must not recurse indefinitely.
+                if (!visited.Add(id) || chain.Count >= 64) return null;
+                chain.Add(definition);
+                var href = definition.Attribute("href")?.Value ?? definition.Attribute(XLinkNs + "href")?.Value;
+                if (href is not { Length: > 1 } || href[0] != '#') break;
+                id = href[1..];
+            }
+            if (chain.Count == 0) return null;
+            string? Attribute(string name) => chain.Select(e => e.Attribute(name)?.Value).FirstOrDefault(v => v is not null);
+            var boundingBox = Attribute("gradientUnits") != "userSpaceOnUse";
+            float Coordinate(string name, string fallback, bool horizontal)
+            {
+                var value = (Attribute(name) ?? fallback).Trim();
+                var number = ParseFloat(value.TrimEnd('%'), 0);
+                return value.EndsWith('%') ? number / 100f * (boundingBox ? 1f : horizontal ? _viewBox.Width : _viewBox.Height) : number;
+            }
+            var start = new SKPoint(Coordinate("x1", "0%", true), Coordinate("y1", "0%", false));
+            var end = new SKPoint(Coordinate("x2", "100%", true), Coordinate("y2", "0%", false));
+            var spread = Attribute("spreadMethod") switch
+            {
+                "reflect" => GradientSpreadMethod.Reflect,
+                "repeat" => GradientSpreadMethod.Repeat,
+                _ => GradientSpreadMethod.Pad
+            };
+            var transform = Attribute("gradientTransform") is { } raw ? ParseTransform(raw) : (SKMatrix?)null;
+            var stopElements = chain.Select(e => e.Elements().Where(child => child.Name.LocalName == "stop"
+                    && (child.Name.Namespace == SvgNs || child.Name.Namespace == XNamespace.None)).ToArray())
+                .FirstOrDefault(stops => stops.Length > 0) ?? [];
+            var stops = new List<GradientStop>();
+            var previousOffset = 0f;
+            foreach (var element in stopElements)
+            {
+                var offset = Math.Max(previousOffset, ParseUnitInterval(element.Attribute("offset")?.Value, 0));
+                var color = ParseSvgColor(element.Attribute("stop-color")?.Value, SKColors.Black);
+                var alpha = ParseUnitInterval(element.Attribute("stop-opacity")?.Value, 1);
+                stops.Add(new GradientStop(offset, color.WithAlpha((byte)Math.Clamp(MathF.Round(color.Alpha * alpha), 0, 255))));
+                previousOffset = offset;
+            }
+            return new LinearGradientFill(stops.ToArray(), start, end, boundingBox, transform, spread);
+        }
+    }
+
+    private static ShapeFill? ReadPaint(string? raw, float opacity, ReadContext context)
+    {
+        raw = raw?.Trim();
+        if (string.IsNullOrEmpty(raw) || string.Equals(raw, "none", StringComparison.OrdinalIgnoreCase)) return null;
+        var reference = Regex.Match(raw, "^url\\(\\s*['\"]?#([^)'\"\\s]+)['\"]?\\s*\\)\\s*(.*)$", RegexOptions.IgnoreCase);
+        if (reference.Success)
+        {
+            var gradient = context.ReadGradient(reference.Groups[1].Value);
+            if (gradient is not null) return gradient with { Opacity = opacity };
+            var fallback = reference.Groups[2].Value.Trim();
+            if (fallback.Length == 0 || fallback == "none") return null;
+            raw = fallback;
+        }
+        else if (raw.StartsWith("url(", StringComparison.OrdinalIgnoreCase)) return null;
+        var color = ParseSvgColor(raw, SKColors.Black);
+        return new SolidColorFill(color.WithAlpha((byte)Math.Clamp(MathF.Round(color.Alpha * opacity), 0, 255)));
+    }
+
+    private static float ParseUnitInterval(string? raw, float fallback)
+    {
+        raw = raw?.Trim();
+        return Math.Clamp(raw?.EndsWith('%') == true ? ParseFloat(raw[..^1], fallback * 100) / 100f : ParseFloat(raw, fallback), 0, 1);
     }
 
     private static string FormatFloat(float value) => value.ToString("G9", CultureInfo.InvariantCulture);

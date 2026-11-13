@@ -164,10 +164,12 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         // 2. Outline (Stroke)
         if (shape.Style.Stroke is { IsVisible: true } stroke)
         {
+            using var strokeShader = CreatePaintShader(stroke.Paint, bounds);
             using var strokePaint = new SKPaint
             {
                 Style = SKPaintStyle.Stroke,
-                Color = stroke.Color,
+                Color = PaintColor(stroke.Paint, stroke.Color),
+                Shader = strokeShader,
                 StrokeWidth = stroke.Width,
                 StrokeCap = stroke.Cap,
                 StrokeJoin = stroke.Join,
@@ -195,32 +197,51 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
 
     private static void RenderShapeFill(ShapeFill fill, SKPath path, SKCanvas canvas)
     {
-        switch (fill)
+        using var shader = CreatePaintShader(fill, path.TightBounds);
+        using var paint = new SKPaint
         {
-            case SolidColorFill solid:
+            Style = SKPaintStyle.Fill,
+            Color = PaintColor(fill, SKColors.Transparent),
+            Shader = shader,
+            IsAntialias = true
+        };
+        canvas.DrawPath(path, paint);
+    }
+
+    private static SKColor PaintColor(ShapeFill? paint, SKColor fallback) => paint switch
+    {
+        SolidColorFill solid => solid.Color,
+        LinearGradientFill gradient => SKColors.White.WithAlpha(
+            (byte)Math.Clamp(MathF.Round(gradient.Opacity * 255f), 0f, 255f)),
+        TextureFill => SKColors.White,
+        _ => fallback
+    };
+
+    private static SKShader? CreatePaintShader(ShapeFill? paint, SKRect bounds) => paint switch
+    {
+        LinearGradientFill gradient => CreateGradientShader(gradient, bounds),
+        TextureFill texture => CreateTexturePatternShader(texture),
+        _ => null
+    };
+
+    private static SKShader CreateGradientShader(LinearGradientFill gradient, SKRect bounds)
+    {
+        var stops = gradient.Stops.Where(s => float.IsFinite(s.Offset))
+            .OrderBy(s => s.Offset).ToArray();
+        if (stops.Length == 0 || gradient.UseObjectBoundingBox && (bounds.Width <= 0 || bounds.Height <= 0))
+            return SKShader.CreateColor(SKColors.Transparent);
+        if (stops.Length == 1 || gradient.Start == gradient.End)
+            return SKShader.CreateColor(stops[^1].Color);
+        var matrix = GradientGeometry.GetLocalMatrix(gradient, bounds);
+        if (!matrix.TryInvert(out _)) return SKShader.CreateColor(SKColors.Transparent);
+        return SKShader.CreateLinearGradient(gradient.Start, gradient.End,
+            stops.Select(s => s.Color).ToArray(), stops.Select(s => Math.Clamp(s.Offset, 0f, 1f)).ToArray(),
+            gradient.SpreadMethod switch
             {
-                using var fillPaint = new SKPaint
-                {
-                    Style = SKPaintStyle.Fill,
-                    Color = solid.Color,
-                    IsAntialias = true
-                };
-                canvas.DrawPath(path, fillPaint);
-                break;
-            }
-            case TextureFill texture:
-            {
-                using var shader = CreateTexturePatternShader(texture);
-                using var fillPaint = new SKPaint
-                {
-                    Style = SKPaintStyle.Fill,
-                    Shader = shader,
-                    IsAntialias = true
-                };
-                canvas.DrawPath(path, fillPaint);
-                break;
-            }
-        }
+                GradientSpreadMethod.Repeat => SKShaderTileMode.Repeat,
+                GradientSpreadMethod.Reflect => SKShaderTileMode.Mirror,
+                _ => SKShaderTileMode.Clamp
+            }, matrix);
     }
 
     private static SKShader CreateTexturePatternShader(TextureFill texture)
