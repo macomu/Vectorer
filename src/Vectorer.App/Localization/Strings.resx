@@ -627,4 +627,24 @@
   <data name="Ui_VersionLabel" xml:space="preserve"><value>Version</value></data>
   <data name="Ui_LicenseLabel" xml:space="preserve"><value>License</value></data>
   <data name="Ui_RuntimeLabel" xml:space="preserve"><value>Runtime</value></data>
+  <data name="Paint_None" xml:space="preserve"><value>None</value></data>
+  <data name="Paint_Solid" xml:space="preserve"><value>Solid color</value></data>
+  <data name="Paint_LinearGradient" xml:space="preserve"><value>Linear gradient</value></data>
+  <data name="Paint_Texture" xml:space="preserve"><value>Texture</value></data>
+  <data name="Paint_Type" xml:space="preserve"><value>Paint type</value></data>
+  <data name="Paint_Mixed" xml:space="preserve"><value>Multiple different colors are selected.</value></data>
+  <data name="Paint_GradientHelp" xml:space="preserve"><value>Drag a square to move a stop. Double-click an empty position to add a stop.</value></data>
+  <data name="Paint_Position" xml:space="preserve"><value>Position (%)</value></data>
+  <data name="Paint_RemoveStop" xml:space="preserve"><value>Remove selected gradient stop</value></data>
+  <data name="Paint_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Paint_End" xml:space="preserve"><value>End</value></data>
+  <data name="Paint_ObjectCoordinates" xml:space="preserve"><value>Relative to shape (%)</value></data>
+  <data name="Paint_Opacity" xml:space="preserve"><value>Gradient opacity (%)</value></data>
+  <data name="Paint_Presets" xml:space="preserve"><value>Color presets</value></data>
+  <data name="Paint_EditPresets" xml:space="preserve"><value>Edit</value></data>
+  <data name="Paint_MoveEarlier" xml:space="preserve"><value>Move earlier</value></data>
+  <data name="Paint_MoveLater" xml:space="preserve"><value>Move later</value></data>
+  <data name="Paint_RemovePreset" xml:space="preserve"><value>Remove preset</value></data>
+  <data name="Paint_AddPreset" xml:space="preserve"><value>Add current color to presets</value></data>
+  <data name="Paint_UserCoordinates" xml:space="preserve"><value>Document coordinates (SVG units)</value></data>
 </root>

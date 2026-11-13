@@ -14,11 +14,12 @@ public sealed partial class MainWindowViewModel
     private EditorFile? _currentFile;
     private IDocumentCommand? _savedCommand;
     private bool _untrackedChanges;
-    public bool HasUnsavedChanges => _untrackedChanges || _undoRedoService.UndoStack.LastOrDefault() != _savedCommand;
+    public bool HasUnsavedChanges => _untrackedChanges || _paintGesture is { HasChanges: true } || _undoRedoService.UndoStack.LastOrDefault() != _savedCommand;
     public string WindowTitle => $"{CurrentDocument.Title}{(HasUnsavedChanges ? " *" : "")} — Vectorer";
     private void NotifyDocumentState() => OnPropertyChanged(nameof(WindowTitle));
     public async Task<bool> CanCloseAsync()
     {
+        FinishPaintEdit();
         FinishTextEditing();
         return !IsBusy && await ProtectUnsavedAsync();
     }
@@ -62,6 +63,7 @@ public sealed partial class MainWindowViewModel
     [RelayCommand] private Task SaveDocumentAsAsync() => SaveDocumentCoreAsync(true);
     private async Task SaveDocumentCoreAsync(bool saveAs)
     {
+        FinishPaintEdit();
         if (IsBusy || IsInteracting || FileDialogs is null) return;
         FinishTextEditing();
         IsBusy = true;
@@ -86,6 +88,7 @@ public sealed partial class MainWindowViewModel
     }
     private async Task<bool> ProtectUnsavedAsync()
     {
+        FinishPaintEdit();
         if (!HasUnsavedChanges) return true;
         if (FileDialogs is null) return false;
         var decision = await FileDialogs.ConfirmUnsavedAsync();
@@ -164,6 +167,7 @@ public sealed partial class MainWindowViewModel
     }
     private void ReplaceDocument(SvgDocument document, EditorFile? file)
     {
+        FinishPaintEdit();
         CancelInteraction(); _scope.Clear(); CurrentDocument = document; _currentFile = file;
         _undoRedoService.Clear(); _savedCommand = null; _untrackedChanges = false;
         ActiveLayer = null; SyncLayersCollection(); SelectNodes([]); NotifyScope(); NotifyDocumentState();

@@ -44,3 +44,11 @@ Overview of implemented phases and feature milestones in Vectorer.
 - [x] Searchable installed-font picker (`FontPicker`)
 - [x] Cross-platform build & packaging script (`build.cs`) and tag-triggered GitHub Releases workflow (`.github/workflows/build.yml`)
 - [x] Assembly version (`0.1.0`) metadata and localized Help → About dialog
+
+## Color Editing (2026-11-14)
+
+- [x] Shared RGBA/HSVA editor with component color ramps, triangular handles, numeric/HEX input and transparency previews
+- [x] Linear gradients for fill and stroke, arbitrary color stops, add/move/edit/remove, endpoints and overall opacity
+- [x] Document palettes with independent scrolling, add/reorder/remove and SVG extension metadata persistence
+- [x] Live preview and one undo operation per drag; regression coverage for SVG round trips, rendering, PNG export, mixed selection and document palettes
+- [ ] Radial gradients and on-canvas gradient endpoint handles

@@ -124,3 +124,11 @@ flowchart TD
    - 選択要素について、祖先を含む表示状態・変換、塗り、ストロークの線幅・線端・角形状、ぼかしの広がりを反映したキャンバス座標の描画範囲を求めます。出力可否・プレビュー・切り出し・倍率の基準寸法はこの範囲を共有し、範囲が空の場合は出力を無効にします。
 3. **レイヤー単位によるバッチ保存 (`ExportLayersBatchAsync`)**:
    - ドキュメント内の各 `LayerNode`（または表示レイヤーのみ）をループし、`{Prefix}_{LayerIndex}_{LayerName}.png` の形式で指定フォルダへ一括出力します。
+
+## 6. 色編集・グラデーション・文書パレット（2026-11-14）
+
+- **共通モデル (`Vectorer.Abstractions`)**: `LinearGradientFill` は任意個の `GradientStop`（位置・RGBA色）、始点・終点、座標系、追加変形、反復方式、全体の不透明度を保持します。各制御点のAlphaとは別に全体の不透明度を適用します。フィルは `ShapeStyle.Fill`、ストロークは `StrokeStyle.Paint` でこのモデルを共有し、`Paint == null` は従来の `StrokeStyle.Color` を意味します。制御点のコレクションは変更時に置き換え、Undoスナップショットを保護します。放射状グラデーションは未実装です。
+- **文書パレット**: `SvgDocument.ColorPresets` は順序つきの `ColorPreset`（RGBA色・任意の名前）を保持します。初期色は新規文書のモデルに用意され、明示的な空パレットも表現できます。図形への適用は値のコピーで、プリセット編集が既存図形を変更することはありません。SVGへの保存形式は [SVG_SPEC_SUPPORT.md](SVG_SPEC_SUPPORT.md) を参照してください。
+- **編集UI (`Vectorer.App`)**: 共通の `ColorEditor` がRGBA/HSVAの数値・バー・色見本を同期し、`ColorChannelSlider` と `GradientStopBar` がポインター操作を担当します。`PaintEditorViewModel` はフィル／ストローク、選択中の制御点、プリセット編集を管理します。`MainWindowViewModel` はコマンドによる文書変更を担当し、ドラッグ中はプレビューを更新して終了時に1回のUndo操作へまとめます。パレットの追加・削除・並び替えもUndo対象です。Avalonia依存はApp内に置き、Core/Abstractionsへ持ち込みません。
+- **描画 (`Vectorer.Rendering`)**: `SKShader.CreateLinearGradient` をフィルとストロークで共有し、バウンディングボックス変換と `gradientTransform` を `bounds * gradientTransform` の行列で合成します。図形の変換はさらに外側で適用します。空のグラデーションは透明、1色または始点と終点が一致する場合は最後の制御点の単色として扱います。ネイティブのShader/Paintは描画スコープで破棄します。
+- **パス変換・PNG出力**: ストロークをパス化するときは、元の図形範囲でグラデーションをユーザー座標へ固定し、輪郭化によるバウンディングボックスの変化で色がずれることを防ぎます。`PaintVisibility` を描画範囲判定で使い、全体不透明度と各制御点のAlphaを考慮して、PNGの選択範囲・プレビュー・出力可否を計算します。

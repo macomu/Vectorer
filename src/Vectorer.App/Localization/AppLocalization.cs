@@ -409,4 +409,24 @@ public sealed class AppLocalization : ObservableObject
     public string Ui_VersionLabel => Get(nameof(Strings.Ui_VersionLabel));
     public string Ui_LicenseLabel => Get(nameof(Strings.Ui_LicenseLabel));
     public string Ui_RuntimeLabel => Get(nameof(Strings.Ui_RuntimeLabel));
+    public string Paint_None => Get(nameof(Strings.Paint_None));
+    public string Paint_Solid => Get(nameof(Strings.Paint_Solid));
+    public string Paint_LinearGradient => Get(nameof(Strings.Paint_LinearGradient));
+    public string Paint_Texture => Get(nameof(Strings.Paint_Texture));
+    public string Paint_Type => Get(nameof(Strings.Paint_Type));
+    public string Paint_Mixed => Get(nameof(Strings.Paint_Mixed));
+    public string Paint_GradientHelp => Get(nameof(Strings.Paint_GradientHelp));
+    public string Paint_Position => Get(nameof(Strings.Paint_Position));
+    public string Paint_RemoveStop => Get(nameof(Strings.Paint_RemoveStop));
+    public string Paint_Start => Get(nameof(Strings.Paint_Start));
+    public string Paint_End => Get(nameof(Strings.Paint_End));
+    public string Paint_ObjectCoordinates => Get(nameof(Strings.Paint_ObjectCoordinates));
+    public string Paint_Opacity => Get(nameof(Strings.Paint_Opacity));
+    public string Paint_Presets => Get(nameof(Strings.Paint_Presets));
+    public string Paint_EditPresets => Get(nameof(Strings.Paint_EditPresets));
+    public string Paint_MoveEarlier => Get(nameof(Strings.Paint_MoveEarlier));
+    public string Paint_MoveLater => Get(nameof(Strings.Paint_MoveLater));
+    public string Paint_RemovePreset => Get(nameof(Strings.Paint_RemovePreset));
+    public string Paint_AddPreset => Get(nameof(Strings.Paint_AddPreset));
+    public string Paint_UserCoordinates => Get(nameof(Strings.Paint_UserCoordinates));
 }

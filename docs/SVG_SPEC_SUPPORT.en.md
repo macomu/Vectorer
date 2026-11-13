@@ -57,3 +57,24 @@ Browsers and other vector editors (Inkscape, Illustrator, etc.) ignore `vectorer
 - Path anchor node types are stored in `vectorer:node-kinds` (`Corner` / `Smooth` / `Symmetric`) alongside standard `d` and `fill-rule`.
 - Stroke caps, joins, miter limit, dash array, dash offset, and separate `fill-opacity` / `stroke-opacity` use standard SVG attributes; 8-digit hex colors are parsed in RGBA order.
 - `viewBox` and `preserveAspectRatio` (`meet` / `slice` / `none`), inherited presentation attributes, inline `style`, named colors, `rgb()`/`rgba()`, and `currentColor` are supported. Arbitrary external CSS stylesheets and embedded web fonts are outside the current scope.
+
+## Colors, Linear Gradients, and Palettes (2026-11-14)
+
+- Linear gradient fills and strokes use standard `<defs><linearGradient id="..."><stop .../></linearGradient></defs>` definitions referenced by `fill="url(#...)"` / `stroke="url(#...)"`. Radial gradients are outside the current implementation.
+- Each stop has an `offset`, RGB `stop-color`, and alpha `stop-opacity`. Overall gradient opacity is stored separately in `fill-opacity` / `stroke-opacity`; importing keeps stop alpha independent of overall opacity. `stop-color` and `stop-opacity` do not automatically inherit from their parents.
+- Both `gradientUnits` modes (`objectBoundingBox`, the default, and `userSpaceOnUse`), `gradientTransform`, and all three `spreadMethod` values (`pad`, `repeat`, `reflect`) round-trip. Percentage coordinates resolve against the bounding box or the `viewBox` width/height. The `viewBox` origin is not added to percentage coordinates.
+- Import supports same-document `href="#id"` / `xlink:href="#id"` templates, inline stop styles, and `currentColor`. External references are not fetched. Unresolved references use an explicit fallback color, or no paint; circular references terminate safely.
+- Stop positions are clamped to 0–1 and made nondecreasing according to SVG ordering rules. Multiple stops at the same position retain their order, allowing abrupt color changes.
+
+Document color presets are stored as private metadata:
+
+```xml
+<metadata>
+  <vectorer:palette>
+    <vectorer:color value="#40112233" name="Translucent color" />
+    <vectorer:color value="#FF0000" />
+  </vectorer:palette>
+</metadata>
+```
+
+Element order determines preset order. `name` is optional. `value` uses `#RRGGBB` when opaque and the existing extension convention `#AARRGGBB` when alpha is present (distinct from standard SVG's RGBA order for eight-digit colors). An absent palette uses the default presets; an explicit empty `<vectorer:palette />` stays empty. Applying a preset copies its color without linking shape styles to the palette entry. Other editors may discard private metadata when saving the file again.

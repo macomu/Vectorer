@@ -199,27 +199,12 @@
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><controls:FontPicker Localization="{Binding L10n}" LanguageSafety="{Binding LanguageSafety}" Value="{Binding FontFamily, Mode=TwoWay}" Families="{Binding InstalledFontFamilies}" Width="210" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_Fill, Mode=OneWay}" ToolTip.Tip="{Binding L10n.Ui_FillColor, Mode=OneWay}">
-            <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
-              <TextBlock Text="{Binding L10n.Ui_FillHex, Mode=OneWay}" />
-              <TextBox Text="{Binding FillColorDisplay}" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
-              <ItemsControl ItemsSource="{Binding ColorSwatches}">
-                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ColorSwatch"><Button Width="32" Height="32" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetFillColorCommand}" CommandParameter="{Binding Value}" /></DataTemplate></ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <Button Content="{Binding L10n.Ui_NoFill, Mode=OneWay}" Command="{Binding ClearFillCommand}" />
-            </StackPanel></Flyout></Button.Flyout>
+            <Button.Flyout><Flyout Placement="BottomEdgeAlignedLeft"><ScrollViewer MaxHeight="650" HorizontalScrollBarVisibility="Disabled"><controls:PaintEditor DataContext="{Binding FillPaintEditor}" Width="300" /></ScrollViewer></Flyout></Button.Flyout>
           </Button>
           <TextBox Text="{Binding FillColorDisplay}" Width="90" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_Stroke, Mode=OneWay}" ToolTip.Tip="{Binding L10n.Ui_StrokeColor, Mode=OneWay}">
-            <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
-              <TextBox Text="{Binding StrokeColor}" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
-              <ItemsControl ItemsSource="{Binding ColorSwatches}">
-                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ColorSwatch"><Button Width="32" Height="32" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetStrokeColorCommand}" CommandParameter="{Binding Value}" /></DataTemplate></ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <Button Content="{Binding L10n.Ui_NoStroke, Mode=OneWay}" Command="{Binding ClearStrokeCommand}" />
-            </StackPanel></Flyout></Button.Flyout>
+            <Button.Flyout><Flyout Placement="BottomEdgeAlignedLeft"><ScrollViewer MaxHeight="650" HorizontalScrollBarVisibility="Disabled"><controls:PaintEditor DataContext="{Binding StrokePaintEditor}" Width="300" /></ScrollViewer></Flyout></Button.Flyout>
           </Button>
           <TextBox Text="{Binding StrokeColor}" Width="90" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
           <NumericUpDown Value="{Binding StrokeWidth}" Minimum="0" Maximum="1000" Increment="0.5" ToolTip.Tip="{Binding L10n.Ui_StrokeWidthHint, Mode=OneWay}" Width="82" MinWidth="82" ShowButtonSpinner="False" />
@@ -337,25 +322,7 @@
                 <TextBlock Text="{Binding StyleTargetDisplay}" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold" />
                 <Expander Header="{Binding L10n.Ui_FillDetails, Mode=OneWay}" IsExpanded="True" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="Auto,*">
-                      <TextBlock Text="{Binding L10n.Ui_FillKind, Mode=OneWay}" />
-                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding FillChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding FillKind, Mode=TwoWay}" PlaceholderText="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
-                    </Grid>
-                    <StackPanel Spacing="6" IsVisible="{Binding IsSolidFill}">
-                      <Grid ColumnDefinitions="Auto,*">
-                        <TextBlock Text="{Binding L10n.Ui_SolidHex, Mode=OneWay}" />
-                        <TextBox Grid.Column="1" Text="{Binding FillColorDisplay}" Watermark="{Binding L10n.Ui_MixedHex, Mode=OneWay}" />
-                      </Grid>
-                      <ItemsControl ItemsSource="{Binding ColorSwatches}">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="vm:ColorSwatch">
-                            <Button Width="24" Height="24" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
-                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetFillColorCommand}" CommandParameter="{Binding Value}" />
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </StackPanel>
+                    <controls:PaintEditor DataContext="{Binding FillPaintEditor}" />
                     <StackPanel Spacing="6" IsVisible="{Binding IsTextureFill}">
                       <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="{Binding L10n.Ui_Pattern, Mode=OneWay}" />
@@ -409,38 +376,22 @@
                         <NumericUpDown Grid.Column="1" Minimum="-180" Maximum="180" Increment="15" Value="{Binding TextureAngle}" />
                       </Grid>
                     </StackPanel>
+                    <StackPanel IsVisible="{Binding IsTextureFill}" Spacing="6">
                     <TextBlock Text="{Binding L10n.Ui_FillOpacity, Mode=OneWay}" />
                     <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding FillOpacity}" Margin="0,0,6,0" />
                       <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" MinWidth="140" />
                     </Grid>
+                    </StackPanel>
                   </StackPanel>
                 </Expander>
 
                 <Expander Header="{Binding L10n.Ui_StrokeDetails, Mode=OneWay}" IsExpanded="True" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="8">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                      <TextBlock Text="{Binding L10n.Ui_StrokeColor, Mode=OneWay}" />
-                      <TextBox Grid.Column="1" Text="{Binding StrokeColor}" Watermark="{Binding L10n.Ui_MixedNone, Mode=OneWay}" Margin="0,0,4,0" />
-                      <Button Grid.Column="2" Content="{Binding L10n.Ui_NoStroke, Mode=OneWay}" Command="{Binding ClearStrokeCommand}" />
-                    </Grid>
-                    <ItemsControl ItemsSource="{Binding ColorSwatches}">
-                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ColorSwatch">
-                          <Button Width="24" Height="24" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}"
-                                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetStrokeColorCommand}" CommandParameter="{Binding Value}" />
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <controls:PaintEditor DataContext="{Binding StrokePaintEditor}" />
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_StrokeWidth, Mode=OneWay}" />
                       <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1000" Increment="0.5" Value="{Binding StrokeWidth}" />
-                    </Grid>
-                    <TextBlock Text="{Binding L10n.Ui_StrokeOpacity, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,140">
-                      <Slider Minimum="0" Maximum="100" Value="{Binding StrokeOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding StrokeOpacity}" MinWidth="140" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_Cap, Mode=OneWay}" />

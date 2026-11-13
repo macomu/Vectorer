@@ -65,3 +65,24 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 - 塗り・線・塗り規則・不透明度・フォント設定の親からの継承とインラインstyleに対応します。SVG既定の塗りは黒です。
 - 色名、rgb()/rgba()、currentColor、空白区切りpolygon/polyline座標に対応します。任意の外部CSS、tspanごとの複雑な組版、フォント埋込みは対象外です。
 - パス単純化は適応分割と三次ベジェ再フィットにより端点・鋭い角・複数輪郭を保持します。独立したPathの結合では最も近い開いた端点を使い、スタイルは背面側から継承します。
+
+## 色・線形グラデーション・パレット（2026-11-14）
+
+- フィルとストロークの線形グラデーションは、標準の `<defs><linearGradient id="..."><stop .../></linearGradient></defs>` と `fill="url(#...)"` / `stroke="url(#...)"` で保存します。放射状グラデーションは現在の実装対象外です。
+- 各制御点は `offset`、RGBの `stop-color`、Alphaの `stop-opacity` で表現し、グラデーション全体の不透明度は `fill-opacity` / `stroke-opacity` に分離します。読み込みでは制御点のAlphaと全体の不透明度を独立して保持します。`stop-color` と `stop-opacity` は親から自動継承しません。
+- `gradientUnits` の `objectBoundingBox`（既定）/ `userSpaceOnUse`、`gradientTransform`、`spreadMethod` の `pad` / `repeat` / `reflect` を読み書きします。割合座標はバウンディングボックスの比率、または `viewBox` の幅・高さに対する割合として解決します。`viewBox` の原点は割合座標へ加算しません。
+- 同一文書内の `href="#id"` / `xlink:href="#id"` によるテンプレート参照、制御点のインラインスタイル・`currentColor` に対応します。外部参照は取得せず、解決できない参照は指定された代替色、または塗りなしとして扱います。循環参照は停止します。
+- 制御点の位置は0〜1に制限し、SVGの順序規則に従って直前より小さい位置を補正します。同一位置の複数制御点は順序を保って保存し、急な色の切り替えを表現できます。
+
+文書の色プリセットは、次の独自メタデータとして保存します。
+
+```xml
+<metadata>
+  <vectorer:palette>
+    <vectorer:color value="#40112233" name="半透明色" />
+    <vectorer:color value="#FF0000" />
+  </vectorer:palette>
+</metadata>
+```
+
+`vectorer:color` の並びが表示順です。`name` は任意で、`value` は不透明なら `#RRGGBB`、Alphaつきなら拡張属性で従来使用している `#AARRGGBB` 順です（標準SVGの8桁色のRGBA順とは異なります）。パレットがなければ初期プリセットを用い、明示的な空の `<vectorer:palette />` は空のまま復元します。プリセットの適用は色のコピーであり、図形のスタイルとの参照リンクは作りません。他のエディタでの再保存では、この独自メタデータが削除される場合があります。

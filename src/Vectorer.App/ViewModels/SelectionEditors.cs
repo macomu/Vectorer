@@ -16,8 +16,28 @@ public sealed record ColorSwatch(string Value)
 
 public sealed partial class MainWindowViewModel
 {
-    public IReadOnlyList<ColorSwatch> ColorSwatches { get; } = new[] { "#FFFFFF", "#0F172A", "#64748B", "#EF4444", "#F97316", "#EAB308", "#22C55E", "#14B8A6", "#0EA5E9", "#3B82F6", "#8B5CF6", "#EC4899" }.Select(c => new ColorSwatch(c)).ToArray();
-    public IReadOnlyList<string> FillKinds { get; } = ["なし", "単色", "テクスチャ"];
+    private SvgDocument? _colorSwatchesDocument;
+    private ColorPreset[] _colorSwatchPresetSnapshot = [];
+    private IReadOnlyList<ColorSwatch> _colorSwatches = [];
+    public IReadOnlyList<ColorSwatch> ColorSwatches
+    {
+        get
+        {
+            SyncColorSwatches(notify: false);
+            return _colorSwatches;
+        }
+    }
+
+    private void SyncColorSwatches(bool notify = true)
+    {
+        if (ReferenceEquals(_colorSwatchesDocument, CurrentDocument)
+            && _colorSwatchPresetSnapshot.SequenceEqual(CurrentDocument.ColorPresets)) return;
+        _colorSwatchesDocument = CurrentDocument;
+        _colorSwatchPresetSnapshot = CurrentDocument.ColorPresets.ToArray();
+        _colorSwatches = _colorSwatchPresetSnapshot.Select(p => new ColorSwatch(p.Color.ToString())).ToArray();
+        if (notify) OnPropertyChanged(nameof(ColorSwatches));
+    }
+    public IReadOnlyList<string> FillKinds { get; } = ["なし", "単色", "グラデーション", "テクスチャ"];
     public IReadOnlyList<TexturePatternKind> TexturePatterns { get; } = [TexturePatternKind.Checkerboard, TexturePatternKind.DiagonalStripes, TexturePatternKind.Crosshatch, TexturePatternKind.Dots];
     public IReadOnlyList<SKStrokeCap> StrokeCaps { get; } = [SKStrokeCap.Butt, SKStrokeCap.Round, SKStrokeCap.Square];
     public IReadOnlyList<SKStrokeJoin> StrokeJoins { get; } = [SKStrokeJoin.Miter, SKStrokeJoin.Round, SKStrokeJoin.Bevel];
@@ -45,6 +65,7 @@ public sealed partial class MainWindowViewModel
 
     private bool _syncingEditors;
     public bool IsSolidFill => FillKind == "単色";
+    public bool IsGradientFill => FillKind == "グラデーション";
     public bool IsTextureFill => FillKind == "テクスチャ";
     public bool HasParametricPolygon => SelectedNodes.Count == 1 && SelectedNodes[0] is PolygonShapeNode { PolygonKind: not PolygonKind.Freeform };
     public string StyleTarget => SelectedNodes.OfType<ShapeNode>().Any() ? L10n.Ui_SelectedShapes : L10n.Ui_NextShape;
@@ -56,10 +77,12 @@ public sealed partial class MainWindowViewModel
         get => FillColor switch
         {
             "texture" => L10n.Get(nameof(Strings.Choice_Texture)),
+            "gradient" => L10n.Get("Paint_LinearGradient"),
             "none" => L10n.Ui_None,
             _ => FillColor
         };
         set => FillColor = value == L10n.Get(nameof(Strings.Choice_Texture)) ? "texture"
+            : value == L10n.Get("Paint_LinearGradient") ? "gradient"
             : value == L10n.Ui_None ? "none" : value;
     }
 
@@ -76,18 +99,20 @@ public sealed partial class MainWindowViewModel
             {
                 null => "なし",
                 SolidColorFill => "単色",
+                LinearGradientFill => "グラデーション",
                 TextureFill => "テクスチャ",
                 _ => "なし"
             }).Distinct().ToArray();
             FillKind = fillKinds.Length == 1 ? fillKinds[0] : null;
 
-            var fills = styles.Select(s => s.Fill is SolidColorFill solid ? solid.Color.ToString() : s.Fill is null ? "none" : "texture").Distinct().ToArray();
+            var fills = styles.Select(s => s.Fill is SolidColorFill solid ? solid.Color.ToString() : s.Fill is null ? "none" : s.Fill is LinearGradientFill ? "gradient" : "texture").Distinct().ToArray();
             FillColor = fills.Length == 1 ? fills[0] : "";
 
             var fillOpacities = styles.Where(s => s.Fill is not null).Select(s => s.Fill switch
             {
                 SolidColorFill solid => Math.Round(solid.Color.Alpha / 255m * 100m, 1),
                 TextureFill tex => Math.Round(tex.PrimaryColor.Alpha / 255m * 100m, 1),
+                LinearGradientFill gradient => Math.Round((decimal)gradient.Opacity * 100m, 1),
                 _ => 100m
             }).Distinct().ToArray();
             FillOpacity = styles.All(s => s.Fill is null) ? 0m
@@ -109,7 +134,7 @@ public sealed partial class MainWindowViewModel
                 TextureAngle = allTexture && angles.Length == 1 ? angles[0] : null;
             }
 
-            var strokes = styles.Select(s => s.Stroke is { IsVisible: true } stroke ? stroke.Color.ToString() : "none").Distinct().ToArray();
+            var strokes = styles.Select(s => s.Stroke is { } stroke ? stroke.Paint is LinearGradientFill ? "gradient" : stroke.Color.ToString() : "none").Distinct().ToArray();
             StrokeColor = strokes.Length == 1 ? strokes[0] : "";
             var widths = styles.Select(s => (decimal)(s.Stroke?.Width ?? 0)).Distinct().ToArray();
             StrokeWidth = widths.Length == 1 ? widths[0] : null;
@@ -117,7 +142,7 @@ public sealed partial class MainWindowViewModel
             StrokeDash = dashes.Length == 1 ? dashes[0] : null;
 
             var allHaveStroke = styles.All(s => s.Stroke is not null);
-            var strokeOpacities = styles.Where(s => s.Stroke is not null).Select(s => Math.Round(s.Stroke!.Color.Alpha / 255m * 100m, 1)).Distinct().ToArray();
+            var strokeOpacities = styles.Where(s => s.Stroke is not null).Select(s => s.Stroke!.Paint is LinearGradientFill gradient ? Math.Round((decimal)gradient.Opacity * 100m, 1) : Math.Round(s.Stroke.Color.Alpha / 255m * 100m, 1)).Distinct().ToArray();
             StrokeOpacity = styles.All(s => s.Stroke is null) ? 0m
                 : allHaveStroke && strokeOpacities.Length == 1 ? strokeOpacities[0] : null;
 
@@ -166,7 +191,9 @@ public sealed partial class MainWindowViewModel
             SyncShapeDetails();
             SyncTransformFields();
             SyncEffectsInspector();
+            SyncPaintEditors();
             OnPropertyChanged(nameof(IsSolidFill));
+            OnPropertyChanged(nameof(IsGradientFill));
             OnPropertyChanged(nameof(IsTextureFill));
             OnPropertyChanged(nameof(HasParametricPolygon));
             OnPropertyChanged(nameof(IsRectangleTool));
@@ -178,9 +205,23 @@ public sealed partial class MainWindowViewModel
 
     private void EditStyle(Action<ShapeStyle> edit, string description)
     {
-        if (_syncingEditors || IsInteracting) return;
+        if (_syncingEditors || IsInteracting || IsBusy) return;
         edit(DefaultCreationStyle);
-        var selected = GetEditableNodes().Select(e => e.Node).OfType<ShapeNode>().Where(n => SelectedNodes.Contains(n)).ToArray();
+        if (_paintGesture is { } gesture)
+        {
+            foreach (var item in gesture.Shapes) edit(item.Shape.Style);
+            NotifyDocumentState();
+            SyncSelectionEditors();
+            RequestRedraw();
+            return;
+        }
+        var selected = GetEditableNodes().Select(e => e.Node).OfType<ShapeNode>().Where(n => SelectedNodes.Contains(n))
+            .Where(n =>
+            {
+                var after = n.Style.Clone();
+                edit(after);
+                return !StylesEqual(n.Style, after);
+            }).ToArray();
         if (selected.Length > 0) ExecuteCommand(new StyleEditCommand(selected, edit, description));
         else { SyncSelectionEditors(); RequestRedraw(); }
     }
@@ -214,6 +255,7 @@ public sealed partial class MainWindowViewModel
     partial void OnFillKindChanged(string? value)
     {
         OnPropertyChanged(nameof(IsSolidFill));
+        OnPropertyChanged(nameof(IsGradientFill));
         OnPropertyChanged(nameof(IsTextureFill));
         if (_syncingEditors || value is null) return;
         switch (value)
@@ -235,13 +277,21 @@ public sealed partial class MainWindowViewModel
             case "テクスチャ":
                 EditStyle(s => s.Fill = CoerceTextureFill(s.Fill), "Fill kind: texture");
                 break;
+            case "グラデーション":
+                EditStyle(s =>
+                {
+                    if (s.Fill is LinearGradientFill) return;
+                    var color = s.Fill is SolidColorFill solid ? solid.Color : s.Fill is TextureFill texture ? texture.PrimaryColor : SKColors.Black;
+                    s.Fill = new LinearGradientFill(new[] { new GradientStop(0, color), new GradientStop(1, color.WithAlpha(0)) }, new SKPoint(0, 0), new SKPoint(1, 0));
+                }, "Fill kind: gradient");
+                break;
         }
     }
 
     partial void OnFillColorChanged(string value)
     {
         OnPropertyChanged(nameof(FillColorDisplay));
-        if (_syncingEditors || string.IsNullOrWhiteSpace(value) || value == "texture") return;
+        if (_syncingEditors || string.IsNullOrWhiteSpace(value) || value is "texture" or "gradient") return;
         if (value.Equals("none", StringComparison.OrdinalIgnoreCase)) EditStyle(s => s.Fill = null, "Remove fill");
         else if (SKColor.TryParse(value, out var color)) EditStyle(s => s.Fill = new SolidColorFill(color), "Fill color");
     }
@@ -257,6 +307,7 @@ public sealed partial class MainWindowViewModel
             {
                 SolidColorFill solid => new SolidColorFill(solid.Color.WithAlpha(alpha)),
                 TextureFill tex => tex with { PrimaryColor = tex.PrimaryColor.WithAlpha(alpha) },
+                LinearGradientFill gradient => gradient with { Opacity = (float)(value.Value / 100) },
                 _ => new SolidColorFill(fallback.WithAlpha(alpha))
             };
         }, "Fill opacity");
@@ -264,32 +315,34 @@ public sealed partial class MainWindowViewModel
 
     partial void OnTexturePatternChanged(TexturePatternKind? value)
     {
-        if (_syncingEditors || value is null) return;
+        // Hidden texture controls can publish transient selections during DataContext attachment.
+        // Only an explicit paint-type change may convert another fill into a texture.
+        if (_syncingEditors || !IsTextureFill || value is null) return;
         EditStyle(s => s.Fill = CoerceTextureFill(s.Fill) with { PatternKind = value.Value }, "Texture pattern");
     }
 
     partial void OnTexturePrimaryColorChanged(string value)
     {
-        if (_syncingEditors || string.IsNullOrWhiteSpace(value) || !SKColor.TryParse(value, out var color)) return;
+        if (_syncingEditors || !IsTextureFill || string.IsNullOrWhiteSpace(value) || !SKColor.TryParse(value, out var color)) return;
         EditStyle(s => s.Fill = CoerceTextureFill(s.Fill) with { PrimaryColor = color }, "Texture primary color");
     }
 
     partial void OnTextureSecondaryColorChanged(string value)
     {
-        if (_syncingEditors || string.IsNullOrWhiteSpace(value) || !SKColor.TryParse(value, out var color)) return;
+        if (_syncingEditors || !IsTextureFill || string.IsNullOrWhiteSpace(value) || !SKColor.TryParse(value, out var color)) return;
         EditStyle(s => s.Fill = CoerceTextureFill(s.Fill) with { SecondaryColor = color }, "Texture secondary color");
     }
 
     partial void OnTextureScaleChanged(decimal? value)
     {
-        if (_syncingEditors || value is not (>= 4m and <= 128m)) return;
+        if (_syncingEditors || !IsTextureFill || value is not (>= 4m and <= 128m)) return;
         var scale = (float)value.Value;
         EditStyle(s => s.Fill = CoerceTextureFill(s.Fill) with { Scale = scale }, "Texture scale");
     }
 
     partial void OnTextureAngleChanged(decimal? value)
     {
-        if (_syncingEditors || value is not (>= -360m and <= 360m)) return;
+        if (_syncingEditors || !IsTextureFill || value is not (>= -360m and <= 360m)) return;
         var angle = (float)value.Value;
         EditStyle(s => s.Fill = CoerceTextureFill(s.Fill) with { AngleDegrees = angle }, "Texture angle");
     }
@@ -298,7 +351,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_syncingEditors || string.IsNullOrWhiteSpace(value)) return;
         if (value.Equals("none", StringComparison.OrdinalIgnoreCase)) EditStyle(s => s.Stroke = null, "Remove stroke");
-        else if (SKColor.TryParse(value, out var color)) EditStyle(s => s.Stroke = EnsureStroke(s.Stroke) with { Color = color }, "Stroke color");
+        else if (SKColor.TryParse(value, out var color)) EditStyle(s => s.Stroke = EnsureStroke(s.Stroke) with { Color = color, Paint = null }, "Stroke color");
     }
 
     partial void OnStrokeWidthChanged(decimal? value)
@@ -313,7 +366,9 @@ public sealed partial class MainWindowViewModel
         EditStyle(s =>
         {
             var st = EnsureStroke(s.Stroke);
-            s.Stroke = st with { Color = st.Color.WithAlpha(alpha) };
+            s.Stroke = st.Paint is LinearGradientFill gradient
+                ? st with { Paint = gradient with { Opacity = (float)(value.Value / 100) } }
+                : st with { Color = st.Color.WithAlpha(alpha) };
         }, "Stroke opacity");
     }
 

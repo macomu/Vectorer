@@ -21,7 +21,7 @@ public sealed partial class MainWindowViewModel
 
     public IReadOnlyList<LocalizedChoice> FillChoices => Choices(nameof(FillChoices), FillKinds, v => v switch
     {
-        "なし" => nameof(Strings.Ui_None), "単色" => nameof(Strings.Choice_Solid), _ => nameof(Strings.Choice_Texture)
+        "なし" => nameof(Strings.Ui_None), "単色" => nameof(Strings.Choice_Solid), "グラデーション" => "Paint_LinearGradient", _ => nameof(Strings.Choice_Texture)
     });
     public IReadOnlyList<LocalizedChoice> DashChoices => Choices(nameof(DashChoices), DashOptions, v => v switch
     {

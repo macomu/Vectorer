@@ -627,4 +627,24 @@
   <data name="Ui_VersionLabel" xml:space="preserve"><value>バージョン</value></data>
   <data name="Ui_LicenseLabel" xml:space="preserve"><value>ライセンス</value></data>
   <data name="Ui_RuntimeLabel" xml:space="preserve"><value>ランタイム</value></data>
+  <data name="Paint_None" xml:space="preserve"><value>なし</value></data>
+  <data name="Paint_Solid" xml:space="preserve"><value>単色</value></data>
+  <data name="Paint_LinearGradient" xml:space="preserve"><value>線形グラデーション</value></data>
+  <data name="Paint_Texture" xml:space="preserve"><value>テクスチャ</value></data>
+  <data name="Paint_Type" xml:space="preserve"><value>塗りの種類</value></data>
+  <data name="Paint_Mixed" xml:space="preserve"><value>異なる色が選択されています。</value></data>
+  <data name="Paint_GradientHelp" xml:space="preserve"><value>四角ハンドルをドラッグして移動。空いた位置をダブルクリックして色を追加。</value></data>
+  <data name="Paint_Position" xml:space="preserve"><value>位置 (%)</value></data>
+  <data name="Paint_RemoveStop" xml:space="preserve"><value>選択中のグラデーション色を削除</value></data>
+  <data name="Paint_Start" xml:space="preserve"><value>始点</value></data>
+  <data name="Paint_End" xml:space="preserve"><value>終点</value></data>
+  <data name="Paint_ObjectCoordinates" xml:space="preserve"><value>図形に対する割合 (%)</value></data>
+  <data name="Paint_Opacity" xml:space="preserve"><value>グラデーションの不透明度 (%)</value></data>
+  <data name="Paint_Presets" xml:space="preserve"><value>色のプリセット</value></data>
+  <data name="Paint_EditPresets" xml:space="preserve"><value>編集</value></data>
+  <data name="Paint_MoveEarlier" xml:space="preserve"><value>前へ移動</value></data>
+  <data name="Paint_MoveLater" xml:space="preserve"><value>後へ移動</value></data>
+  <data name="Paint_RemovePreset" xml:space="preserve"><value>プリセットを削除</value></data>
+  <data name="Paint_AddPreset" xml:space="preserve"><value>現在の色をプリセットに追加</value></data>
+  <data name="Paint_UserCoordinates" xml:space="preserve"><value>ドキュメント座標 (SVG単位)</value></data>
 </root>

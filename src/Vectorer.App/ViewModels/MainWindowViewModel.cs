@@ -151,6 +151,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     public void SelectNodes(IEnumerable<SceneNode> nodes)
     {
+        FinishPaintEdit();
         var selection = nodes.Distinct().ToList();
         _selectedNodes.Clear();
         _selectedNodes.AddRange(selection);
@@ -297,6 +298,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [RelayCommand]
     private void Undo()
     {
+        FinishPaintEdit();
         if (IsInteracting || IsBusy) return;
         if (_undoRedoService.CanUndo)
         {
@@ -312,6 +314,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     [RelayCommand]
     private void Redo()
     {
+        FinishPaintEdit();
         if (IsInteracting || IsBusy) return;
         if (_undoRedoService.CanRedo)
         {
