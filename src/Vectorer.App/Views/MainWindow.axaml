@@ -191,14 +191,14 @@
             <Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" />
           </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowTransformInputs}"><TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="W" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="H" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="Node X" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="{Binding L10n.Ui_NodeX, Mode=OneWay}" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><controls:FontPicker Localization="{Binding L10n}" LanguageSafety="{Binding LanguageSafety}" Value="{Binding FontFamily, Mode=TwoWay}" Families="{Binding InstalledFontFamilies}" Width="210" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_Fill, Mode=OneWay}" ToolTip.Tip="{Binding L10n.Ui_FillColor, Mode=OneWay}">
             <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
               <TextBlock Text="{Binding L10n.Ui_FillHex, Mode=OneWay}" />
-              <TextBox Text="{Binding FillColor}" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
+              <TextBox Text="{Binding FillColorDisplay}" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
               <ItemsControl ItemsSource="{Binding ColorSwatches}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ColorSwatch"><Button Width="32" Height="32" Margin="2" Background="{Binding Brush}" ToolTip.Tip="{Binding Value}" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SetFillColorCommand}" CommandParameter="{Binding Value}" /></DataTemplate></ItemsControl.ItemTemplate>
@@ -206,7 +206,7 @@
               <Button Content="{Binding L10n.Ui_NoFill, Mode=OneWay}" Command="{Binding ClearFillCommand}" />
             </StackPanel></Flyout></Button.Flyout>
           </Button>
-          <TextBox Text="{Binding FillColor}" Width="90" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
+          <TextBox Text="{Binding FillColorDisplay}" Width="90" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_Stroke, Mode=OneWay}" ToolTip.Tip="{Binding L10n.Ui_StrokeColor, Mode=OneWay}">
             <Button.Flyout><Flyout><StackPanel Spacing="8" Width="220">
@@ -275,8 +275,7 @@
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewX, Mode=OneWay}" /><NumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewY, Mode=OneWay}" /><NumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><Button Content="{Binding L10n.Ui_ApplyTransform, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LayerAngle, Mode=OneWay}" /><NumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_RotateLayer, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />
+          <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LayerAngle, Mode=OneWay}" /><NumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" /><Button Content="{Binding L10n.Ui_RotateLayer, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />
                     </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LineStyle, Mode=OneWay}" /><ComboBox ItemsSource="{Binding DashChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding StrokeDash, Mode=TwoWay}" PlaceholderText="{Binding L10n.Ui_MixedCustom, Mode=OneWay}" />
                   </StackPanel>
@@ -329,7 +328,7 @@
     <Border Grid.Column="2" Background="#161B22" BorderBrush="#30363D" BorderThickness="1,0,0,0" Padding="6">
       <Grid RowDefinitions="3*,4,2*">
         <TabControl Grid.Row="0" Padding="4" SelectedIndex="{Binding SelectedInspectorTab}">
-          <TabItem Header="{Binding L10n.Ui_FillStroke, Mode=OneWay}" FontSize="13">
+          <TabItem Header="{Binding L10n.Ui_FillStroke, Mode=OneWay}" FontSize="13" MinWidth="150">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled">
               <StackPanel Spacing="10" Margin="0,4,4,8">
                 <TextBlock Text="{Binding StyleTargetDisplay}" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold" />
@@ -342,7 +341,7 @@
                     <StackPanel Spacing="6" IsVisible="{Binding IsSolidFill}">
                       <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="{Binding L10n.Ui_SolidHex, Mode=OneWay}" />
-                        <TextBox Grid.Column="1" Text="{Binding FillColor}" Watermark="{Binding L10n.Ui_MixedHex, Mode=OneWay}" />
+                        <TextBox Grid.Column="1" Text="{Binding FillColorDisplay}" Watermark="{Binding L10n.Ui_MixedHex, Mode=OneWay}" />
                       </Grid>
                       <ItemsControl ItemsSource="{Binding ColorSwatches}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -398,9 +397,9 @@
                         </Button>
                       </Grid>
                       <TextBlock Text="{Binding L10n.Ui_TextureScale, Mode=OneWay}" />
-                      <Grid ColumnDefinitions="*,90">
+                      <Grid ColumnDefinitions="*,140">
                         <Slider Minimum="4" Maximum="128" Value="{Binding TextureScale}" Margin="0,0,6,0" />
-                        <NumericUpDown Grid.Column="1" Minimum="4" Maximum="128" Increment="2" Value="{Binding TextureScale}" MinWidth="80" />
+                        <NumericUpDown Grid.Column="1" Minimum="4" Maximum="128" Increment="2" Value="{Binding TextureScale}" MinWidth="140" />
                       </Grid>
                       <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="{Binding L10n.Ui_Angle, Mode=OneWay}" />
@@ -408,9 +407,9 @@
                       </Grid>
                     </StackPanel>
                     <TextBlock Text="{Binding L10n.Ui_FillOpacity, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,90">
+                    <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding FillOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" MinWidth="80" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" MinWidth="140" />
                     </Grid>
                   </StackPanel>
                 </Expander>
@@ -436,9 +435,9 @@
                       <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1000" Increment="0.5" Value="{Binding StrokeWidth}" />
                     </Grid>
                     <TextBlock Text="{Binding L10n.Ui_StrokeOpacity, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,90">
+                    <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding StrokeOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding StrokeOpacity}" MinWidth="80" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding StrokeOpacity}" MinWidth="140" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_Cap, Mode=OneWay}" />
@@ -491,7 +490,7 @@
               </StackPanel>
             </ScrollViewer>
           </TabItem>
-          <TabItem Header="{Binding L10n.Ui_Effects, Mode=OneWay}" FontSize="13">
+          <TabItem Header="{Binding L10n.Ui_Effects, Mode=OneWay}" FontSize="13" MinWidth="150">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled">
               <StackPanel Spacing="10" Margin="0,4,4,8">
                 <TextBlock Text="{Binding EffectTargetDisplay}" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold" />
@@ -499,9 +498,9 @@
                 <Expander Header="{Binding L10n.Ui_Compositing, Mode=OneWay}" IsExpanded="True" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="8">
                     <TextBlock Text="{Binding L10n.Ui_Opacity, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,90">
+                    <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding EffectOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding EffectOpacity}" MinWidth="80" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding EffectOpacity}" MinWidth="140" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_BlendMode, Mode=OneWay}" />
@@ -514,14 +513,14 @@
                   <StackPanel Spacing="8">
                     <CheckBox Content="{Binding L10n.Ui_EnableBlur, Mode=OneWay}" IsChecked="{Binding IsBlurEnabled}" />
                     <TextBlock Text="{Binding L10n.Ui_BlurX, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,90">
+                    <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaX}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaX}" MinWidth="80" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaX}" MinWidth="140" />
                     </Grid>
                     <TextBlock Text="{Binding L10n.Ui_BlurY, Mode=OneWay}" />
-                    <Grid ColumnDefinitions="*,90">
+                    <Grid ColumnDefinitions="*,140">
                       <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaY}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaY}" MinWidth="80" />
+                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaY}" MinWidth="140" />
                     </Grid>
                     <CheckBox Content="{Binding L10n.Ui_LinkBlur, Mode=OneWay}" IsChecked="{Binding LinkBlurSigma}" />
                     <Button Content="{Binding L10n.Ui_ClearFilters, Mode=OneWay}" Command="{Binding ClearFiltersCommand}" HorizontalAlignment="Stretch" />
@@ -542,9 +541,9 @@
                           <DataTemplate x:DataType="vm:ShaderUniformItem">
                             <StackPanel Spacing="3" Margin="0,2">
                               <TextBlock Text="{Binding Name}" FontSize="12" />
-                              <Grid ColumnDefinitions="*,90">
+                              <Grid ColumnDefinitions="*,140">
                                 <Slider Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Value="{Binding Value}" Margin="0,0,6,0" />
-                                <NumericUpDown Grid.Column="1" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Increment="{Binding Increment}" Value="{Binding Value}" MinWidth="80" />
+                                <NumericUpDown Grid.Column="1" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Increment="{Binding Increment}" Value="{Binding Value}" MinWidth="140" />
                               </Grid>
                             </StackPanel>
                           </DataTemplate>

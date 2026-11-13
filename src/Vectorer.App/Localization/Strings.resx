@@ -619,4 +619,5 @@
   <data name="DefaultName_Freehand" xml:space="preserve"><value>Freehand</value></data>
   <data name="DefaultName_Path" xml:space="preserve"><value>Path</value></data>
   <data name="DefaultName_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Ui_NodeX" xml:space="preserve"><value>Node X</value></data>
 </root>

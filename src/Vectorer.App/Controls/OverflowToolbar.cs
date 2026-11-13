@@ -14,7 +14,7 @@ public sealed class OverflowToolbar : UserControl
         AvaloniaProperty.Register<OverflowToolbar, AppLocalization?>(nameof(Localization));
     public AppLocalization? Localization { get => GetValue(LocalizationProperty); set => SetValue(LocalizationProperty, value); }
 
-    private readonly StackPanel _primary = new() { Orientation = Orientation.Horizontal, Spacing = 8 };
+    private readonly StackPanel _primary = new() { Orientation = Orientation.Horizontal, Spacing = 8, ClipToBounds = true };
     private readonly StackPanel _overflow = new() { Spacing = 10, Margin = new Thickness(4) };
     private readonly Button _more = new() { Content = "⋯", Width = 36, VerticalAlignment = VerticalAlignment.Center };
 
@@ -53,12 +53,15 @@ public sealed class OverflowToolbar : UserControl
         var visible = Items.Where(i => i.IsVisible).ToArray();
         foreach (var item in visible) item.Measure(Size.Infinity);
         var total = visible.Sum(i => i.DesiredSize.Width) + Math.Max(0, visible.Length - 1) * 8;
-        var budget = Math.Max(0, availableSize.Width - (total > availableSize.Width ? 44 : 0));
+        // Reserve the button and a margin for theme padding and rounding at the edge.
+        var budget = Math.Max(0, availableSize.Width - (total > availableSize.Width || _overflow.Children.Any(i => i.IsVisible) ? 80 : 0));
         var used = 0d;
+        var overflowStarted = false;
         foreach (var item in Items)
         {
             var width = item.IsVisible ? item.DesiredSize.Width + (used > 0 ? 8 : 0) : 0;
-            var fits = !item.IsVisible || used + width <= budget;
+            var fits = !item.IsVisible || (!overflowStarted && used + width <= budget);
+            if (item.IsVisible && !fits) overflowStarted = true;
             var target = fits ? _primary : _overflow;
             var other = fits ? _overflow : _primary;
             if (!target.Children.Contains(item))

@@ -97,6 +97,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(ToolHint));
         OnPropertyChanged(nameof(StyleTarget));
         OnPropertyChanged(nameof(StyleTargetDisplay));
+        OnPropertyChanged(nameof(FillColorDisplay));
         OnPropertyChanged(nameof(EffectTargetLabel));
         OnPropertyChanged(nameof(EffectTargetDisplay));
         OnPropertyChanged(nameof(ScopePath));

@@ -619,4 +619,5 @@
   <data name="DefaultName_Freehand" xml:space="preserve"><value>フリーハンド</value></data>
   <data name="DefaultName_Path" xml:space="preserve"><value>パス</value></data>
   <data name="DefaultName_Text" xml:space="preserve"><value>テキスト</value></data>
+  <data name="Ui_NodeX" xml:space="preserve"><value>ノード X</value></data>
 </root>

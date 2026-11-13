@@ -51,6 +51,18 @@ public sealed partial class MainWindowViewModel
 
     public string StyleTargetDisplay => L10n.Format(new LocalizedMessage(nameof(Strings.Ui_EditingTarget), StyleTarget));
 
+    public string FillColorDisplay
+    {
+        get => FillColor switch
+        {
+            "texture" => L10n.Get(nameof(Strings.Choice_Texture)),
+            "none" => L10n.Ui_None,
+            _ => FillColor
+        };
+        set => FillColor = value == L10n.Get(nameof(Strings.Choice_Texture)) ? "texture"
+            : value == L10n.Ui_None ? "none" : value;
+    }
+
     private void SyncSelectionEditors()
     {
         if (_syncingEditors) return;
@@ -228,6 +240,7 @@ public sealed partial class MainWindowViewModel
 
     partial void OnFillColorChanged(string value)
     {
+        OnPropertyChanged(nameof(FillColorDisplay));
         if (_syncingEditors || string.IsNullOrWhiteSpace(value) || value == "texture") return;
         if (value.Equals("none", StringComparison.OrdinalIgnoreCase)) EditStyle(s => s.Fill = null, "Remove fill");
         else if (SKColor.TryParse(value, out var color)) EditStyle(s => s.Fill = new SolidColorFill(color), "Fill color");

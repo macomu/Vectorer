@@ -249,17 +249,16 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         baseRow.Children.Add(baseVal);
         settingsStack.Children.Add(baseRow);
 
-        var widthRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*,Auto") };
+        var widthRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*") };
         widthRow.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_WidthPx)) }, TextBlock.TextProperty, nameof(Strings.Ui_WidthPx)));
         var widthInput = new NumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
         widthInput.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.TargetWidth)) { Mode = BindingMode.TwoWay });
         Grid.SetColumn(widthInput, 1);
         widthRow.Children.Add(widthInput);
-        var lockCheck = text.Bind(new CheckBox { Content = localization.Get(nameof(Strings.Ui_AspectLocked)), Margin = new Avalonia.Thickness(8, 0, 0, 0) }, CheckBox.ContentProperty, nameof(Strings.Ui_AspectLocked));
+        var lockCheck = text.Bind(new CheckBox { Content = localization.Get(nameof(Strings.Ui_AspectLocked)) }, CheckBox.ContentProperty, nameof(Strings.Ui_AspectLocked));
         lockCheck.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.LockAspect)) { Mode = BindingMode.TwoWay });
-        Grid.SetColumn(lockCheck, 2);
-        widthRow.Children.Add(lockCheck);
         settingsStack.Children.Add(widthRow);
+        settingsStack.Children.Add(lockCheck);
 
         var heightRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*") };
         heightRow.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_HeightPx)) }, TextBlock.TextProperty, nameof(Strings.Ui_HeightPx)));

@@ -208,6 +208,7 @@ public sealed class AppLocalization : ObservableObject
     public string Ui_Secondary => Get(nameof(Strings.Ui_Secondary));
     public string Ui_Shader => Get(nameof(Strings.Ui_Shader));
     public string Ui_Simplify => Get(nameof(Strings.Ui_Simplify));
+    public string Ui_NodeX => Get(nameof(Strings.Ui_NodeX));
     public string Ui_TextureScale => Get(nameof(Strings.Ui_TextureScale));
     public string Ui_StrokeDetails => Get(nameof(Strings.Ui_StrokeDetails));
     public string Ui_Snap => Get(nameof(Strings.Ui_Snap));
