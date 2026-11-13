@@ -9,6 +9,7 @@ string[] defaultRids = ["win-x64", "win-arm64", "osx-arm64"];
 List<string> rids = [];
 string configuration = "Release";
 string outputRoot = "artifacts";
+string? version = null;
 bool skipTests = false;
 bool selfContained = true;
 
@@ -43,6 +44,19 @@ for (int i = 0; i < args.Length; i++)
             }
             outputRoot = args[++i];
             break;
+        case "--version" or "-v":
+            if (i + 1 >= args.Length)
+            {
+                Console.Error.WriteLine($"Error: {args[i]} requires a version value.");
+                return 1;
+            }
+            version = args[++i].Trim().TrimStart('v', 'V');
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                Console.Error.WriteLine("Error: --version value cannot be empty.");
+                return 1;
+            }
+            break;
         case "--skip-tests":
             skipTests = true;
             break;
@@ -75,6 +89,10 @@ Directory.CreateDirectory(packagesDir);
 
 Console.WriteLine($"Repository Root : {repoRoot}");
 Console.WriteLine($"Configuration   : {configuration}");
+if (version is not null)
+{
+    Console.WriteLine($"Version         : {version}");
+}
 Console.WriteLine($"Self-Contained  : {selfContained}");
 Console.WriteLine($"Target RIDs     : {string.Join(", ", rids)}");
 Console.WriteLine($"Output Directory: {packagesDir}");
@@ -113,6 +131,11 @@ foreach (var rid in rids)
         "-p:DebugType=None",
         "-p:DebugSymbols=false"
     ];
+
+    if (version is not null)
+    {
+        publishArgs.Add($"-p:Version={version}");
+    }
 
     RunDotnet(repoRoot, [.. publishArgs]);
     VerifyLocalizationResources(ridPublishDir, rid);
@@ -174,6 +197,7 @@ static void PrintHelp()
                                     Default: win-x64, win-arm64, osx-arm64
           -c, --configuration <CFG> Build configuration (Default: Release)
           -o, --output <DIR>        Artifacts output root directory (Default: artifacts)
+          -v, --version <VER>       Package/assembly version passed to dotnet publish (leading 'v' is trimmed)
           --skip-tests              Skip running unit tests before publishing
           --no-self-contained       Publish as framework-dependent instead of self-contained
           -h, --help                Show this help message
