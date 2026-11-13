@@ -30,7 +30,7 @@ public interface IEditorFileDialogs
 }
 
 /// <summary>Storage pickers and confirmation presentation only; document operations live in the VM.</summary>
-public sealed class EditorFileDialogs(Window owner, AppLocalization localization) : IEditorFileDialogs
+public sealed class EditorFileDialogs(Window owner, AppLocalization localization, LanguageChangeSafety? safety = null) : IEditorFileDialogs
 {
     private static readonly FilePickerFileType SvgType = new("SVG") { Patterns = ["*.svg"], MimeTypes = ["image/svg+xml"] };
     private static readonly FilePickerFileType PngType = new("PNG") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
@@ -42,12 +42,20 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     }
     public async Task<EditorFile?> OpenSvgAsync()
     {
-        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = localization.Get(nameof(Strings.Ui_OpenSvg)), AllowMultiple = false, FileTypeFilter = [SvgType] });
+        IReadOnlyList<IStorageFile> files;
+        using (safety?.EnterNativeDialog())
+        {
+            files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = localization.Get(nameof(Strings.Ui_OpenSvg)), AllowMultiple = false, FileTypeFilter = [SvgType] });
+        }
         return files.Count > 0 ? Adapt(files[0]) : null;
     }
     public async Task<EditorFile?> SaveSvgAsync(string suggestedName)
     {
-        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { Title = localization.Get(nameof(Strings.Ui_SaveSvg)), SuggestedFileName = suggestedName, DefaultExtension = "svg", FileTypeChoices = [SvgType], ShowOverwritePrompt = true });
+        IStorageFile? file;
+        using (safety?.EnterNativeDialog())
+        {
+            file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { Title = localization.Get(nameof(Strings.Ui_SaveSvg)), SuggestedFileName = suggestedName, DefaultExtension = "svg", FileTypeChoices = [SvgType], ShowOverwritePrompt = true });
+        }
         return file is null ? null : Adapt(file);
     }
     public async Task<bool> ConfirmDiscardAsync() => await ConfirmUnsavedAsync() == UnsavedDecision.Discard;
@@ -55,6 +63,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     {
         using var text = new LocalizedControlBindings(localization);
         var dialog = text.Bind(new Window { Title = localization.Get(nameof(Strings.Ui_Unsaved)), Width = 460, Height = 165, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner }, Window.TitleProperty, nameof(Strings.Ui_Unsaved));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var save = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Save)) }, Button.ContentProperty, nameof(Strings.Ui_Save)); var discard = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Discard)) }, Button.ContentProperty, nameof(Strings.Ui_Discard)); var cancel = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Cancel)) }, Button.ContentProperty, nameof(Strings.Ui_Cancel));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right };
         buttons.Children.Add(cancel); buttons.Children.Add(discard); buttons.Children.Add(save);
@@ -69,6 +78,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         var vm = new DocumentSettingsViewModel { Width = (decimal)current.Width, Height = (decimal)current.Height, Title = current.Title,
             Transparent = current.Background.Alpha == 0, Background = current.Background.Alpha == 0 ? "#FFFFFF" : current.Background.ToString() };
         var dialog = text.Bind(new Window { Title = localization.Get(isNew ? nameof(Strings.Ui_NewDocument) : nameof(Strings.Ui_DocumentSettings)), Width = 440, Height = 510, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner, DataContext = vm }, Window.TitleProperty, isNew ? nameof(Strings.Ui_NewDocument) : nameof(Strings.Ui_DocumentSettings));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 10 };
         var title = new TextBox(); title.Bind(TextBox.TextProperty, new Binding(nameof(vm.Title)) { Mode = BindingMode.TwoWay });
         content.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_Title)) }, TextBlock.TextProperty, nameof(Strings.Ui_Title))); content.Children.Add(title);
@@ -106,6 +116,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             DataContext = vm
         }, Window.TitleProperty, nameof(Strings.Ui_LayerRotation));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
 
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 12 };
         content.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_RotationRange)) }, TextBlock.TextProperty, nameof(Strings.Ui_RotationRange)));
@@ -146,24 +157,32 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
 
     public async Task<EditorFile?> SavePngAsync(string suggestedName)
     {
-        var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        IStorageFile? file;
+        using (safety?.EnterNativeDialog())
         {
-            Title = localization.Get(nameof(Strings.Ui_SavePng)),
-            SuggestedFileName = suggestedName,
-            DefaultExtension = "png",
-            FileTypeChoices = [PngType],
-            ShowOverwritePrompt = true
-        });
+            file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = localization.Get(nameof(Strings.Ui_SavePng)),
+                SuggestedFileName = suggestedName,
+                DefaultExtension = "png",
+                FileTypeChoices = [PngType],
+                ShowOverwritePrompt = true
+            });
+        }
         return file is null ? null : Adapt(file);
     }
 
     public async Task<string?> SelectExportFolderAsync()
     {
-        var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        IReadOnlyList<IStorageFolder> folders;
+        using (safety?.EnterNativeDialog())
         {
-            Title = localization.Get(nameof(Strings.Ui_ExportFolder)),
-            AllowMultiple = false
-        });
+            folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = localization.Get(nameof(Strings.Ui_ExportFolder)),
+                AllowMultiple = false
+            });
+        }
         return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 
@@ -179,6 +198,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             DataContext = vm
         }, Window.TitleProperty, nameof(Strings.Ui_ExportPng));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
 
         var root = new DockPanel { Margin = new Avalonia.Thickness(20) };
 
@@ -332,6 +352,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     {
         using var text = new LocalizedControlBindings(localization);
         var dialog = text.Bind(new Window { Title = localization.Get(nameof(Strings.Ui_FileError)), Width = 520, Height = 210, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner }, Window.TitleProperty, nameof(Strings.Ui_FileError));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 }; var close = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Close)), HorizontalAlignment = HorizontalAlignment.Right }, Button.ContentProperty, nameof(Strings.Ui_Close));
         var body = new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         if (localizedMessage is not null) text.BindMessage(body, TextBlock.TextProperty, localizedMessage);

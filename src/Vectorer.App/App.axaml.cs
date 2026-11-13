@@ -68,7 +68,22 @@ public partial class App : Application
         CultureInfo.CurrentUICulture = localization.UiCulture;
         CultureInfo.DefaultThreadCurrentUICulture = localization.UiCulture;
 
-        var viewModel = new MainWindowViewModel(localization);
+        var settingsSession = new EditorUserSettingsSession(
+            store,
+            settings,
+            postNotification: action =>
+            {
+                if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+                {
+                    action();
+                }
+                else
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(action);
+                }
+            });
+
+        var viewModel = new MainWindowViewModel(localization, settingsSession);
         viewModel.ApplyLoadedSettings(settings, store);
 
         var mainWindow = new MainWindow

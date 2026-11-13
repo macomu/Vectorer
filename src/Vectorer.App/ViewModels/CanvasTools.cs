@@ -144,17 +144,27 @@ public sealed partial class MainWindowViewModel
     {
         if (CanvasTool is ShapeDrawingTool shapes) shapes.Begin(point, shift, forceNew);
         else CanvasTool.Begin(point, shift);
+        SyncGestureSafety();
     }
     public void UpdateInteraction(SKPoint point, bool shift, bool alt)
     {
         CursorPosition = $"{point.X:0.0}, {point.Y:0.0}";
         CanvasTool.Move(point, shift, alt);
+        SyncGestureSafety();
     }
-    public void EndInteraction() => CanvasTool.End();
-    public void CancelInteraction() => CanvasTool.Cancel();
+    public void EndInteraction()
+    {
+        CanvasTool.End();
+        SyncGestureSafety();
+    }
+    public void CancelInteraction()
+    {
+        CanvasTool.Cancel();
+        SyncGestureSafety();
+    }
 
-    [RelayCommand] private void FinishBezier() { if (CanvasTool is BezierPenTool tool) tool.Finish(); }
-    [RelayCommand] private void CloseBezier() { if (CanvasTool is BezierPenTool tool) tool.Finish(true); }
+    [RelayCommand] private void FinishBezier() { if (CanvasTool is BezierPenTool tool) tool.Finish(); SyncGestureSafety(); }
+    [RelayCommand] private void CloseBezier() { if (CanvasTool is BezierPenTool tool) tool.Finish(true); SyncGestureSafety(); }
     [RelayCommand] private void AddNode() { if (CanvasTool is NodeEditTool tool) tool.AddMidpoint(); }
     [RelayCommand] private void DeleteNode() { if (CanvasTool is NodeEditTool tool) tool.DeleteNodes(); }
     [RelayCommand] private void CornerNode() { if (CanvasTool is NodeEditTool tool) tool.SetKind(PathNodeKind.Corner); }

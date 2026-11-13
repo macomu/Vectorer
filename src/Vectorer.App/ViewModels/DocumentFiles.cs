@@ -28,10 +28,11 @@ public sealed partial class MainWindowViewModel
         if (IsBusy || IsInteracting) return;
         FinishTextEditing();
         if (!await ProtectUnsavedAsync()) return;
-        var settings = FileDialogs is not null ? await FileDialogs.EditDocumentAsync(new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, "Untitled"), true)
-            : new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, "Untitled");
+        var initialTitle = Naming.UntitledDocument();
+        var settings = FileDialogs is not null ? await FileDialogs.EditDocumentAsync(new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, initialTitle), true)
+            : new DocumentSettings(860, 540, SkiaSharp.SKColors.Transparent, initialTitle);
         if (settings is null) return;
-        var document = SvgDocument.CreateDefault(settings.Width, settings.Height); document.Title = settings.Title; document.BackgroundColor = settings.Background;
+        var document = Naming.CreateDefaultDocument(settings.Width, settings.Height); document.Title = settings.Title; document.BackgroundColor = settings.Background;
         ReplaceDocument(document, null);
     }
     [RelayCommand] private async Task OpenDocumentAsync()

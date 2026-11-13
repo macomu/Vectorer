@@ -31,15 +31,38 @@ public sealed class VectorCanvasControl : Decorator
     private TextBox? _textEditor;
     private SKPoint _textPosition;
     private float _textSize;
+    private readonly object _panGuardToken = new();
+    private readonly object _inlineTextGuardToken = new();
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == WorkspaceProperty)
         {
-            if (change.OldValue is MainWindowViewModel before) { before.TextEditRequested -= OpenTextEditor; before.FinishTextEditingRequested -= CommitInlineText; before.FitCanvasRequested -= FitDocument; }
+            if (change.OldValue is MainWindowViewModel before)
+            {
+                before.TextEditRequested -= OpenTextEditor;
+                before.FinishTextEditingRequested -= CommitInlineText;
+                before.FitCanvasRequested -= FitDocument;
+                before.LanguageSafety.SetInputGuard(_panGuardToken, false);
+                before.LanguageSafety.SetInputGuard(_inlineTextGuardToken, false);
+            }
             if (change.NewValue is MainWindowViewModel after) { after.TextEditRequested += OpenTextEditor; after.FinishTextEditingRequested += CommitInlineText; after.FitCanvasRequested += FitDocument; }
         }
+    }
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        if (Workspace is { } vm)
+        {
+            vm.LanguageSafety.SetInputGuard(_panGuardToken, false);
+            vm.LanguageSafety.SetInputGuard(_inlineTextGuardToken, false);
+        }
+    }
+    private void SetPanning(bool panning)
+    {
+        _panning = panning;
+        Workspace?.LanguageSafety.SetInputGuard(_panGuardToken, panning);
     }
     private void OpenTextEditor(TextShapeNode text, SKPoint point)
     {
@@ -49,6 +72,7 @@ public sealed class VectorCanvasControl : Decorator
             FontFamily = new FontFamily(text.FontFamily), FontSize = Math.Clamp(text.FontSize * Workspace!.Zoom, 10, 120),
             Background = new SolidColorBrush(Color.FromRgb(22, 27, 34)) };
         _textEditor = editor;
+        Workspace?.LanguageSafety.SetInputGuard(_inlineTextGuardToken, true);
         editor.AddHandler(KeyDownEvent, (_, e) =>
         {
             if (e.Key == Key.Escape) { CloseTextEditor(false); e.Handled = true; }
@@ -62,8 +86,19 @@ public sealed class VectorCanvasControl : Decorator
     {
         if (_textEditor is not { } editor) return;
         _textEditor = null;
-        Workspace?.CommitText(commit ? editor.Text ?? "" : null);
+        var workspace = Workspace;
+        workspace?.CommitText(commit ? editor.Text ?? "" : null);
         Child = null; Focus(); InvalidateVisual();
+        if (workspace is not null)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_textEditor is null)
+                {
+                    workspace.LanguageSafety.SetInputGuard(_inlineTextGuardToken, false);
+                }
+            }, DispatcherPriority.Input);
+        }
     }
     private void FitDocument()
     {
@@ -224,7 +259,7 @@ public sealed class VectorCanvasControl : Decorator
         if (vm.ActiveTool == DrawingTool.Text && !current.Properties.IsMiddleButtonPressed && !_space)
         { vm.BeginTextEdit(ToDocument(current.Position)); e.Handled = true; return; }
         _pointer = e.Pointer;
-        _panning = current.Properties.IsMiddleButtonPressed || _space || vm.ActiveTool == DrawingTool.Pan;
+        SetPanning(current.Properties.IsMiddleButtonPressed || _space || vm.ActiveTool == DrawingTool.Pan);
         if (_panning) { vm.CancelInteraction(); _panStart = current.Position; _offsetBeforePan = _offset; }
         else vm.BeginInteraction(ToDocument(current.Position), e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Control));
         e.Pointer.Capture(this);
@@ -248,7 +283,7 @@ public sealed class VectorCanvasControl : Decorator
             vm.UpdateInteraction(ToDocument(e.GetPosition(this)), e.KeyModifiers.HasFlag(KeyModifiers.Shift), e.KeyModifiers.HasFlag(KeyModifiers.Alt));
             vm.EndInteraction();
         }
-        _panning = false;
+        SetPanning(false);
         _pointer = null;
         e.Pointer.Capture(null);
         e.Handled = true;
@@ -257,7 +292,7 @@ public sealed class VectorCanvasControl : Decorator
     {
         base.OnPointerCaptureLost(e);
         if (_pointer is not null) Workspace?.CancelInteraction();
-        _panning = false;
+        SetPanning(false);
         _pointer = null;
     }
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
@@ -281,7 +316,7 @@ public sealed class VectorCanvasControl : Decorator
         if (Workspace is not { } vm || e.Handled || _textEditor?.IsKeyboardFocusWithin == true) return;
         if (e.Key == Key.Escape && _panning)
         {
-            _offset = _offsetBeforePan; _panning = false; _pointer?.Capture(null); _pointer = null;
+            _offset = _offsetBeforePan; SetPanning(false); _pointer?.Capture(null); _pointer = null;
             InvalidateVisual(); e.Handled = true; return;
         }
         if (e.Key == Key.Space && !vm.IsInteracting) { _space = true; e.Handled = true; return; }
@@ -293,6 +328,6 @@ public sealed class VectorCanvasControl : Decorator
     {
         base.OnLostFocus(e);
         _space = false;
-        if (_pointer is not null) { Workspace?.CancelInteraction(); _panning = false; _pointer.Capture(null); _pointer = null; }
+        if (_pointer is not null) { Workspace?.CancelInteraction(); SetPanning(false); _pointer.Capture(null); _pointer = null; }
     }
 }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Avalonia.Threading;
 using Vectorer.App.Localization;
 using Vectorer.App.Services;
 using Vectorer.App.ViewModels;
@@ -84,12 +85,14 @@ public sealed partial class LocalizationTests : IDisposable
             Assert.Equal("ファイル(_F)", l10n.Menu_File);
 
             vm.SetLanguageCommand.Execute("en");
+            Dispatcher.UIThread.RunJobs();
             await vm.LanguageCoordinator.WaitForPendingSavesAsync();
             Assert.Equal("en", l10n.UiCulture.Name);
             Assert.Equal("_File", l10n.Menu_File);
             Assert.True(l10n.IsEnglishLanguage);
 
             vm.SetLanguageCommand.Execute("system");
+            Dispatcher.UIThread.RunJobs();
             await vm.LanguageCoordinator.WaitForPendingSavesAsync();
             Assert.Equal("ja", l10n.UiCulture.Name);
             Assert.Equal("ファイル(_F)", l10n.Menu_File);
@@ -202,6 +205,7 @@ public sealed partial class LocalizationTests : IDisposable
         Assert.Equal("選択: 0 個", vm.SelectionSummary);
 
         vm.SetLanguageCommand.Execute("en");
+        Dispatcher.UIThread.RunJobs();
 
         Assert.Same(originalTool, vm.ActiveToolItem);
         Assert.Equal("Select", originalTool.Title);
@@ -223,6 +227,7 @@ public sealed partial class LocalizationTests : IDisposable
         Assert.Equal("スターバースト (プラグイン)", tool.Title);
 
         vm.SetLanguageCommand.Execute("en");
+        Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("Apply Sunset Wave Shader to Selection", menu.Title);
         Assert.Equal("Starburst (Plugin)", tool.Title);
@@ -242,6 +247,7 @@ public sealed partial class LocalizationTests : IDisposable
         export.PropertyChanged += (_, e) => notifications.Add(e.PropertyName);
 
         vm.SetLanguageCommand.Execute("en");
+        Dispatcher.UIThread.RunJobs();
 
         Assert.Equal("No selected objects to export", export.BaseDimensionsLabel);
         Assert.Equal("No selected objects to export", export.OutputSizeLabel);
@@ -253,7 +259,33 @@ public sealed partial class LocalizationTests : IDisposable
         export.Dispose();
         notifications.Clear();
         vm.SetLanguageCommand.Execute("ja");
+        Dispatcher.UIThread.RunJobs();
         Assert.Empty(notifications);
+    }
+
+    [Fact]
+    public void SatelliteResourceAssembly_LoadsJapaneseStringsWithoutFallback()
+    {
+        var jaSatellite = Path.Combine(AppContext.BaseDirectory, "ja", "Vectorer.App.resources.dll");
+        Assert.True(File.Exists(jaSatellite), $"Missing Japanese satellite assembly: {jaSatellite}");
+        Assert.True(new FileInfo(jaSatellite).Length > 0);
+
+        var enCulture = CultureInfo.GetCultureInfo("en");
+        var jaCulture = CultureInfo.GetCultureInfo("ja");
+        var jaEntries = LoadResxEntries(Path.Combine(FindLocalizationDirectory(), "Strings.ja.resx"));
+
+        foreach (var (key, expectedJa) in jaEntries)
+        {
+            var actualEn = Strings.ResourceManager.GetString(key, enCulture);
+            var actualJa = Strings.ResourceManager.GetString(key, jaCulture);
+            Assert.False(string.IsNullOrWhiteSpace(actualEn), $"English resource '{key}' returned empty.");
+            Assert.Equal(expectedJa, actualJa);
+        }
+
+        // Verify a representative key is actually translated (not English fallback)
+        Assert.NotEqual(
+            Strings.ResourceManager.GetString(nameof(Strings.Menu_File), enCulture),
+            Strings.ResourceManager.GetString(nameof(Strings.Menu_File), jaCulture));
     }
 
     private static string FindLocalizationDirectory()

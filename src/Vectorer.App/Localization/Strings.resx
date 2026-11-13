@@ -605,4 +605,18 @@
   <data name="Ui_FontName" xml:space="preserve"><value>Font family (you can also type a name)</value></data>
   <data name="Ui_FontSelect" xml:space="preserve"><value>Choose an installed font</value></data>
   <data name="Ui_MoreSettings" xml:space="preserve"><value>More tool settings</value></data>
+  <data name="Status_LanguageChangePending" xml:space="preserve"><value>Language will change after the current operation</value></data>
+  <data name="DefaultName_Untitled" xml:space="preserve"><value>Untitled</value></data>
+  <data name="DefaultName_Layer" xml:space="preserve"><value>Layer {0}</value></data>
+  <data name="DefaultName_CopyOf" xml:space="preserve"><value>{0} copy</value></data>
+  <data name="DefaultName_Rectangle" xml:space="preserve"><value>Rectangle</value></data>
+  <data name="DefaultName_Ellipse" xml:space="preserve"><value>Ellipse</value></data>
+  <data name="DefaultName_Circle" xml:space="preserve"><value>Circle</value></data>
+  <data name="DefaultName_Arc" xml:space="preserve"><value>Arc</value></data>
+  <data name="DefaultName_PieArc" xml:space="preserve"><value>Pie Arc</value></data>
+  <data name="DefaultName_Polygon" xml:space="preserve"><value>Polygon ({0})</value></data>
+  <data name="DefaultName_Star" xml:space="preserve"><value>Star ({0})</value></data>
+  <data name="DefaultName_Freehand" xml:space="preserve"><value>Freehand</value></data>
+  <data name="DefaultName_Path" xml:space="preserve"><value>Path</value></data>
+  <data name="DefaultName_Text" xml:space="preserve"><value>Text</value></data>
 </root>

@@ -51,6 +51,7 @@ public sealed class BezierPenTool(MainWindowViewModel workspace) : CanvasToolBas
         {
             Refresh();
             var shape = PreviewShape!;
+            shape.Name = Workspace.Naming.PathName();
             Workspace.ExecuteCommand(new AddNodeCommand(_container, shape, "Draw Bezier path"));
             Workspace.SelectNodes([shape]);
         }

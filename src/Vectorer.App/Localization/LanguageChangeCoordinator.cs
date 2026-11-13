@@ -1,62 +1,145 @@
 using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Vectorer.App.Services;
 
 namespace Vectorer.App.Localization;
 
-public sealed class LanguageChangeCoordinator
+public sealed class LanguageChangeCoordinator : ObservableObject
 {
     private readonly AppLocalization _localization;
     private readonly Func<bool> _canApplyNow;
     private readonly Action<bool, CultureInfo>? _onCultureApplied;
+    private readonly EditorUserSettingsSession? _settingsSession;
     private readonly Func<string, Task>? _saveSettingsAsync;
     private readonly Action<Exception>? _onSaveFailed;
+    private readonly LanguageChangeSafety? _safety;
+    private readonly Action<Action> _scheduleFlush;
 
     private bool _isApplying;
-    private long _requestedSaveGeneration;
-    private string? _pendingSaveLanguage;
-    private Task _saveLoopTask = Task.CompletedTask;
-    private readonly object _saveLock = new();
+    private bool _flushScheduled;
+    private bool _isShuttingDown;
+    private string? _pendingLanguage;
+    private Task _legacySaveTask = Task.CompletedTask;
 
-    public string? PendingLanguage { get; private set; }
+    public string? PendingLanguage
+    {
+        get => _pendingLanguage;
+        private set
+        {
+            if (string.Equals(_pendingLanguage, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _pendingLanguage = value;
+            OnPropertyChanged();
+        }
+    }
 
     public LanguageChangeCoordinator(
         AppLocalization localization,
         Func<bool>? canApplyNow = null,
         Action<bool, CultureInfo>? onCultureApplied = null,
         Func<string, Task>? saveSettingsAsync = null,
-        Action<Exception>? onSaveFailed = null)
+        Action<Exception>? onSaveFailed = null,
+        LanguageChangeSafety? safety = null,
+        Action<Action>? scheduleFlush = null,
+        EditorUserSettingsSession? settingsSession = null)
     {
         _localization = localization;
         _canApplyNow = canApplyNow ?? (() => true);
         _onCultureApplied = onCultureApplied;
         _saveSettingsAsync = saveSettingsAsync;
         _onSaveFailed = onSaveFailed;
+        _safety = safety;
+        _scheduleFlush = scheduleFlush ?? (action => action());
+        _settingsSession = settingsSession;
+
+        if (_safety is not null)
+        {
+            _safety.StateChanged += OnSafetyStateChanged;
+        }
+    }
+
+    private bool CanApplyNow() => !_isShuttingDown && (_safety?.CanApply ?? true) && _canApplyNow();
+
+    public void BeginShutdown()
+    {
+        _isShuttingDown = true;
+        PendingLanguage = null;
     }
 
     public Task RequestLanguageAsync(string? requestedLanguage)
     {
+        if (_isShuttingDown)
+        {
+            return Task.CompletedTask;
+        }
+
         var normalized = AppLocalization.NormalizeLanguage(requestedLanguage);
 
-        if (_isApplying || !_canApplyNow())
-        {
-            PendingLanguage = normalized;
-            return Task.CompletedTask;
-        }
-
-        PendingLanguage = null;
         if (string.Equals(_localization.RequestedLanguage, normalized, StringComparison.Ordinal))
         {
+            PendingLanguage = null;
+            if (_settingsSession is { HasPendingChanges: true })
+            {
+                _settingsSession.RetrySave();
+            }
             return Task.CompletedTask;
         }
 
-        ApplyCore(normalized);
+        PendingLanguage = normalized;
+
+        if (!_isApplying && CanApplyNow())
+        {
+            ScheduleFlush();
+        }
+
         return Task.CompletedTask;
     }
 
     public Task FlushPendingAsync()
     {
-        if (_isApplying || PendingLanguage is null || !_canApplyNow())
+        FlushScheduledCore();
+        return Task.CompletedTask;
+    }
+
+    public Task WaitForPendingSavesAsync()
+    {
+        if (_settingsSession is not null)
         {
-            return Task.CompletedTask;
+            return _settingsSession.WaitForIdleAsync();
+        }
+
+        return _legacySaveTask;
+    }
+
+    private void OnSafetyStateChanged(object? sender, EventArgs e)
+    {
+        if (!_isApplying && PendingLanguage is not null && CanApplyNow())
+        {
+            ScheduleFlush();
+        }
+    }
+
+    private void ScheduleFlush()
+    {
+        if (_flushScheduled || _isShuttingDown)
+        {
+            return;
+        }
+
+        _flushScheduled = true;
+        _scheduleFlush(FlushScheduledCore);
+    }
+
+    private void FlushScheduledCore()
+    {
+        _flushScheduled = false;
+
+        if (_isShuttingDown || _isApplying || PendingLanguage is null || !CanApplyNow())
+        {
+            return;
         }
 
         var next = PendingLanguage;
@@ -64,16 +147,6 @@ public sealed class LanguageChangeCoordinator
         if (!string.Equals(_localization.RequestedLanguage, next, StringComparison.Ordinal))
         {
             ApplyCore(next);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task WaitForPendingSavesAsync()
-    {
-        lock (_saveLock)
-        {
-            return _saveLoopTask;
         }
     }
 
@@ -90,71 +163,35 @@ public sealed class LanguageChangeCoordinator
                 _onCultureApplied?.Invoke(cultureChanged, targetCulture);
             }
 
-            EnqueueSave(normalizedLanguage);
+            if (_settingsSession is not null)
+            {
+                _settingsSession.Update(s => s with { UiLanguage = normalizedLanguage });
+            }
+            else if (_saveSettingsAsync is not null)
+            {
+                _legacySaveTask = SaveLegacyAsync(normalizedLanguage);
+            }
         }
         finally
         {
             _isApplying = false;
         }
 
-        if (PendingLanguage is not null && _canApplyNow())
+        if (PendingLanguage is not null && CanApplyNow())
         {
-            _ = FlushPendingAsync();
+            ScheduleFlush();
         }
     }
 
-    private void EnqueueSave(string normalizedLanguage)
+    private async Task SaveLegacyAsync(string normalizedLanguage)
     {
-        if (_saveSettingsAsync is null)
+        try
         {
-            return;
+            await _saveSettingsAsync!(normalizedLanguage).ConfigureAwait(false);
         }
-
-        lock (_saveLock)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _requestedSaveGeneration++;
-            _pendingSaveLanguage = normalizedLanguage;
-            if (_saveLoopTask.IsCompleted)
-            {
-                _saveLoopTask = RunSaveLoopAsync();
-            }
-        }
-    }
-
-    private async Task RunSaveLoopAsync()
-    {
-        while (true)
-        {
-            string languageToSave;
-            long generation;
-            lock (_saveLock)
-            {
-                if (_pendingSaveLanguage is null)
-                {
-                    return;
-                }
-
-                languageToSave = _pendingSaveLanguage;
-                generation = _requestedSaveGeneration;
-                _pendingSaveLanguage = null;
-            }
-
-            try
-            {
-                await _saveSettingsAsync!(languageToSave);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                _onSaveFailed?.Invoke(ex);
-            }
-
-            lock (_saveLock)
-            {
-                if (_pendingSaveLanguage is null && _requestedSaveGeneration == generation)
-                {
-                    return;
-                }
-            }
+            _onSaveFailed?.Invoke(ex);
         }
     }
 }

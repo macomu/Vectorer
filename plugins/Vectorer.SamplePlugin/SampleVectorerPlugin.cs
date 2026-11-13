@@ -153,7 +153,7 @@ internal sealed class AddStarburstToolbarContribution(Func<bool>? isJapanese = n
             innerRadius: 48f,
             pointsCount: 8);
 
-        star.Name = "Plugin Starburst";
+        star.Name = isJapanese?.Invoke() == true ? "プラグイン スターバースト" : "Plugin Starburst";
         star.ShaderEffect = new ShaderEffectDescriptor(SampleVectorerPlugin.SunsetWaveShaderId);
         star.Style.Stroke = new StrokeStyle(new SKColor(255, 240, 200), 2.5f);
 

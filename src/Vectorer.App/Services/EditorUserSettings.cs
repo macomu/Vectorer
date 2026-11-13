@@ -25,12 +25,12 @@ public sealed class JsonEditorUserSettingsStore(string? filePath = null) : IEdit
 
     public async Task<EditorUserSettings> LoadAsync()
     {
-        await _gate.WaitAsync();
+        await _gate.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!File.Exists(_filePath)) return new();
             await using var stream = File.OpenRead(_filePath);
-            return await JsonSerializer.DeserializeAsync<EditorUserSettings>(stream) ?? new();
+            return await JsonSerializer.DeserializeAsync<EditorUserSettings>(stream).ConfigureAwait(false) ?? new();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { return new(); }
         finally { _gate.Release(); }
@@ -38,15 +38,15 @@ public sealed class JsonEditorUserSettingsStore(string? filePath = null) : IEdit
 
     public async Task SaveAsync(EditorUserSettings settings)
     {
-        await _gate.WaitAsync();
+        await _gate.WaitAsync().ConfigureAwait(false);
         var temporary = _filePath + $".{Guid.NewGuid():N}.tmp";
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_filePath))!);
             await using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
             {
-                await JsonSerializer.SerializeAsync(stream, settings);
-                await stream.FlushAsync();
+                await JsonSerializer.SerializeAsync(stream, settings).ConfigureAwait(false);
+                await stream.FlushAsync().ConfigureAwait(false);
             }
             File.Move(temporary, _filePath, true);
         }

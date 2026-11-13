@@ -58,6 +58,7 @@ public sealed partial class MainWindowViewModel
         {
             if (string.IsNullOrWhiteSpace(text) || _textContainer is null) return;
             node.Text = text;
+            node.Name = Naming.TextName();
             ExecuteCommand(new AddNodeCommand(_textContainer, node, "Create text"));
             SelectNodes([node]);
         }

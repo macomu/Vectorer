@@ -1,4 +1,5 @@
 using Vectorer.App.Localization;
+using Vectorer.App.Services;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -13,6 +14,10 @@ public sealed class FontPicker : UserControl
         AvaloniaProperty.Register<FontPicker, AppLocalization?>(nameof(Localization));
     public AppLocalization? Localization { get => GetValue(LocalizationProperty); set => SetValue(LocalizationProperty, value); }
 
+    public static readonly StyledProperty<LanguageChangeSafety?> LanguageSafetyProperty =
+        AvaloniaProperty.Register<FontPicker, LanguageChangeSafety?>(nameof(LanguageSafety));
+    public LanguageChangeSafety? LanguageSafety { get => GetValue(LanguageSafetyProperty); set => SetValue(LanguageSafetyProperty, value); }
+
     public static readonly StyledProperty<string> ValueProperty =
         AvaloniaProperty.Register<FontPicker, string>(nameof(Value), "sans-serif", defaultBindingMode: BindingMode.TwoWay);
     public static readonly StyledProperty<IReadOnlyList<string>> FamiliesProperty =
@@ -21,6 +26,7 @@ public sealed class FontPicker : UserControl
     public IReadOnlyList<string> Families { get => GetValue(FamiliesProperty); set => SetValue(FamiliesProperty, value); }
     private readonly ListBox _list = new() { Height = 300, MinWidth = 300 };
     private readonly TextBox _search = new();
+    private EditorInputLanguageGuard? _popupInputGuard;
 
     public FontPicker()
     {
@@ -39,6 +45,21 @@ public sealed class FontPicker : UserControl
         flyout.Opened += (_, _) =>
         {
             _list.SelectedItem = null; _search.Text = ""; Filter(); _search.Focus();
+            _popupInputGuard?.Dispose();
+            if (LanguageSafety is { } safety && TopLevel.GetTopLevel(_search) is { } popupTopLevel)
+            {
+                _popupInputGuard = EditorInputLanguageGuard.Attach(popupTopLevel, safety);
+            }
+        };
+        flyout.Closed += (_, _) =>
+        {
+            _popupInputGuard?.Dispose();
+            _popupInputGuard = null;
+        };
+        DetachedFromVisualTree += (_, _) =>
+        {
+            _popupInputGuard?.Dispose();
+            _popupInputGuard = null;
         };
         _list.SelectionChanged += (_, _) =>
         {

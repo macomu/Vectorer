@@ -400,4 +400,5 @@ public sealed class AppLocalization : ObservableObject
     public string Ui_FontName => Get(nameof(Strings.Ui_FontName));
     public string Ui_FontSelect => Get(nameof(Strings.Ui_FontSelect));
     public string Ui_MoreSettings => Get(nameof(Strings.Ui_MoreSettings));
+    public string Status_LanguageChangePending => Get(nameof(Strings.Status_LanguageChangePending));
 }

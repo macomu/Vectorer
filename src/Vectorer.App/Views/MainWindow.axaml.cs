@@ -15,17 +15,32 @@ public partial class MainWindow : Window
     private SceneTreeItem? _dragTreeSource;
     private Point _dragStartPoint;
     private bool _isDraggingTreeItem;
+    private readonly object _treeDragGuardToken = new();
+    private EditorInputLanguageGuard? _inputLanguageGuard;
 
     public MainWindow()
     {
         InitializeComponent();
         DataContextChanged += (_, _) =>
         {
+            _inputLanguageGuard?.Dispose();
+            _inputLanguageGuard = null;
+
             if (DataContext is MainWindowViewModel vm)
             {
-                vm.FileDialogs = new EditorFileDialogs(this, vm.L10n);
+                vm.FileDialogs = new EditorFileDialogs(this, vm.L10n, vm.LanguageSafety);
                 vm.Clipboard = new EditorClipboard(this);
                 vm.CloseRequested += Close;
+                _inputLanguageGuard = EditorInputLanguageGuard.Attach(this, vm.LanguageSafety);
+            }
+        };
+        Closed += (_, _) =>
+        {
+            _inputLanguageGuard?.Dispose();
+            _inputLanguageGuard = null;
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.LanguageSafety.SetInputGuard(_treeDragGuardToken, false);
             }
         };
 
@@ -63,8 +78,8 @@ public partial class MainWindow : Window
             {
                 if (await vm.CanCloseAsync())
                 {
+                    vm.LanguageCoordinator.BeginShutdown();
                     await vm.SaveUserSettingsAsync(EditorLayout.ColumnDefinitions[2].ActualWidth);
-                    await vm.LanguageCoordinator.WaitForPendingSavesAsync();
                     _allowClose = true; Close();
                 }
             }
@@ -125,6 +140,10 @@ public partial class MainWindow : Window
             if (Math.Abs(pos.X - _dragStartPoint.X) > 5 || Math.Abs(pos.Y - _dragStartPoint.Y) > 5)
             {
                 _isDraggingTreeItem = true;
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    vm.LanguageSafety.SetInputGuard(_treeDragGuardToken, true);
+                }
             }
         }, RoutingStrategies.Tunnel);
 
@@ -149,6 +168,19 @@ public partial class MainWindow : Window
 
             _dragTreeSource = null;
             _isDraggingTreeItem = false;
+            if (DataContext is MainWindowViewModel vmAfter)
+            {
+                vmAfter.LanguageSafety.SetInputGuard(_treeDragGuardToken, false);
+            }
+        }, RoutingStrategies.Tunnel);
+        SceneHierarchyTree.AddHandler(PointerCaptureLostEvent, (_, _) =>
+        {
+            _dragTreeSource = null;
+            _isDraggingTreeItem = false;
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.LanguageSafety.SetInputGuard(_treeDragGuardToken, false);
+            }
         }, RoutingStrategies.Tunnel);
     }
 

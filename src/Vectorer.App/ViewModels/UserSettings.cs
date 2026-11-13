@@ -17,6 +17,7 @@ public sealed partial class MainWindowViewModel
         : RecentFiles.Select(f => new RecentFileMenuEntry(f.DisplayName, OpenRecentFileCommand, f))
             .Append(new(L10n.Menu_File_Recent_Clear, ClearRecentFilesCommand, null));
     public double InspectorWidth { get; private set; } = 300;
+    public bool HasSettingsSaveError => SettingsSession.LastSaveError is not null;
 
     public void ApplyLoadedSettings(EditorUserSettings settings, IEditorUserSettingsStore store)
     {
@@ -27,7 +28,9 @@ public sealed partial class MainWindowViewModel
             if (file is not null && !string.IsNullOrWhiteSpace(file.Name) && Uri.TryCreate(file.Location, UriKind.Absolute, out _)
                 && !RecentFiles.Any(f => SameLocation(f.Location, file.Location)) && RecentFiles.Count < 10)
                 RecentFiles.Add(file);
+        SettingsSession.AttachLoaded(new(InspectorWidth, RecentFiles.ToArray(), L10n.RequestedLanguage), store);
         OnPropertyChanged(nameof(HasRecentFiles)); OnPropertyChanged(nameof(RecentFileMenuItems));
+        OnPropertyChanged(nameof(HasSettingsSaveError));
     }
 
     public async Task LoadUserSettingsAsync(IEditorUserSettingsStore store)
@@ -49,15 +52,30 @@ public sealed partial class MainWindowViewModel
     {
         if (inspectorWidth is { } width && double.IsFinite(width)) InspectorWidth = Math.Clamp(width, 240, 650);
         if (_userSettingsStore is null) return;
-        try { await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray(), L10n.RequestedLanguage)); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { SetStatus(nameof(Localization.Strings.Status_SettingsSaveFailed), ex.Message); }
+        SettingsSession.Update(current => current with
+        {
+            InspectorWidth = InspectorWidth,
+            RecentFiles = RecentFiles.ToArray(),
+            UiLanguage = L10n.RequestedLanguage
+        });
+        var result = await SettingsSession.FlushAsync();
+        OnPropertyChanged(nameof(HasSettingsSaveError));
+        if (!result.Succeeded && result.Error is { } error)
+        {
+            SetStatus(nameof(Localization.Strings.Status_SettingsSaveFailed), error.Message);
+        }
     }
 
-    private async Task SaveLanguageSettingAsync(string language)
+    [RelayCommand]
+    private async Task RetrySaveSettingsAsync()
     {
-        if (_userSettingsStore is null) return;
-        await _userSettingsStore.SaveAsync(new(InspectorWidth, RecentFiles.ToArray(), language));
+        SettingsSession.RetrySave();
+        var result = await SettingsSession.FlushAsync();
+        OnPropertyChanged(nameof(HasSettingsSaveError));
+        if (!result.Succeeded && result.Error is { } error)
+        {
+            SetStatus(nameof(Localization.Strings.Status_SettingsSaveFailed), error.Message);
+        }
     }
 
     private void OnLanguageApplied()
@@ -74,6 +92,7 @@ public sealed partial class MainWindowViewModel
         }
         OnPropertyChanged(nameof(RecentFileMenuItems));
         OnPropertyChanged(nameof(StatusMessage));
+        OnPropertyChanged(nameof(PendingLanguageNotice));
         OnPropertyChanged(nameof(SelectionSummary));
         OnPropertyChanged(nameof(ToolHint));
         OnPropertyChanged(nameof(StyleTarget));

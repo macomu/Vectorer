@@ -80,6 +80,7 @@ public sealed class ShapeDrawingTool(MainWindowViewModel workspace) : CanvasTool
             if (Workspace.ActiveTool == DrawingTool.Freehand ? MathF.Max(path.Bounds.Width, path.Bounds.Height) > 1
                 : path.Bounds.Width > 1 && path.Bounds.Height > 1)
             {
+                shape.Name = Workspace.Naming.ShapeName(Workspace.ActiveTool, shape);
                 Workspace.ExecuteCommand(new AddNodeCommand(container, shape));
                 Workspace.SelectNodes([shape]);
             }

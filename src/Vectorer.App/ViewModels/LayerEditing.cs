@@ -16,14 +16,14 @@ public sealed partial class MainWindowViewModel
     [RelayCommand] private void NewLayer()
     {
         if (IsInteracting || IsBusy) return;
-        var layer = new LayerNode { Name = $"Layer {CurrentDocument.Layers.Count + 1}" };
+        var layer = new LayerNode { Name = Naming.Layer(CurrentDocument.Layers.Count + 1) };
         ExecuteCommand(new DelegateDocumentCommand("New layer", () => CurrentDocument.Layers.Add(layer), () => CurrentDocument.Layers.Remove(layer)));
         ActiveLayer = layer;
     }
     [RelayCommand] private void DuplicateLayer()
     {
         if (!CanEditLayer) return;
-        var layer = (LayerNode)SceneNodeCloner.Clone(ActiveLayer!); layer.Name += " copy";
+        var layer = (LayerNode)SceneNodeCloner.Clone(ActiveLayer!); layer.Name = Naming.CopyOf(ActiveLayer!.Name);
         var index = CurrentDocument.Layers.IndexOf(ActiveLayer!) + 1;
         ExecuteCommand(new DelegateDocumentCommand("Duplicate layer", () => CurrentDocument.Layers.Insert(index, layer), () => CurrentDocument.Layers.Remove(layer)));
         ActiveLayer = layer;
@@ -32,7 +32,7 @@ public sealed partial class MainWindowViewModel
     {
         if (!CanEditLayer) return;
         var layer = ActiveLayer!; var index = CurrentDocument.Layers.IndexOf(layer);
-        var replacement = new LayerNode { Name = "Layer 1" }; var only = CurrentDocument.Layers.Count == 1;
+        var replacement = new LayerNode { Name = Naming.Layer(1) }; var only = CurrentDocument.Layers.Count == 1;
         SelectNodes([]);
         ExecuteCommand(new DelegateDocumentCommand("Delete layer", () => { CurrentDocument.Layers.Remove(layer); if (only) CurrentDocument.Layers.Add(replacement); },
             () => { if (only) CurrentDocument.Layers.Remove(replacement); CurrentDocument.Layers.Insert(index, layer); }));

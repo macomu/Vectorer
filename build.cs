@@ -66,6 +66,7 @@ if (rids.Count == 0)
 
 string repoRoot = FindRepoRoot(Directory.GetCurrentDirectory());
 string artifactsDir = Path.GetFullPath(Path.Combine(repoRoot, outputRoot));
+EnsureUnderDirectory(artifactsDir, repoRoot, "output directory");
 string publishBaseDir = Path.Combine(artifactsDir, "publish");
 string packagesDir = Path.Combine(artifactsDir, "packages");
 
@@ -91,7 +92,8 @@ string appProject = Path.Combine(repoRoot, "src", "Vectorer.App", "Vectorer.App.
 foreach (var rid in rids)
 {
     Console.WriteLine($"=== Publishing Vectorer for {rid} ===");
-    string ridPublishDir = Path.Combine(publishBaseDir, rid);
+    string ridPublishDir = Path.GetFullPath(Path.Combine(publishBaseDir, rid));
+    EnsureUnderDirectory(ridPublishDir, publishBaseDir, "publish directory");
     if (Directory.Exists(ridPublishDir))
     {
         Directory.Delete(ridPublishDir, recursive: true);
@@ -113,6 +115,7 @@ foreach (var rid in rids)
     ];
 
     RunDotnet(repoRoot, [.. publishArgs]);
+    VerifyLocalizationResources(ridPublishDir, rid);
 
     CopyDocIfPresent(repoRoot, ridPublishDir, "LICENSE");
     CopyDocIfPresent(repoRoot, ridPublishDir, "THIRD_PARTY_NOTICES.md");
@@ -130,6 +133,7 @@ foreach (var rid in rids)
 
         Console.WriteLine($"Creating ZIP archive: {archivePath}");
         ZipFile.CreateFromDirectory(ridPublishDir, archivePath, CompressionLevel.Optimal, includeBaseDirectory: false);
+        VerifyArchiveLocalizationResources(archivePath, rid, isZip: true);
     }
     else
     {
@@ -141,6 +145,7 @@ foreach (var rid in rids)
 
         Console.WriteLine($"Creating tar.gz archive: {archivePath}");
         CreateTarGzArchive(ridPublishDir, archivePath, $"Vectorer-{rid}");
+        VerifyArchiveLocalizationResources(archivePath, rid, isZip: false);
     }
 
     Console.WriteLine($"Successfully packaged {rid}!");
@@ -286,4 +291,111 @@ static bool IsUnixExecutable(FileInfo file)
     }
 
     return false;
+}
+
+static void EnsureUnderDirectory(string candidatePath, string parentPath, string label)
+{
+    string fullCandidate = Path.GetFullPath(candidatePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    string fullParent = Path.GetFullPath(parentPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    if (!fullCandidate.StartsWith(fullParent + Path.DirectorySeparatorChar, comparison))
+    {
+        throw new InvalidOperationException($"Refusing to operate on {label} '{fullCandidate}' outside '{fullParent}'.");
+    }
+}
+
+static void VerifyLocalizationResources(string ridPublishDir, string rid)
+{
+    string mainAssembly = Path.Combine(ridPublishDir, "Vectorer.App.dll");
+    string mainExecutable = Path.Combine(ridPublishDir, rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase) ? "Vectorer.App.exe" : "Vectorer.App");
+    if ((!File.Exists(mainAssembly) || new FileInfo(mainAssembly).Length == 0) &&
+        (!File.Exists(mainExecutable) || new FileInfo(mainExecutable).Length == 0))
+    {
+        throw new InvalidOperationException($"Missing or empty main application assembly in publish output for '{rid}': '{ridPublishDir}'.");
+    }
+
+    string jaSatellite = Path.Combine(ridPublishDir, "ja", "Vectorer.App.resources.dll");
+    if (!File.Exists(jaSatellite))
+    {
+        throw new InvalidOperationException($"Missing Japanese satellite resource assembly for '{rid}': '{jaSatellite}'. Ensure SatelliteResourceLanguages does not strip 'ja'.");
+    }
+
+    long size = new FileInfo(jaSatellite).Length;
+    if (size == 0)
+    {
+        throw new InvalidOperationException($"Japanese satellite resource assembly is empty (0 bytes) for '{rid}': '{jaSatellite}'.");
+    }
+
+    Console.WriteLine($"Verified localization resources for {rid}: ja/Vectorer.App.resources.dll ({size} bytes)");
+}
+
+static void VerifyArchiveLocalizationResources(string archivePath, string rid, bool isZip)
+{
+    string expectedPrefix = isZip ? "" : $"Vectorer-{rid}/";
+    string expectedSatellite = $"{expectedPrefix}ja/Vectorer.App.resources.dll";
+    string expectedAssembly = $"{expectedPrefix}Vectorer.App.dll";
+    string expectedExecutable = $"{expectedPrefix}{(rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase) ? "Vectorer.App.exe" : "Vectorer.App")}";
+
+    bool foundMain = false;
+    bool foundJaSatellite = false;
+
+    if (isZip)
+    {
+        using ZipArchive archive = ZipFile.OpenRead(archivePath);
+        foreach (ZipArchiveEntry entry in archive.Entries)
+        {
+            string entryPath = entry.FullName.Replace('\\', '/');
+            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal) || entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            {
+                if (entry.Length > 0) foundMain = true;
+            }
+            else if (entryPath.Equals(expectedSatellite, StringComparison.Ordinal))
+            {
+                if (entry.Length == 0)
+                {
+                    throw new InvalidOperationException($"Archive '{archivePath}' contains an empty '{expectedSatellite}'.");
+                }
+                foundJaSatellite = true;
+            }
+        }
+    }
+    else
+    {
+        using FileStream fileStream = File.OpenRead(archivePath);
+        using GZipStream gzipStream = new GZipStream(fileStream, CompressionMode.Decompress);
+        using TarReader tarReader = new TarReader(gzipStream);
+        while (tarReader.GetNextEntry() is { } entry)
+        {
+            if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile))
+            {
+                continue;
+            }
+
+            string entryPath = entry.Name.Replace('\\', '/');
+            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal) || entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            {
+                if (entry.Length > 0) foundMain = true;
+            }
+            else if (entryPath.Equals(expectedSatellite, StringComparison.Ordinal))
+            {
+                if (entry.Length == 0)
+                {
+                    throw new InvalidOperationException($"Archive '{archivePath}' contains an empty '{expectedSatellite}'.");
+                }
+                foundJaSatellite = true;
+            }
+        }
+    }
+
+    if (!foundMain)
+    {
+        throw new InvalidOperationException($"Archive '{archivePath}' is missing a non-empty main application assembly ('{expectedAssembly}' or '{expectedExecutable}').");
+    }
+
+    if (!foundJaSatellite)
+    {
+        throw new InvalidOperationException($"Archive '{archivePath}' is missing '{expectedSatellite}' at the expected hierarchy.");
+    }
+
+    Console.WriteLine($"Verified archive localization resources: {Path.GetFileName(archivePath)}");
 }

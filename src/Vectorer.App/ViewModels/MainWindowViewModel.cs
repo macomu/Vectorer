@@ -9,6 +9,7 @@ using Vectorer.Abstractions.Plugins;
 using Vectorer.Abstractions.Services;
 using Vectorer.Abstractions.Styling;
 using Vectorer.App.Localization;
+using Vectorer.App.Services;
 using Vectorer.Core.Commands;
 using Vectorer.Core.Geometry;
 using Vectorer.Plugins;
@@ -64,7 +65,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     public IDocumentRenderer DocumentRenderer { get; }
     public AppLocalization L10n { get; }
+    public EditorNaming Naming { get; }
+    public EditorUserSettingsSession SettingsSession { get; }
+    public LanguageChangeSafety LanguageSafety { get; } = new();
     public LanguageChangeCoordinator LanguageCoordinator { get; }
+    public bool HasPendingLanguage => LanguageCoordinator.PendingLanguage is not null;
+    public string PendingLanguageNotice => HasPendingLanguage ? L10n.Status_LanguageChangePending : string.Empty;
 
     public ObservableCollection<LayerNode> Layers { get; } = [];
     public ObservableCollection<PluginMenuItem> PluginMenus { get; } = [];
@@ -72,15 +78,50 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
     public IReadOnlyList<SceneNode> SelectedNodes => _selectedNodes;
 
-    public MainWindowViewModel(AppLocalization? localization = null)
+    public MainWindowViewModel(AppLocalization? localization = null, EditorUserSettingsSession? settingsSession = null)
     {
         L10n = localization ?? new AppLocalization();
+        Naming = new EditorNaming(L10n);
+        SettingsSession = settingsSession ?? new EditorUserSettingsSession(
+            postNotification: action =>
+            {
+                if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+                {
+                    action();
+                }
+                else
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(action);
+                }
+            });
+        SettingsSession.SaveFailed += (_, ex) =>
+        {
+            OnPropertyChanged(nameof(HasSettingsSaveError));
+            SetStatus(nameof(Strings.Status_SettingsSaveFailed), ex.Message);
+        };
+        SettingsSession.SaveSucceeded += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasSettingsSaveError));
+            if (Equals(_status.Key, nameof(Strings.Status_SettingsSaveFailed)))
+            {
+                SetStatus(nameof(Strings.Status_Ready));
+            }
+        };
         LanguageCoordinator = new LanguageChangeCoordinator(
             L10n,
             canApplyNow: () => !IsInteracting,
             onCultureApplied: (_, _) => OnLanguageApplied(),
-            saveSettingsAsync: SaveLanguageSettingAsync,
-            onSaveFailed: ex => SetStatus(nameof(Strings.Status_LanguageSavedFailed), ex.Message));
+            safety: LanguageSafety,
+            scheduleFlush: action => Avalonia.Threading.Dispatcher.UIThread.Post(action),
+            settingsSession: SettingsSession);
+        LanguageCoordinator.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(LanguageChangeCoordinator.PendingLanguage))
+            {
+                OnPropertyChanged(nameof(HasPendingLanguage));
+                OnPropertyChanged(nameof(PendingLanguageNotice));
+            }
+        };
 
         _undoRedoService = new UndoRedoService();
         _booleanService = new PathBooleanService();
@@ -91,7 +132,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         _pluginHost = new PluginHostService();
         _pluginHost.NotifyUiCultureChanged(L10n.UiCulture);
 
-        _currentDocument = SvgDocument.CreateDefault();
+        _currentDocument = Naming.CreateDefaultDocument();
         SyncLayersCollection();
 
         LoadBuiltInAndExternalPlugins();
@@ -131,17 +172,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         OnPropertyChanged(nameof(ScopePath));
         OnPropertyChanged(nameof(IsInGroup));
         RenderVersion++;
-        if (!IsInteracting && LanguageCoordinator.PendingLanguage is not null)
-        {
-            _ = LanguageCoordinator.FlushPendingAsync();
-        }
+        SyncGestureSafety();
     }
+
+    public void SyncGestureSafety() => LanguageSafety.SetGestureActive(IsInteracting);
 
     [RelayCommand]
     private void AddConvexPolygon()
     {
         var layer = EnsureActiveLayer();
         var hex = PolygonShapeNode.CreateRegularConvex(new SKPoint(220, 220), 85f, sides: 6);
+        hex.Name = Naming.PolygonName(6);
         hex.Style.Fill = new SolidColorFill(new SKColor(56, 189, 248));
         hex.Style.Stroke = new StrokeStyle(new SKColor(15, 23, 42), 3f);
 
@@ -155,6 +196,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     {
         var layer = EnsureActiveLayer();
         var star = PolygonShapeNode.CreateConcaveStar(new SKPoint(420, 240), outerRadius: 95f, innerRadius: 42f, pointsCount: 5);
+        star.Name = Naming.StarName(5);
         star.Style.Fill = new TextureFill(
             TexturePatternKind.Checkerboard,
             new SKColor(250, 204, 21),
@@ -173,7 +215,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var layer = EnsureActiveLayer();
         var circle = new EllipseShapeNode
         {
-            Name = "Circle",
+            Name = Naming.CircleName(),
             Center = new SKPoint(320, 260),
             RadiusX = 80f,
             RadiusY = 80f
@@ -192,7 +234,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         var layer = EnsureActiveLayer();
         var arc = new ArcShapeNode
         {
-            Name = "Pie Arc",
+            Name = Naming.PieArcName(),
             Center = new SKPoint(560, 260),
             RadiusX = 85f,
             RadiusY = 85f,
@@ -338,7 +380,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 
         if (CurrentDocument.Layers.Count == 0)
         {
-            CurrentDocument.Layers.Add(new LayerNode { Name = "Layer 1" });
+            CurrentDocument.Layers.Add(new LayerNode { Name = Naming.Layer(1) });
         }
 
         ActiveLayer = CurrentDocument.Layers[0];
