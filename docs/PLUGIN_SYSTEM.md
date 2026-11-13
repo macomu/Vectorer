@@ -1,5 +1,7 @@
 # プラグイン & シェーダー拡張システム仕様書 (`PLUGIN_SYSTEM.md`)
 
+**Languages:** 日本語 | [English](PLUGIN_SYSTEM.en.md)
+
 Vectorer は、外部 DLL を読み込んでメニューやツールバーに機能を追加したり、`SkiaSharp` のシェーダー (`SKRuntimeEffect`) をオブジェクト単位で適用できる拡張アーキテクチャを備えています。
 
 ---

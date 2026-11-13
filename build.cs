@@ -143,6 +143,7 @@ foreach (var rid in rids)
     CopyDocIfPresent(repoRoot, ridPublishDir, "LICENSE");
     CopyDocIfPresent(repoRoot, ridPublishDir, "THIRD_PARTY_NOTICES.md");
     CopyDocIfPresent(repoRoot, ridPublishDir, "README.md");
+    CopyDocIfPresent(repoRoot, ridPublishDir, "README.en.md");
 
     Directory.CreateDirectory(Path.Combine(ridPublishDir, "plugins"));
 

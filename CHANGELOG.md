@@ -1,5 +1,7 @@
 # Changelog
 
+**Languages:** 日本語 | [English](CHANGELOG.en.md)
+
 本プロジェクトの主な変更履歴を [Keep a Changelog](https://keepachangelog.com/ja/1.1.0/) 形式で記録します。
 バージョニングは [Semantic Versioning](https://semver.org/) に準拠します。
 

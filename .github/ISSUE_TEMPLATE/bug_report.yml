@@ -1,5 +1,5 @@
 name: Bug Report / バグ報告
-description: 不具合やクラッシュを報告します
+description: Report a bug or crash / 不具合やクラッシュを報告します
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -7,14 +7,14 @@ body:
     id: summary
     attributes:
       label: 概要 / Summary
-      description: 発生している問題の内容を簡潔に記載してください。
+      description: 発生している問題の内容を簡潔に記載してください。 / Briefly describe the issue.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: 再現手順 / Steps to Reproduce
-      description: 問題が発生するまでの操作手順を記載してください。
+      description: 問題が発生するまでの操作手順を記載してください。 / Describe the steps to reproduce the issue.
       placeholder: |
         1. ...
         2. ...
@@ -25,13 +25,14 @@ body:
     id: expected
     attributes:
       label: 期待される動作 / Expected Behavior
+      description: 本来期待していた動作を記載してください。 / Describe what you expected to happen.
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Vectorer バージョン / Version
-      placeholder: 例: v0.1.0 / main (commit hash)
+      placeholder: "e.g. v0.1.0 / main (commit hash)"
     validations:
       required: true
   - type: dropdown
@@ -50,4 +51,4 @@ body:
     id: extra
     attributes:
       label: 補足・スクリーンショット・エラーログ / Additional Context
-      description: 差し支えなければ現象が再現する SVG サンプルやログも添付してください。
+      description: 差し支えなければ現象が再現する SVG サンプルやログも添付してください。 / Attach sample SVGs, screenshots, or logs if available.

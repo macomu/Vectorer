@@ -1,5 +1,7 @@
 # セキュリティポリシー (Security Policy)
 
+**Languages:** 日本語 | [English](SECURITY.en.md)
+
 ## サポート対象バージョン
 
 現在セキュリティ修正の対象となるバージョンは以下のとおりです。

@@ -1,5 +1,7 @@
 # SVG 仕様サポートと拡張名前空間 (`SVG_SPEC_SUPPORT.md`)
 
+**Languages:** 日本語 | [English](SVG_SPEC_SUPPORT.en.md)
+
 Vectorer は標準的な SVG 1.1 / SVG 2.0 ファイルを読み書きできると同時に、Vectorer 固有の高度な編集情報（レイヤー情報、特殊ブレンド、カスタム SkiaSharp シェーダー等）を失わずに保存するため、専用の XML 名前空間を使用します。
 
 ---

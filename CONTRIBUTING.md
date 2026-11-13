@@ -1,5 +1,7 @@
 # Vectorer コントリビューションガイド
 
+**Languages:** 日本語 | [English](CONTRIBUTING.en.md)
+
 Vectorer へのバグ報告・機能提案・Pull Request を歓迎します。
 プロジェクトの全体像は [README.md](README.md)、ライセンス方針は [LICENSE](LICENSE) および [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)、コミュニティの行動規範は [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) をご確認ください。
 

@@ -1,5 +1,7 @@
 # Vectorer
 
+**Languages:** 日本語 | [English](README.en.md)
+
 **Vectorer** は、.NET 10 と Avalonia UI、SkiaSharp で構築された軽量かつ高度な拡張性を持つクロスプラットフォーム対応の SVG エディタです。
 
 ## 主な機能
@@ -99,15 +101,15 @@ git push origin v0.1.0
 
 開発やコントリビューションに参加される方は、まず [CONTRIBUTING.md](CONTRIBUTING.md) および関連する設計ドキュメントをご参照ください。
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) — 開発手順・コントリビューションガイド・依存境界・ライセンスルール
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — コミュニティ行動規範
-- [SECURITY.md](SECURITY.md) — セキュリティポリシー・脆弱性報告方法（GitHub Security Advisories）
-- [CHANGELOG.md](CHANGELOG.md) — リリース変更履歴
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — シーングラフ、レンダリングパイプライン、座標系・図形演算の設計
+- [CONTRIBUTING.md](CONTRIBUTING.md) ([English](CONTRIBUTING.en.md)) — 開発手順・コントリビューションガイド・依存境界・ライセンスルール
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ([English](CODE_OF_CONDUCT.en.md)) — コミュニティ行動規範
+- [SECURITY.md](SECURITY.md) ([English](SECURITY.en.md)) — セキュリティポリシー・脆弱性報告方法（GitHub Security Advisories）
+- [CHANGELOG.md](CHANGELOG.md) ([English](CHANGELOG.en.md)) — リリース変更履歴
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ([English](docs/ARCHITECTURE.en.md)) — シーングラフ、レンダリングパイプライン、座標系・図形演算の設計
 - [docs/UI_DESIGN.md](docs/UI_DESIGN.md) — 画面レイアウト、ツールボックス、インスペクタ、ダイアログの GUI 設計仕様
-- [docs/PLUGIN_SYSTEM.md](docs/PLUGIN_SYSTEM.md) — DLL プラグインおよび SkiaSharp シェーダー拡張の仕様
-- [docs/SVG_SPEC_SUPPORT.md](docs/SVG_SPEC_SUPPORT.md) — SVG 入出力マッピングと `vectorer:*` 拡張属性仕様
+- [docs/PLUGIN_SYSTEM.md](docs/PLUGIN_SYSTEM.md) ([English](docs/PLUGIN_SYSTEM.en.md)) — DLL プラグインおよび SkiaSharp シェーダー拡張の仕様
+- [docs/SVG_SPEC_SUPPORT.md](docs/SVG_SPEC_SUPPORT.md) ([English](docs/SVG_SPEC_SUPPORT.en.md)) — SVG 入出力マッピングと `vectorer:*` 拡張属性仕様
 - [docs/LOCALIZATION.md](docs/LOCALIZATION.md) — 日本語・英語対応とリアルタイム言語切替の設計
-- [docs/ROADMAP.md](docs/ROADMAP.md) — 開発フェーズと機能チェックリスト
+- [docs/ROADMAP.md](docs/ROADMAP.md) ([English](docs/ROADMAP.en.md)) — 開発フェーズと機能チェックリスト
 
 （※ AI コーディングエージェント向けの作業規約は [AGENTS.md](AGENTS.md) および `.agents/rules/` に定義されています。）

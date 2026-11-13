@@ -1,5 +1,7 @@
 # Vectorer アーキテクチャ設計書 (`ARCHITECTURE.md`)
 
+**Languages:** 日本語 | [English](ARCHITECTURE.en.md)
+
 本ドキュメントでは、Vectorer の内部構造、データモデル（シーングラフ）、図形演算、レンダリングパイプライン、および PNG エクスポートの設計について定義します。
 
 ---

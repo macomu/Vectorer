@@ -1,5 +1,7 @@
 # Vectorer 開発ロードマップ (`ROADMAP.md`)
 
+**Languages:** 日本語 | [English](ROADMAP.en.md)
+
 AI エージェントや開発者が現在の実装状況と今後の拡張タスクを把握するためのロードマップです。
 
 ---
