@@ -7,8 +7,13 @@
     <Deterministic>true</Deterministic>
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Version>0.1.0</Version>
     <Authors>Vectorer Contributors</Authors>
+    <Company>Vectorer Contributors</Company>
     <Product>Vectorer</Product>
+    <Copyright>Copyright (c) 2026 Vectorer Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>svg;vector-graphics;editor;avalonia;skiasharp;sksl;plugins</PackageTags>
   </PropertyGroup>
 </Project>

@@ -402,4 +402,11 @@ public sealed class AppLocalization : ObservableObject
     public string Ui_FontSelect => Get(nameof(Strings.Ui_FontSelect));
     public string Ui_MoreSettings => Get(nameof(Strings.Ui_MoreSettings));
     public string Status_LanguageChangePending => Get(nameof(Strings.Status_LanguageChangePending));
+    public string Menu_Help => Get(nameof(Strings.Menu_Help));
+    public string Menu_Help_About => Get(nameof(Strings.Menu_Help_About));
+    public string Ui_AboutTitle => Get(nameof(Strings.Ui_AboutTitle));
+    public string Ui_AboutDescription => Get(nameof(Strings.Ui_AboutDescription));
+    public string Ui_VersionLabel => Get(nameof(Strings.Ui_VersionLabel));
+    public string Ui_LicenseLabel => Get(nameof(Strings.Ui_LicenseLabel));
+    public string Ui_RuntimeLabel => Get(nameof(Strings.Ui_RuntimeLabel));
 }

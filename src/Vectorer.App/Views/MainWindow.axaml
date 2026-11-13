@@ -178,6 +178,9 @@
           </MenuItem.ItemContainerTheme>
         </MenuItem>
       </MenuItem>
+      <MenuItem Header="{Binding L10n.Menu_Help, Mode=OneWay}">
+        <MenuItem Header="{Binding L10n.Menu_Help_About, Mode=OneWay}" Command="{Binding OpenAboutDialogCommand}" />
+      </MenuItem>
     </Menu>
     <Border DockPanel.Dock="Top" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,1" Padding="10,6">
       <Grid ColumnDefinitions="Auto,*">

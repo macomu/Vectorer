@@ -620,4 +620,11 @@
   <data name="DefaultName_Path" xml:space="preserve"><value>Path</value></data>
   <data name="DefaultName_Text" xml:space="preserve"><value>Text</value></data>
   <data name="Ui_NodeX" xml:space="preserve"><value>Node X</value></data>
+  <data name="Menu_Help" xml:space="preserve"><value>Help</value></data>
+  <data name="Menu_Help_About" xml:space="preserve"><value>About Vectorer</value></data>
+  <data name="Ui_AboutTitle" xml:space="preserve"><value>About Vectorer</value></data>
+  <data name="Ui_AboutDescription" xml:space="preserve"><value>Lightweight, extensible SVG editor built with .NET 10, Avalonia UI, and SkiaSharp.</value></data>
+  <data name="Ui_VersionLabel" xml:space="preserve"><value>Version</value></data>
+  <data name="Ui_LicenseLabel" xml:space="preserve"><value>License</value></data>
+  <data name="Ui_RuntimeLabel" xml:space="preserve"><value>Runtime</value></data>
 </root>

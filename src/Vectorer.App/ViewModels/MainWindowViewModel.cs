@@ -431,4 +431,15 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
         }
     }
 
+    [RelayCommand]
+    private async Task OpenAboutDialogAsync()
+    {
+        if (FileDialogs is null)
+        {
+            return;
+        }
+
+        await FileDialogs.ShowAboutDialogAsync(AppMetadata.Current);
+    }
+
 }

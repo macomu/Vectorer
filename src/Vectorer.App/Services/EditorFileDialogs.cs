@@ -27,6 +27,7 @@ public interface IEditorFileDialogs
     Task<string?> SelectExportFolderAsync() => Task.FromResult<string?>(null);
     Task ShowErrorAsync(string message) => Task.CompletedTask;
     Task ShowLocalizedErrorAsync(LocalizedMessage message, string fallback) => ShowErrorAsync(fallback);
+    Task ShowAboutDialogAsync(AppMetadata metadata) => Task.CompletedTask;
 }
 
 /// <summary>Storage pickers and confirmation presentation only; document operations live in the VM.</summary>
@@ -346,6 +347,99 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
 
     public Task ShowErrorAsync(string message) => ShowErrorCoreAsync(message, null);
     public Task ShowLocalizedErrorAsync(LocalizedMessage message, string fallback) => ShowErrorCoreAsync(fallback, message);
+
+    public async Task ShowAboutDialogAsync(AppMetadata metadata)
+    {
+        using var text = new LocalizedControlBindings(localization);
+        var dialog = text.Bind(
+            new Window
+            {
+                Title = localization.Get(nameof(Strings.Ui_AboutTitle)),
+                Width = 440,
+                Height = 280,
+                CanResize = false,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            },
+            Window.TitleProperty,
+            nameof(Strings.Ui_AboutTitle));
+        using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
+
+        var root = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 12 };
+        root.Children.Add(new TextBlock
+        {
+            Text = metadata.ProductName,
+            FontSize = 20,
+            FontWeight = Avalonia.Media.FontWeight.Bold
+        });
+        root.Children.Add(text.Bind(
+            new TextBlock
+            {
+                Text = localization.Get(nameof(Strings.Ui_AboutDescription)),
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            },
+            TextBlock.TextProperty,
+            nameof(Strings.Ui_AboutDescription)));
+
+        var details = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+            ColumnSpacing = 12,
+            RowSpacing = 6,
+            Margin = new Avalonia.Thickness(0, 4, 0, 4)
+        };
+
+        AddAboutRow(details, text, 0, nameof(Strings.Ui_VersionLabel), metadata.Version);
+        AddAboutRow(details, text, 1, nameof(Strings.Ui_LicenseLabel), metadata.License);
+        AddAboutRow(details, text, 2, nameof(Strings.Ui_RuntimeLabel), metadata.RuntimeSummary);
+        root.Children.Add(details);
+
+        root.Children.Add(new TextBlock
+        {
+            Text = metadata.Copyright,
+            Opacity = 0.75,
+            FontSize = 12
+        });
+
+        var close = text.Bind(
+            new Button
+            {
+                Content = localization.Get(nameof(Strings.Ui_Close)),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                MinWidth = 88
+            },
+            Button.ContentProperty,
+            nameof(Strings.Ui_Close));
+        close.Click += (_, _) => dialog.Close();
+        root.Children.Add(close);
+
+        dialog.Content = root;
+        await dialog.ShowDialog(owner);
+    }
+
+    private void AddAboutRow(Grid grid, LocalizedControlBindings text, int row, string labelKey, string value)
+    {
+        var label = text.Bind(
+            new TextBlock
+            {
+                Text = localization.Get(labelKey),
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                Opacity = 0.85
+            },
+            TextBlock.TextProperty,
+            labelKey);
+        var val = new TextBlock
+        {
+            Text = value,
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        };
+        Grid.SetRow(label, row);
+        Grid.SetColumn(label, 0);
+        Grid.SetRow(val, row);
+        Grid.SetColumn(val, 1);
+        grid.Children.Add(label);
+        grid.Children.Add(val);
+    }
 
     private async Task ShowErrorCoreAsync(string message, LocalizedMessage? localizedMessage)
     {
