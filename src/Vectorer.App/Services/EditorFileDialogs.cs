@@ -1,3 +1,4 @@
+using Vectorer.App.Controls;
 using Vectorer.App.Localization;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -94,7 +95,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         presets.SelectedIndex = 0;
         presets.SelectionChanged += (_, _) => vm.ApplyPreset((presets.SelectedItem as LocalizedChoice)?.Value as CanvasPreset); content.Children.Add(presets);
         foreach (var field in new[] { (nameof(Strings.Ui_WidthPx), nameof(vm.Width)), (nameof(Strings.Ui_HeightPx), nameof(vm.Height)) })
-        { content.Children.Add(text.Bind(new TextBlock { Text = localization.Get(field.Item1) }, TextBlock.TextProperty, field.Item1)); var input = new NumericUpDown { Minimum = 1, Maximum = 100000 }; input.Bind(NumericUpDown.ValueProperty, new Binding(field.Item2) { Mode = BindingMode.TwoWay }); content.Children.Add(input); }
+        { content.Children.Add(text.Bind(new TextBlock { Text = localization.Get(field.Item1) }, TextBlock.TextProperty, field.Item1)); var input = new SafeNumericUpDown { Minimum = 1, Maximum = 100000 }; input.Bind(NumericUpDown.ValueProperty, new Binding(field.Item2) { Mode = BindingMode.TwoWay }); content.Children.Add(input); }
         content.Children.Add(text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_SwapDimensions)), Command = vm.SwapDimensionsCommand }, Button.ContentProperty, nameof(Strings.Ui_SwapDimensions)));
         var transparent = text.Bind(new CheckBox { Content = localization.Get(nameof(Strings.Ui_Transparent)) }, CheckBox.ContentProperty, nameof(Strings.Ui_Transparent)); transparent.Bind(CheckBox.IsCheckedProperty, new Binding(nameof(vm.Transparent)) { Mode = BindingMode.TwoWay }); content.Children.Add(transparent);
         var background = new TextBox { Watermark = "#RRGGBB / #AARRGGBB" }; background.Bind(TextBox.TextProperty, new Binding(nameof(vm.Background)) { Mode = BindingMode.TwoWay }); content.Children.Add(background);
@@ -125,7 +126,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         var angleRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,110") };
         var slider = new Slider { Minimum = -360, Maximum = 360, Margin = new Avalonia.Thickness(0, 0, 8, 0) };
         slider.Bind(Slider.ValueProperty, new Binding(nameof(vm.Degrees)) { Mode = BindingMode.TwoWay });
-        var numeric = new NumericUpDown { Minimum = -360, Maximum = 360, Increment = 5 };
+        var numeric = new SafeNumericUpDown { Minimum = -360, Maximum = 360, Increment = 5 };
         numeric.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.Degrees)) { Mode = BindingMode.TwoWay });
         Grid.SetColumn(numeric, 1);
         angleRow.Children.Add(slider);
@@ -252,7 +253,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
 
         var widthRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*") };
         widthRow.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_WidthPx)) }, TextBlock.TextProperty, nameof(Strings.Ui_WidthPx)));
-        var widthInput = new NumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
+        var widthInput = new SafeNumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
         widthInput.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.TargetWidth)) { Mode = BindingMode.TwoWay });
         Grid.SetColumn(widthInput, 1);
         widthRow.Children.Add(widthInput);
@@ -263,7 +264,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
 
         var heightRow = new Grid { ColumnDefinitions = new ColumnDefinitions("90,*") };
         heightRow.Children.Add(text.Bind(new TextBlock { Text = localization.Get(nameof(Strings.Ui_HeightPx)) }, TextBlock.TextProperty, nameof(Strings.Ui_HeightPx)));
-        var heightInput = new NumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
+        var heightInput = new SafeNumericUpDown { Minimum = 1, Maximum = 32768, Increment = 10, FormatString = "0" };
         heightInput.Bind(NumericUpDown.ValueProperty, new Binding(nameof(vm.TargetHeight)) { Mode = BindingMode.TwoWay });
         Grid.SetColumn(heightInput, 1);
         heightRow.Children.Add(heightInput);

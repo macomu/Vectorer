@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Vectorer.App.ViewModels"
         xmlns:controls="using:Vectorer.App.Controls"
+        xmlns:converters="using:Vectorer.App.Converters"
         xmlns:plugins="using:Vectorer.Abstractions.Plugins"
         xmlns:docs="using:Vectorer.Abstractions.Documents"
         xmlns:styling="using:Vectorer.Abstractions.Styling"
@@ -11,6 +12,7 @@
         Width="1280" Height="800" MinWidth="1024" MinHeight="720"
         Background="#0D1117">
   <Window.Resources>
+    <converters:NullableDecimalToDoubleConverter x:Key="NullableDecimalToDoubleConverter" />
     <DataTemplate x:Key="LocalizedChoiceTemplate" x:DataType="vm:LocalizedChoice">
       <TextBlock Text="{Binding Label}" />
     </DataTemplate>
@@ -187,17 +189,17 @@
         <TextBlock Text="{Binding ActiveToolItem.Title}" FontWeight="SemiBold" Margin="0,0,10,0" />
         <controls:OverflowToolbar Grid.Column="1" Localization="{Binding L10n}">
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRectangleInputs}">
-            <TextBlock Text="X" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
-            <TextBlock Text="Y" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
-            <TextBlock Text="W" /><NumericUpDown Value="{Binding GeometryWidth}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
-            <TextBlock Text="H" /><NumericUpDown Value="{Binding GeometryHeight}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="X" /><controls:SafeNumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="Y" /><controls:SafeNumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="W" /><controls:SafeNumericUpDown Value="{Binding GeometryWidth}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
+            <TextBlock Text="H" /><controls:SafeNumericUpDown Value="{Binding GeometryHeight}" Minimum="0.01" Maximum="1000000" Width="72" MinWidth="72" ShowButtonSpinner="False" />
             <Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" />
           </StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowTransformInputs}"><TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="W" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="H" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="{Binding L10n.Ui_NodeX, Mode=OneWay}" /><NumericUpDown Value="{Binding NodeX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding NodeY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><NumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><NumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
-              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><controls:FontPicker Localization="{Binding L10n}" LanguageSafety="{Binding LanguageSafety}" Value="{Binding FontFamily, Mode=TwoWay}" Families="{Binding InstalledFontFamilies}" Width="210" /><NumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowTransformInputs}"><TextBlock Text="X" /><controls:SafeNumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><controls:SafeNumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="W" /><controls:SafeNumericUpDown Value="{Binding SelectionWidth}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="H" /><controls:SafeNumericUpDown Value="{Binding SelectionHeight}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="{Binding L10n.Ui_NodeX, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding NodeX}" AllowEmpty="True" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Y" /><controls:SafeNumericUpDown Value="{Binding NodeY}" AllowEmpty="True" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyNodeCoordinatesCommand}" IsEnabled="{Binding HasSelectedAnchors}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowRadialInputs}"><TextBlock Text="Cx" /><controls:SafeNumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Cy" /><controls:SafeNumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Rx" /><controls:SafeNumericUpDown Value="{Binding RadiusX}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="Ry" /><controls:SafeNumericUpDown Value="{Binding RadiusY}" Minimum="-1000000" Maximum="1000000" ShowButtonSpinner="False" MinWidth="72" Width="72" /><Button Content="{Binding L10n.Ui_Apply, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding ShowPolygonInputs}"><TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" ShowButtonSpinner="False" MinWidth="72" Width="72" /><TextBlock Text="R" /><controls:SafeNumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><controls:FontPicker Localization="{Binding L10n}" LanguageSafety="{Binding LanguageSafety}" Value="{Binding FontFamily, Mode=TwoWay}" Families="{Binding InstalledFontFamilies}" Width="210" /><controls:SafeNumericUpDown Value="{Binding FontSize}" Minimum="1" Maximum="1000" ShowButtonSpinner="False" MinWidth="72" Width="72" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><Button Content="{Binding L10n.Ui_Fill, Mode=OneWay}" ToolTip.Tip="{Binding L10n.Ui_FillColor, Mode=OneWay}">
             <Button.Flyout><Flyout Placement="BottomEdgeAlignedLeft"><ScrollViewer MaxHeight="650" HorizontalScrollBarVisibility="Disabled"><controls:PaintEditor DataContext="{Binding FillPaintEditor}" Width="300" /></ScrollViewer></Flyout></Button.Flyout>
           </Button>
@@ -207,25 +209,25 @@
             <Button.Flyout><Flyout Placement="BottomEdgeAlignedLeft"><ScrollViewer MaxHeight="650" HorizontalScrollBarVisibility="Disabled"><controls:PaintEditor DataContext="{Binding StrokePaintEditor}" Width="300" /></ScrollViewer></Flyout></Button.Flyout>
           </Button>
           <TextBox Text="{Binding StrokeColor}" Width="90" Watermark="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
-          <NumericUpDown Value="{Binding StrokeWidth}" Minimum="0" Maximum="1000" Increment="0.5" ToolTip.Tip="{Binding L10n.Ui_StrokeWidthHint, Mode=OneWay}" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <controls:SafeNumericUpDown Value="{Binding StrokeWidth}" AllowEmpty="True" Minimum="0" Maximum="1000" Increment="0.5" ToolTip.Tip="{Binding L10n.Ui_StrokeWidthHint, Mode=OneWay}" Width="82" MinWidth="82" ShowButtonSpinner="False" />
         </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><TextBlock Text="{Binding L10n.Ui_RadiusX, Mode=OneWay}" /><NumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><TextBlock Text="{Binding L10n.Ui_RadiusX, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding CornerRadius}" Minimum="0" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><TextBlock Text="{Binding L10n.Ui_RadiusY, Mode=OneWay}" /><NumericUpDown Value="{Binding CornerRadiusY}" Minimum="0" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><TextBlock Text="{Binding L10n.Ui_RadiusY, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding CornerRadiusY}" Minimum="0" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><CheckBox Content="{Binding L10n.Ui_LinkRadii, Mode=OneWay}" IsChecked="{Binding LinkCorners}" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsRectangleTool}"><Button Content="{Binding L10n.Ui_ResetCorners, Mode=OneWay}" Command="{Binding ResetCornersCommand}" />
                     </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsPolygonTool}"><TextBlock Text="{Binding L10n.Ui_VertexCount, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsPolygonTool}"><TextBlock Text="{Binding L10n.Ui_VertexCount, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" Increment="1" FormatString="0" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsStarTool}"><TextBlock Text="{Binding L10n.Ui_InnerRatio, Mode=OneWay}" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsStarTool}"><TextBlock Text="{Binding L10n.Ui_InnerRatio, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsArcTool}"><ComboBox ItemsSource="{Binding ArcChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding ArcMode, Mode=TwoWay}" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsArcTool}"><TextBlock Text="{Binding L10n.Ui_StartAngle, Mode=OneWay}" /><NumericUpDown Value="{Binding ArcStart}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsArcTool}"><TextBlock Text="{Binding L10n.Ui_StartAngle, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding ArcStart}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsArcTool}"><TextBlock Text="{Binding L10n.Ui_Sweep, Mode=OneWay}" /><NumericUpDown Value="{Binding ArcSweep}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsArcTool}"><TextBlock Text="{Binding L10n.Ui_Sweep, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding ArcSweep}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                     </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsFreehandTool}"><TextBlock Text="{Binding L10n.Ui_Smoothing, Mode=OneWay}" /><NumericUpDown Value="{Binding Smoothing}" Minimum="0" Maximum="100" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsFreehandTool}"><TextBlock Text="{Binding L10n.Ui_Smoothing, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding Smoothing}" Minimum="0" Maximum="100" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsFreehandTool}"><CheckBox Content="{Binding L10n.Ui_CloseAfterDraw, Mode=OneWay}" IsChecked="{Binding CloseFreehand}" />
                     </StackPanel>
@@ -250,7 +252,7 @@
                         </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><Button Content="{Binding L10n.Ui_ToggleClosed, Mode=OneWay}" Command="{Binding TogglePathClosedCommand}" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="{Binding L10n.Ui_Tolerance, Mode=OneWay}" /><NumericUpDown Value="{Binding SimplifyTolerance}" Minimum="0.1" Maximum="50" Increment="0.5" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><TextBlock Text="{Binding L10n.Ui_Tolerance, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding SimplifyTolerance}" Minimum="0.1" Maximum="50" Increment="0.5" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsNodeTool}"><Button Content="{Binding L10n.Ui_Simplify, Mode=OneWay}" Command="{Binding SimplifyPathCommand}" />
                     </StackPanel>
@@ -258,17 +260,17 @@
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><ToggleButton Content="{Binding L10n.Ui_Italic, Mode=OneWay}" IsChecked="{Binding TextItalic}" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><ComboBox ItemsSource="{Binding AlignmentChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding TextAlignment, Mode=TwoWay}" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><TextBlock Text="{Binding L10n.Ui_LetterSpacing, Mode=OneWay}" /><NumericUpDown Value="{Binding LetterSpacing}" Minimum="-100" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsTextTool}"><TextBlock Text="{Binding L10n.Ui_LetterSpacing, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding LetterSpacing}" Minimum="-100" Maximum="1000" Width="82" MinWidth="82" ShowButtonSpinner="False" />
                       </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewX, Mode=OneWay}" /><NumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewY, Mode=OneWay}" /><NumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewX, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding ShearX}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><TextBlock Text="{Binding L10n.Ui_SkewY, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding ShearY}" Minimum="-85" Maximum="85" Width="82" MinWidth="82" ShowButtonSpinner="False" /></StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasSelection}"><Button Content="{Binding L10n.Ui_ApplyTransform, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LayerAngle, Mode=OneWay}" /><NumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" /><Button Content="{Binding L10n.Ui_RotateLayer, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />
+          <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LayerAngle, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding LayerAngle}" Minimum="-360" Maximum="360" Width="82" MinWidth="82" ShowButtonSpinner="False" /><Button Content="{Binding L10n.Ui_RotateLayer, Mode=OneWay}" Command="{Binding RotateLayerCommand}" CommandParameter="custom" />
                     </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="{Binding L10n.Ui_LineStyle, Mode=OneWay}" /><ComboBox ItemsSource="{Binding DashChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding StrokeDash, Mode=TwoWay}" PlaceholderText="{Binding L10n.Ui_MixedCustom, Mode=OneWay}" />
                   </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasRadialShape}"><TextBlock Text="{Binding L10n.Ui_Shape, Mode=OneWay}" /><ComboBox ItemsSource="{Binding EllipseChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding EllipseMode, Mode=TwoWay}" /><Button Content="{Binding L10n.Ui_ApplyShape, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasParametricPolygon}"><TextBlock Text="{Binding L10n.Ui_CenterX, Mode=OneWay}" /><NumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><TextBlock Text="Y" /><NumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><ComboBox ItemsSource="{Binding PolygonModes}" SelectedItem="{Binding PolygonMode}" /><Button Content="{Binding L10n.Ui_ApplyShape, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding HasParametricPolygon}"><TextBlock Text="{Binding L10n.Ui_CenterX, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding GeometryX}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><TextBlock Text="Y" /><controls:SafeNumericUpDown Value="{Binding GeometryY}" Minimum="-1000000" Maximum="1000000" Width="82" MinWidth="82" ShowButtonSpinner="False" /><ComboBox ItemsSource="{Binding PolygonModes}" SelectedItem="{Binding PolygonMode}" /><Button Content="{Binding L10n.Ui_ApplyShape, Mode=OneWay}" Command="{Binding ApplyShapeDetailsCommand}" /></StackPanel>
         </controls:OverflowToolbar>
       </Grid>
     </Border>
@@ -368,19 +370,19 @@
                       </Grid>
                       <TextBlock Text="{Binding L10n.Ui_TextureScale, Mode=OneWay}" />
                       <Grid ColumnDefinitions="*,140">
-                        <Slider Minimum="4" Maximum="128" Value="{Binding TextureScale}" Margin="0,0,6,0" />
-                        <NumericUpDown Grid.Column="1" Minimum="4" Maximum="128" Increment="2" Value="{Binding TextureScale}" MinWidth="140" />
+                        <Slider Minimum="4" Maximum="128" Value="{Binding TextureScale, Converter={StaticResource NullableDecimalToDoubleConverter}}" Margin="0,0,6,0" />
+                        <controls:SafeNumericUpDown Grid.Column="1" Minimum="4" Maximum="128" Increment="2" Value="{Binding TextureScale}" AllowEmpty="True" MinWidth="140" />
                       </Grid>
                       <Grid ColumnDefinitions="Auto,*">
                         <TextBlock Text="{Binding L10n.Ui_Angle, Mode=OneWay}" />
-                        <NumericUpDown Grid.Column="1" Minimum="-180" Maximum="180" Increment="15" Value="{Binding TextureAngle}" />
+                        <controls:SafeNumericUpDown Grid.Column="1" Minimum="-180" Maximum="180" Increment="15" Value="{Binding TextureAngle}" AllowEmpty="True" />
                       </Grid>
                     </StackPanel>
                     <StackPanel IsVisible="{Binding IsTextureFill}" Spacing="6">
                     <TextBlock Text="{Binding L10n.Ui_FillOpacity, Mode=OneWay}" />
                     <Grid ColumnDefinitions="*,140">
-                      <Slider Minimum="0" Maximum="100" Value="{Binding FillOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" MinWidth="140" />
+                      <Slider Minimum="0" Maximum="100" Value="{Binding FillOpacity, Converter={StaticResource NullableDecimalToDoubleConverter}}" Margin="0,0,6,0" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding FillOpacity}" AllowEmpty="True" MinWidth="140" />
                     </Grid>
                     </StackPanel>
                   </StackPanel>
@@ -391,7 +393,7 @@
                     <controls:PaintEditor DataContext="{Binding StrokePaintEditor}" />
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_StrokeWidth, Mode=OneWay}" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="1000" Increment="0.5" Value="{Binding StrokeWidth}" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="0" Maximum="1000" Increment="0.5" Value="{Binding StrokeWidth}" AllowEmpty="True" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_Cap, Mode=OneWay}" />
@@ -403,7 +405,7 @@
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_MiterLimit, Mode=OneWay}" />
-                      <NumericUpDown Grid.Column="1" Minimum="1" Maximum="100" Increment="0.5" Value="{Binding StrokeMiterLimit}" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="1" Maximum="100" Increment="0.5" Value="{Binding StrokeMiterLimit}" AllowEmpty="True" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_DashKind, Mode=OneWay}" />
@@ -416,29 +418,29 @@
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_DashPhase, Mode=OneWay}" />
-                      <NumericUpDown Grid.Column="1" Minimum="-1000" Maximum="1000" Increment="1" Value="{Binding StrokeDashPhase}" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="-1000" Maximum="1000" Increment="1" Value="{Binding StrokeDashPhase}" AllowEmpty="True" />
                     </Grid>
                   </StackPanel>
                 </Expander>
 
                 <Expander Header="{Binding L10n.Ui_Transform, Mode=OneWay}" IsExpanded="False" IsVisible="{Binding HasSelection}" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="X" /><NumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" />
-                    <TextBlock Text="Y" /><NumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" />
-                    <TextBlock Text="{Binding L10n.Ui_Width, Mode=OneWay}" /><NumericUpDown Value="{Binding SelectionWidth}" Minimum="0.01" Maximum="1000000" />
-                    <TextBlock Text="{Binding L10n.Ui_Height, Mode=OneWay}" /><NumericUpDown Value="{Binding SelectionHeight}" Minimum="0.01" Maximum="1000000" />
+                    <TextBlock Text="X" /><controls:SafeNumericUpDown Value="{Binding SelectionX}" Minimum="-1000000" Maximum="1000000" />
+                    <TextBlock Text="Y" /><controls:SafeNumericUpDown Value="{Binding SelectionY}" Minimum="-1000000" Maximum="1000000" />
+                    <TextBlock Text="{Binding L10n.Ui_Width, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding SelectionWidth}" Minimum="0.01" Maximum="1000000" />
+                    <TextBlock Text="{Binding L10n.Ui_Height, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding SelectionHeight}" Minimum="0.01" Maximum="1000000" />
                     <CheckBox Content="{Binding L10n.Ui_LockAspect, Mode=OneWay}" IsChecked="{Binding LockAspect}" />
-                    <TextBlock Text="{Binding L10n.Ui_ExtraRotation, Mode=OneWay}" /><NumericUpDown Value="{Binding SelectionRotation}" Minimum="-360" Maximum="360" />
+                    <TextBlock Text="{Binding L10n.Ui_ExtraRotation, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding SelectionRotation}" Minimum="-360" Maximum="360" />
                     <Button Content="{Binding L10n.Ui_ApplyTransform, Mode=OneWay}" Command="{Binding ApplyTransformCommand}" />
                   </StackPanel>
                 </Expander>
 
                 <Expander Header="{Binding L10n.Ui_PolygonParams, Mode=OneWay}" IsVisible="{Binding HasParametricPolygon}" IsExpanded="True" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
-                    <TextBlock Text="{Binding L10n.Ui_OuterRadius, Mode=OneWay}" /><NumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
-                    <StackPanel IsVisible="{Binding HasStarPolygon}"><TextBlock Text="{Binding L10n.Ui_StarRatio, Mode=OneWay}" /><NumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
-                    <TextBlock Text="{Binding L10n.Ui_StartAngle, Mode=OneWay}" /><NumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
+                    <TextBlock Text="{Binding L10n.Ui_Sides, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding PolygonSides}" Minimum="3" Maximum="64" FormatString="0" />
+                    <TextBlock Text="{Binding L10n.Ui_OuterRadius, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding OuterRadius}" Minimum="0.01" Maximum="100000" />
+                    <StackPanel IsVisible="{Binding HasStarPolygon}"><TextBlock Text="{Binding L10n.Ui_StarRatio, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding InnerRatio}" Minimum="0.05" Maximum="0.95" Increment="0.05" /></StackPanel>
+                    <TextBlock Text="{Binding L10n.Ui_StartAngle, Mode=OneWay}" /><controls:SafeNumericUpDown Value="{Binding PolygonAngle}" Minimum="-360" Maximum="360" />
                   </StackPanel>
                 </Expander>
               </StackPanel>
@@ -453,8 +455,8 @@
                   <StackPanel Spacing="8">
                     <TextBlock Text="{Binding L10n.Ui_Opacity, Mode=OneWay}" />
                     <Grid ColumnDefinitions="*,140">
-                      <Slider Minimum="0" Maximum="100" Value="{Binding EffectOpacity}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding EffectOpacity}" MinWidth="140" />
+                      <Slider Minimum="0" Maximum="100" Value="{Binding EffectOpacity, Converter={StaticResource NullableDecimalToDoubleConverter}}" Margin="0,0,6,0" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="5" Value="{Binding EffectOpacity}" AllowEmpty="True" MinWidth="140" />
                     </Grid>
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_BlendMode, Mode=OneWay}" />
@@ -468,13 +470,13 @@
                     <CheckBox Content="{Binding L10n.Ui_EnableBlur, Mode=OneWay}" IsChecked="{Binding IsBlurEnabled}" />
                     <TextBlock Text="{Binding L10n.Ui_BlurX, Mode=OneWay}" />
                     <Grid ColumnDefinitions="*,140">
-                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaX}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaX}" MinWidth="140" />
+                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaX, Converter={StaticResource NullableDecimalToDoubleConverter}}" Margin="0,0,6,0" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaX}" AllowEmpty="True" MinWidth="140" />
                     </Grid>
                     <TextBlock Text="{Binding L10n.Ui_BlurY, Mode=OneWay}" />
                     <Grid ColumnDefinitions="*,140">
-                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaY}" Margin="0,0,6,0" />
-                      <NumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaY}" MinWidth="140" />
+                      <Slider Minimum="0" Maximum="100" Value="{Binding BlurSigmaY, Converter={StaticResource NullableDecimalToDoubleConverter}}" Margin="0,0,6,0" />
+                      <controls:SafeNumericUpDown Grid.Column="1" Minimum="0" Maximum="100" Increment="0.5" Value="{Binding BlurSigmaY}" AllowEmpty="True" MinWidth="140" />
                     </Grid>
                     <CheckBox Content="{Binding L10n.Ui_LinkBlur, Mode=OneWay}" IsChecked="{Binding LinkBlurSigma}" />
                     <Button Content="{Binding L10n.Ui_ClearFilters, Mode=OneWay}" Command="{Binding ClearFiltersCommand}" HorizontalAlignment="Stretch" />
@@ -497,7 +499,7 @@
                               <TextBlock Text="{Binding Name}" FontSize="12" />
                               <Grid ColumnDefinitions="*,140">
                                 <Slider Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Value="{Binding Value}" Margin="0,0,6,0" />
-                                <NumericUpDown Grid.Column="1" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Increment="{Binding Increment}" Value="{Binding Value}" MinWidth="140" />
+                                <controls:SafeNumericUpDown Grid.Column="1" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" Increment="{Binding Increment}" Value="{Binding Value}" MinWidth="140" />
                               </Grid>
                             </StackPanel>
                           </DataTemplate>
@@ -551,7 +553,7 @@
               <TextBlock Text="{Binding L10n.Ui_BlendShort, Mode=OneWay}" FontSize="11" Foreground="#94A3B8" Margin="0,0,4,0" />
               <ComboBox Grid.Column="1" ItemsSource="{Binding BlendChoices}" ItemTemplate="{StaticResource LocalizedChoiceTemplate}" SelectedValueBinding="{ReflectionBinding Value}" SelectedValue="{Binding EffectBlendMode, Mode=TwoWay}" PlaceholderText="{Binding L10n.Ui_Mixed, Mode=OneWay}" FontSize="11" HorizontalAlignment="Stretch" />
               <TextBlock Grid.Column="2" Text="{Binding L10n.Ui_OpacityShort, Mode=OneWay}" FontSize="11" Foreground="#94A3B8" Margin="8,0,4,0" />
-              <Slider Grid.Column="3" Minimum="0" Maximum="100" Value="{Binding EffectOpacity}" VerticalAlignment="Center" />
+              <Slider Grid.Column="3" Minimum="0" Maximum="100" Value="{Binding EffectOpacity, Converter={StaticResource NullableDecimalToDoubleConverter}}" VerticalAlignment="Center" />
             </Grid>
           </StackPanel>
 
