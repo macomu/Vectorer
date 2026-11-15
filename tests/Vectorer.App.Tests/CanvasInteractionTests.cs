@@ -148,4 +148,133 @@ public sealed class CanvasInteractionTests
         Assert.Equal(new SKRect(100, 80, 160, 130), vm.GetSelectionBounds());
         vm.UndoCommand.Execute(null); Assert.True(rectangle.Transform.IsIdentity);
     }
+    [Fact]
+    public void SelectionTool_SecondClickTogglesRotationMode_AndCornerHandleRotatesWithUndo()
+    {
+        var vm = CreateWorkspace();
+        var rect = new RectangleShapeNode { Rect = new(100, 100, 200, 160) };
+        vm.ActiveLayer!.Children.Add(rect);
+        var tool = Assert.IsType<SelectionTool>(vm.CanvasTool);
+
+        // First click selects in Scale mode
+        vm.BeginInteraction(new(150, 130), false);
+        vm.EndInteraction();
+        Assert.Same(rect, Assert.Single(vm.SelectedNodes));
+        Assert.Equal(SelectionTransformMode.Scale, tool.TransformMode);
+        Assert.False(vm.HasUnsavedChanges);
+
+        // Second click on selected object switches to Rotate mode
+        vm.BeginInteraction(new(150, 130), false);
+        vm.EndInteraction();
+        Assert.Equal(SelectionTransformMode.Rotate, tool.TransformMode);
+        Assert.False(vm.HasUnsavedChanges);
+        Assert.Contains("15°", vm.ToolHint);
+
+        // Dragging top-right rotation handle 90° clockwise around center (150, 130)
+        var bounds = vm.GetSelectionBounds()!.Value;
+        var topRight = SelectionTool.GetRotationHandles(bounds, vm.Zoom)[1];
+        var center = tool.GetPivot(bounds);
+        var target = new SKPoint(center.X - (topRight.Y - center.Y), center.Y + (topRight.X - center.X));
+        vm.BeginInteraction(topRight, false);
+        vm.UpdateInteraction(target, true, false);
+        vm.EndInteraction();
+
+        Assert.Equal(SelectionTransformMode.Rotate, tool.TransformMode);
+        Assert.True(vm.HasUnsavedChanges);
+        var rotatedTopLeft = rect.Transform.MapPoint(new SKPoint(100, 100));
+        Assert.Equal(180f, rotatedTopLeft.X, 2);
+        Assert.Equal(80f, rotatedTopLeft.Y, 2);
+
+        // Dragging body (away from pivot) in Rotate mode moves without toggling back to Scale mode
+        vm.BeginInteraction(new(135, 115), false);
+        vm.UpdateInteraction(new(155, 125), false, false);
+        vm.EndInteraction();
+        Assert.Equal(SelectionTransformMode.Rotate, tool.TransformMode);
+        var movedCenter = rect.Transform.MapPoint(new SKPoint(150, 130));
+        Assert.Equal(170f, movedCenter.X, 2);
+        Assert.Equal(140f, movedCenter.Y, 2);
+
+        // Third click (no drag) at center toggles back to Scale mode
+        vm.BeginInteraction(new(170, 140), false);
+        vm.EndInteraction();
+        Assert.Equal(SelectionTransformMode.Scale, tool.TransformMode);
+
+        vm.UndoCommand.Execute(null);
+        vm.UndoCommand.Execute(null);
+        Assert.True(rect.Transform.IsIdentity);
+    }
+    [Fact]
+    public void SelectionTool_CustomPivotRotatesAroundMovedPivot_AndShiftClickResetsPivot()
+    {
+        var vm = CreateWorkspace();
+        var rect = new RectangleShapeNode { Rect = new(100, 100, 200, 200) };
+        vm.ActiveLayer!.Children.Add(rect);
+        var tool = Assert.IsType<SelectionTool>(vm.CanvasTool);
+
+        // Select and click again to enter Rotate mode
+        vm.BeginInteraction(new(150, 150), false); vm.EndInteraction();
+        vm.BeginInteraction(new(150, 150), false); vm.EndInteraction();
+        Assert.Equal(SelectionTransformMode.Rotate, tool.TransformMode);
+
+        // Drag pivot from (150, 150) to top-left corner (100, 100)
+        vm.BeginInteraction(new(150, 150), false);
+        vm.UpdateInteraction(new(100, 100), false, false);
+        vm.EndInteraction();
+        Assert.Equal(new SKPoint(100, 100), tool.CustomPivot);
+        Assert.False(vm.HasUnsavedChanges);
+
+        // Rotate 90° clockwise around custom pivot (100, 100) using bottom-right handle
+        var bounds = vm.GetSelectionBounds()!.Value;
+        var bottomRight = SelectionTool.GetRotationHandles(bounds, vm.Zoom)[2];
+        var target = new SKPoint(100f - (bottomRight.Y - 100f), 100f + (bottomRight.X - 100f));
+        vm.BeginInteraction(bottomRight, false);
+        vm.UpdateInteraction(target, true, false);
+        vm.EndInteraction();
+
+        // Top-left (100, 100) stays fixed; bottom-right (200, 200) maps to (0, 200)
+        var mappedTopLeft = rect.Transform.MapPoint(new SKPoint(100, 100));
+        Assert.Equal(100f, mappedTopLeft.X, 2);
+        Assert.Equal(100f, mappedTopLeft.Y, 2);
+        var mappedBottomRight = rect.Transform.MapPoint(new SKPoint(200, 200));
+        Assert.Equal(0f, mappedBottomRight.X, 2);
+        Assert.Equal(200f, mappedBottomRight.Y, 2);
+
+        // Shift+click on custom pivot resets it to center
+        vm.BeginInteraction(new(100, 100), true);
+        vm.EndInteraction();
+        Assert.Null(tool.CustomPivot);
+    }
+    [Fact]
+    public void SelectionTool_SkewHandlesAndSelectionChangeReset()
+    {
+        var vm = CreateWorkspace();
+        var a = new RectangleShapeNode { Rect = new(100, 100, 200, 200) };
+        var b = new RectangleShapeNode { Rect = new(300, 100, 360, 160) };
+        vm.ActiveLayer!.Children.AddRange([a, b]);
+        var tool = Assert.IsType<SelectionTool>(vm.CanvasTool);
+
+        vm.BeginInteraction(new(150, 150), false); vm.EndInteraction();
+        vm.BeginInteraction(new(150, 150), false); vm.EndInteraction();
+        Assert.Equal(SelectionTransformMode.Rotate, tool.TransformMode);
+
+        // Drag top skew handle right; bottom edge remains fixed
+        var bounds = vm.GetSelectionBounds()!.Value;
+        var topSkew = SelectionTool.GetSkewHandles(bounds, vm.Zoom)[0];
+        vm.BeginInteraction(topSkew, false);
+        vm.UpdateInteraction(new(topSkew.X + 40, topSkew.Y), false, false);
+        vm.EndInteraction();
+
+        var mappedTopLeft = a.Transform.MapPoint(new SKPoint(100, 100));
+        var mappedBottomLeft = a.Transform.MapPoint(new SKPoint(100, 200));
+        Assert.True(mappedTopLeft.X > 130f);
+        Assert.Equal(100f, mappedTopLeft.Y, 2);
+        Assert.Equal(100f, mappedBottomLeft.X, 2);
+        Assert.Equal(200f, mappedBottomLeft.Y, 2);
+
+        // Selecting a different object resets back to Scale mode
+        vm.BeginInteraction(new(330, 130), false);
+        vm.EndInteraction();
+        Assert.Same(b, Assert.Single(vm.SelectedNodes));
+        Assert.Equal(SelectionTransformMode.Scale, tool.TransformMode);
+    }
 }

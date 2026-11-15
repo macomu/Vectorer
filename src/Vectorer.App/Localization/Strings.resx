@@ -341,7 +341,10 @@
     <value>Pan View (H) / Space + Drag / Middle Button</value>
   </data>
   <data name="ToolHint_Select" xml:space="preserve">
-    <value>Shift: Multi-select · Drag: Move / Marquee · Handles: Scale · Top circle: Rotate</value>
+    <value>Shift: Multi-select · Click again: Rotate / Skew · Drag: Move / Marquee · Handles: Scale · Top circle: Rotate</value>
+  </data>
+  <data name="ToolHint_SelectRotate" xml:space="preserve">
+    <value>Click again: Scale · Corners: Rotate (Shift: 15°) · Edges: Skew · Center +: Move pivot (Shift+click: Reset)</value>
   </data>
   <data name="ToolHint_Pan" xml:space="preserve">
     <value>Drag: Pan view · Ctrl + Wheel: Zoom</value>

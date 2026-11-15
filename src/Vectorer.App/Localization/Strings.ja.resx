@@ -341,7 +341,10 @@
     <value>視点移動 (H) / Space + ドラッグ / 中ボタン</value>
   </data>
   <data name="ToolHint_Select" xml:space="preserve">
-    <value>Shift: 複数選択 · ドラッグ: 移動/範囲選択 · ハンドル: 拡縮 · 上の丸: 回転</value>
+    <value>Shift: 複数選択 · 再クリック: 回転/傾斜 · ドラッグ: 移動/範囲選択 · ハンドル: 拡縮 · 上の丸: 回転</value>
+  </data>
+  <data name="ToolHint_SelectRotate" xml:space="preserve">
+    <value>再クリック: 拡縮 · 四隅: 回転 (Shift: 15°) · 辺: 傾斜 · 中央+: 回転中心移動 (Shift+クリック: リセット)</value>
   </data>
   <data name="ToolHint_Pan" xml:space="preserve">
     <value>ドラッグ: 視点移動 · Ctrl + ホイール: ズーム</value>

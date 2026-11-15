@@ -153,8 +153,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
     {
         FinishPaintEdit();
         var selection = nodes.Distinct().ToList();
+        var selectionChanged = _selectedNodes.Count != selection.Count || !_selectedNodes.ToHashSet().SetEquals(selection);
         _selectedNodes.Clear();
         _selectedNodes.AddRange(selection);
+        if (selectionChanged && _canvasTool is Vectorer.App.Tools.SelectionTool selectTool) selectTool.ResetTransformMode();
         if (_canvasTool is Vectorer.App.Tools.NodeEditTool nodesTool) nodesTool.Synchronize();
         SyncSelectionEditors();
         SyncSceneTree();

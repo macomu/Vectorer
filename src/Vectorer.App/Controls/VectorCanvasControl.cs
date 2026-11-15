@@ -180,17 +180,26 @@ public sealed class VectorCanvasControl : Decorator
             canvas.Restore();
             using var outline = new SKPaint { Color = new SKColor(96, 165, 250), Style = SKPaintStyle.Stroke, StrokeWidth = unit, IsAntialias = true };
             using var handle = new SKPaint { Color = new SKColor(226, 232, 240), IsAntialias = true };
+            var isRotateSelectionMode = vm.ActiveTool == DrawingTool.Select
+                && vm.CanvasTool is SelectionTool { TransformMode: SelectionTransformMode.Rotate };
             if (!vm.IsShapeEditing && vm.ActiveTool != DrawingTool.Node && vm.GetSelectionBounds() is { } bounds)
             {
-                canvas.DrawRect(bounds, outline);
-                foreach (var point in MainWindowViewModel.GetHandles(bounds))
+                if (isRotateSelectionMode && vm.CanvasTool is SelectionTool rotateTool)
                 {
-                    var rect = SKRect.Create(point.X - 3 * unit, point.Y - 3 * unit, 6 * unit, 6 * unit);
-                    canvas.DrawRect(rect, handle);
-                    canvas.DrawRect(rect, outline);
+                    DrawRotationOverlay(canvas, bounds, rotateTool, vm.Zoom, unit, outline);
                 }
-                canvas.DrawLine(bounds.MidX, bounds.Top, bounds.MidX, bounds.Top - 24 * unit, outline);
-                canvas.DrawCircle(bounds.MidX, bounds.Top - 24 * unit, 4 * unit, handle);
+                else
+                {
+                    canvas.DrawRect(bounds, outline);
+                    foreach (var point in MainWindowViewModel.GetHandles(bounds))
+                    {
+                        var rect = SKRect.Create(point.X - 3 * unit, point.Y - 3 * unit, 6 * unit, 6 * unit);
+                        canvas.DrawRect(rect, handle);
+                        canvas.DrawRect(rect, outline);
+                    }
+                    canvas.DrawLine(bounds.MidX, bounds.Top, bounds.MidX, bounds.Top - 24 * unit, outline);
+                    canvas.DrawCircle(bounds.MidX, bounds.Top - 24 * unit, 4 * unit, handle);
+                }
             }
             if (vm.IsShapeEditing)
             {
@@ -204,7 +213,7 @@ public sealed class VectorCanvasControl : Decorator
                     }
                 }
             }
-            if (vm.ActiveTool == DrawingTool.Select || vm.IsShapeEditing)
+            if ((vm.ActiveTool == DrawingTool.Select && !isRotateSelectionMode) || vm.IsShapeEditing)
             {
                 using var parameterPaint = new SKPaint { Color = new SKColor(251, 191, 36), IsAntialias = true };
                 foreach (var parameter in ShapeParameterGesture.GetHandles(vm))
@@ -329,5 +338,122 @@ public sealed class VectorCanvasControl : Decorator
         base.OnLostFocus(e);
         _space = false;
         if (_pointer is not null) { Workspace?.CancelInteraction(); SetPanning(false); _pointer.Capture(null); _pointer = null; }
+    }
+
+    private static void DrawRotationOverlay(SKCanvas canvas, SKRect bounds, SelectionTool selectTool, double zoom, float unit, SKPaint outline)
+    {
+        using var dashEffect = SKPathEffect.CreateDash([4 * unit, 3 * unit], 0);
+        using var dashedOutline = new SKPaint
+        {
+            Color = outline.Color,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = unit,
+            IsAntialias = true,
+            PathEffect = dashEffect
+        };
+        canvas.DrawRect(bounds, dashedOutline);
+
+        using var haloStroke = new SKPaint
+        {
+            Color = new SKColor(15, 23, 42, 220),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2.6f * unit,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round,
+            IsAntialias = true
+        };
+        using var handleStroke = new SKPaint
+        {
+            Color = new SKColor(226, 232, 240),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.4f * unit,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round,
+            IsAntialias = true
+        };
+        using var pivotStroke = new SKPaint
+        {
+            Color = outline.Color,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1.4f * unit,
+            StrokeCap = SKStrokeCap.Round,
+            IsAntialias = true
+        };
+
+        var rotationHandles = SelectionTool.GetRotationHandles(bounds, zoom);
+        var cornerAngles = new[] { -45f, 45f, 135f, -135f };
+        using var cornerArrow = BuildCornerRotationPath(unit);
+        for (var i = 0; i < rotationHandles.Length; i++)
+        {
+            var point = rotationHandles[i];
+            canvas.Save();
+            canvas.Translate(point.X, point.Y);
+            canvas.RotateDegrees(cornerAngles[i]);
+            canvas.DrawPath(cornerArrow, haloStroke);
+            canvas.DrawPath(cornerArrow, handleStroke);
+            canvas.Restore();
+        }
+
+        var skewHandles = SelectionTool.GetSkewHandles(bounds, zoom);
+        using var skewArrow = BuildSkewArrowPath(unit);
+        for (var i = 0; i < skewHandles.Length; i++)
+        {
+            var point = skewHandles[i];
+            canvas.Save();
+            canvas.Translate(point.X, point.Y);
+            if (i is 1 or 3) canvas.RotateDegrees(90f);
+            canvas.DrawPath(skewArrow, haloStroke);
+            canvas.DrawPath(skewArrow, handleStroke);
+            canvas.Restore();
+        }
+
+        var pivot = selectTool.GetPivot(bounds);
+        using var pivotPath = new SKPath();
+        pivotPath.AddCircle(pivot.X, pivot.Y, 4.5f * unit);
+        pivotPath.MoveTo(pivot.X - 7 * unit, pivot.Y);
+        pivotPath.LineTo(pivot.X + 7 * unit, pivot.Y);
+        pivotPath.MoveTo(pivot.X, pivot.Y - 7 * unit);
+        pivotPath.LineTo(pivot.X, pivot.Y + 7 * unit);
+        canvas.DrawPath(pivotPath, haloStroke);
+        canvas.DrawPath(pivotPath, pivotStroke);
+    }
+
+    private static SKPath BuildCornerRotationPath(float unit)
+    {
+        var path = new SKPath();
+        var radius = 6f * unit;
+        var arcRect = new SKRect(-radius, 4f * unit - radius, radius, 4f * unit + radius);
+        path.AddArc(arcRect, -130f, 80f);
+
+        var leftRad = -130f * MathF.PI / 180f;
+        var leftTip = new SKPoint(radius * MathF.Cos(leftRad), 4f * unit + radius * MathF.Sin(leftRad));
+        var leftTangent = new SKPoint(MathF.Sin(leftRad), -MathF.Cos(leftRad));
+        AddChevron(path, leftTip, leftTangent, 2.4f * unit);
+
+        var rightRad = -50f * MathF.PI / 180f;
+        var rightTip = new SKPoint(radius * MathF.Cos(rightRad), 4f * unit + radius * MathF.Sin(rightRad));
+        var rightTangent = new SKPoint(-MathF.Sin(rightRad), MathF.Cos(rightRad));
+        AddChevron(path, rightTip, rightTangent, 2.4f * unit);
+        return path;
+    }
+
+    private static SKPath BuildSkewArrowPath(float unit)
+    {
+        var path = new SKPath();
+        var half = 5f * unit;
+        path.MoveTo(-half, 0);
+        path.LineTo(half, 0);
+        AddChevron(path, new SKPoint(-half, 0), new SKPoint(-1, 0), 2.3f * unit);
+        AddChevron(path, new SKPoint(half, 0), new SKPoint(1, 0), 2.3f * unit);
+        return path;
+    }
+
+    private static void AddChevron(SKPath path, SKPoint tip, SKPoint direction, float size)
+    {
+        var normal = new SKPoint(-direction.Y, direction.X);
+        var back = new SKPoint(tip.X - direction.X * size, tip.Y - direction.Y * size);
+        path.MoveTo(back.X + normal.X * size * 0.75f, back.Y + normal.Y * size * 0.75f);
+        path.LineTo(tip.X, tip.Y);
+        path.LineTo(back.X - normal.X * size * 0.75f, back.Y - normal.Y * size * 0.75f);
     }
 }

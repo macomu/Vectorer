@@ -91,7 +91,9 @@ public sealed partial class MainWindowViewModel
     public string ZoomLabel => $"{Zoom:P0}";
     public string ToolHint => L10n.Get(ActiveTool switch
     {
-        DrawingTool.Select => nameof(Strings.ToolHint_Select),
+        DrawingTool.Select => CanvasTool is SelectionTool { TransformMode: SelectionTransformMode.Rotate }
+            ? nameof(Strings.ToolHint_SelectRotate)
+            : nameof(Strings.ToolHint_Select),
         DrawingTool.Pan => nameof(Strings.ToolHint_Pan),
         DrawingTool.Freehand => nameof(Strings.ToolHint_Freehand),
         DrawingTool.Node => nameof(Strings.ToolHint_Node),
@@ -100,6 +102,8 @@ public sealed partial class MainWindowViewModel
         DrawingTool.Polygon or DrawingTool.Star => nameof(Strings.ToolHint_Polygon),
         _ => nameof(Strings.ToolHint_Shape)
     });
+
+    public void NotifyToolHintChanged() => OnPropertyChanged(nameof(ToolHint));
 
     private ICanvasTool? _canvasTool;
     public ICanvasTool CanvasTool => _canvasTool ??= new SelectionTool(this);
