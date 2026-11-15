@@ -64,7 +64,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     public async Task<UnsavedDecision> ConfirmUnsavedAsync()
     {
         using var text = new LocalizedControlBindings(localization);
-        var dialog = text.Bind(new Window { Title = localization.Get(nameof(Strings.Ui_Unsaved)), Width = 460, Height = 165, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner }, Window.TitleProperty, nameof(Strings.Ui_Unsaved));
+        var dialog = CreateModalDialog(text, nameof(Strings.Ui_Unsaved), 460, 165);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var save = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Save)) }, Button.ContentProperty, nameof(Strings.Ui_Save)); var discard = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Discard)) }, Button.ContentProperty, nameof(Strings.Ui_Discard)); var cancel = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Cancel)) }, Button.ContentProperty, nameof(Strings.Ui_Cancel));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right };
@@ -79,7 +79,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         using var text = new LocalizedControlBindings(localization);
         var vm = new DocumentSettingsViewModel { Width = (decimal)current.Width, Height = (decimal)current.Height, Title = current.Title,
             Transparent = current.Background.Alpha == 0, Background = current.Background.Alpha == 0 ? "#FFFFFF" : current.Background.ToString() };
-        var dialog = text.Bind(new Window { Title = localization.Get(isNew ? nameof(Strings.Ui_NewDocument) : nameof(Strings.Ui_DocumentSettings)), Width = 440, Height = 510, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner, DataContext = vm }, Window.TitleProperty, isNew ? nameof(Strings.Ui_NewDocument) : nameof(Strings.Ui_DocumentSettings));
+        var dialog = CreateModalDialog(text, isNew ? nameof(Strings.Ui_NewDocument) : nameof(Strings.Ui_DocumentSettings), 440, 510, vm);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 10 };
         var title = new TextBox(); title.Bind(TextBox.TextProperty, new Binding(nameof(vm.Title)) { Mode = BindingMode.TwoWay });
@@ -109,15 +109,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     public async Task<bool> ShowRotateLayerDialogAsync(RotateLayerViewModel vm)
     {
         using var text = new LocalizedControlBindings(localization);
-        var dialog = text.Bind(new Window
-        {
-            Title = localization.Get(nameof(Strings.Ui_LayerRotation)),
-            Width = 420,
-            Height = 290,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            DataContext = vm
-        }, Window.TitleProperty, nameof(Strings.Ui_LayerRotation));
+        var dialog = CreateModalDialog(text, nameof(Strings.Ui_LayerRotation), 420, 290, vm);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
 
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 12 };
@@ -191,15 +183,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     public async Task<bool> ShowPngExportDialogAsync(PngExportViewModel vm)
     {
         using var text = new LocalizedControlBindings(localization);
-        var dialog = text.Bind(new Window
-        {
-            Title = localization.Get(nameof(Strings.Ui_ExportPng)),
-            Width = 680,
-            Height = 470,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            DataContext = vm
-        }, Window.TitleProperty, nameof(Strings.Ui_ExportPng));
+        var dialog = CreateModalDialog(text, nameof(Strings.Ui_ExportPng), 680, 470, vm);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
 
         var root = new DockPanel { Margin = new Avalonia.Thickness(20) };
@@ -352,17 +336,7 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
     public async Task ShowAboutDialogAsync(AppMetadata metadata)
     {
         using var text = new LocalizedControlBindings(localization);
-        var dialog = text.Bind(
-            new Window
-            {
-                Title = localization.Get(nameof(Strings.Ui_AboutTitle)),
-                Width = 440,
-                Height = 280,
-                CanResize = false,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            },
-            Window.TitleProperty,
-            nameof(Strings.Ui_AboutTitle));
+        var dialog = CreateModalDialog(text, nameof(Strings.Ui_AboutTitle), 440, 280);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
 
         var root = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 12 };
@@ -442,10 +416,25 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
         grid.Children.Add(val);
     }
 
+    private Window CreateModalDialog(LocalizedControlBindings text, string titleKey, double width, double height, object? dataContext = null) =>
+        text.Bind(
+            new Window
+            {
+                Title = localization.Get(titleKey),
+                Icon = owner.Icon,
+                Width = width,
+                Height = height,
+                CanResize = false,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                DataContext = dataContext
+            },
+            Window.TitleProperty,
+            titleKey);
+
     private async Task ShowErrorCoreAsync(string message, LocalizedMessage? localizedMessage)
     {
         using var text = new LocalizedControlBindings(localization);
-        var dialog = text.Bind(new Window { Title = localization.Get(nameof(Strings.Ui_FileError)), Width = 520, Height = 210, CanResize = false, WindowStartupLocation = WindowStartupLocation.CenterOwner }, Window.TitleProperty, nameof(Strings.Ui_FileError));
+        var dialog = CreateModalDialog(text, nameof(Strings.Ui_FileError), 520, 210);
         using var inputGuard = safety is null ? null : EditorInputLanguageGuard.Attach(dialog, safety);
         var content = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 16 }; var close = text.Bind(new Button { Content = localization.Get(nameof(Strings.Ui_Close)), HorizontalAlignment = HorizontalAlignment.Right }, Button.ContentProperty, nameof(Strings.Ui_Close));
         var body = new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap };

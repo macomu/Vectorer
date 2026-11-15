@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:vectorer="https://vectorer.dev/ns/1.0" width="256" height="256" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid meet" vectorer:title="icon">
+  <metadata>
+    <vectorer:palette>
+      <vectorer:color value="#FFFFFF" />
+      <vectorer:color value="#0F172A" />
+      <vectorer:color value="#64748B" />
+      <vectorer:color value="#EF4444" />
+      <vectorer:color value="#F97316" />
+      <vectorer:color value="#EAB308" />
+      <vectorer:color value="#22C55E" />
+      <vectorer:color value="#8B5CF6" />
+      <vectorer:color value="#EC4899" />
+      <vectorer:color value="#201500" />
+      <vectorer:color value="#D5890E" />
+    </vectorer:palette>
+  </metadata>
+  <g vectorer:layer="true" id="node_64cc832a" vectorer:name="レイヤー 1">
+    <path d="M50.2483 204.933C49.5947 226.243 14.5259 220.562 8.05121 215.203C8.14925 212.007 1.39852 194.889 8.29302 192.153C22.7867 186.402 49.692 186.82 50.2483 204.933Z" fill-rule="nonzero" vectorer:node-kinds="Corner,Corner,Smooth" transform="matrix(1 0 0 1 15.2777863 7.40739441)" id="node_25b642b4" vectorer:name="fudesaki" fill="#6C2C0B" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <path d="M179.525 204.726L187.163 202.035L196.953 200.635L193.4 229.557L188.403 228.782L181.463 226.111L178.244 211.012L179.525 204.726Z" fill-rule="nonzero" vectorer:node-kinds="Corner,Corner,Corner,Corner,Corner,Corner,Corner" transform="matrix(1 0 0 1 -157.083038 -3.75587463)" id="node_a7929238" vectorer:name="四角形" fill="#2298BD" stroke="none" />
+    <path d="M50.2483 204.933C49.5947 226.243 14.5259 220.562 8.05121 215.203C8.14925 212.007 1.39852 194.889 8.29302 192.153C22.7867 186.402 49.692 186.82 50.2483 204.933Z" fill-rule="nonzero" vectorer:node-kinds="Corner,Corner,Smooth" transform="matrix(1 0 0 1 15.5874519 7.50170898)" id="node_267e7822" vectorer:name="fudesaki2" fill="#6C2C0B" fill-opacity="0" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <polygon points="66.0518112,16.7132454 22.7324715,36.8118401 26.9862537,-10.7531099" vectorer:poly-kind="regular" vectorer:cx="38.5901756" vectorer:cy="14.2573271" vectorer:points-count="3" vectorer:outer-r="27.5712337" vectorer:inner-r="45" vectorer:start-angle="5.11041641" transform="matrix(1 0 0 1 62.6100311 39.3343353)" id="node_74e70de3" vectorer:name="3角形" fill="#D5890E" stroke="#201500" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <rect x="35.066288" y="206.272858" width="104.041641" height="23.6661224" transform="matrix(1 0 0 1 23.7618637 -6.43504333)" id="node_e385cfab" vectorer:name="四角形" fill="#BE875B" stroke="#000000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <polygon points="39.9766655,56.5013962 0.68157959,31.6587257 53.4555168,-0.735075474" transform="matrix(1 0 0 1 169.507187 41.52005)" id="node_3db43e54" vectorer:name="3角形" fill="#D5890E" stroke="#201500" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <path d="M203.112 120.242C202.852 130.007 201.073 139.413 197.062 148.368C184.515 176.379 174.339 186.865 123.066 203.268C94.853 212.294 77.6616 216.536 63.5408 210.404C56.7737 207.465 50.8698 188.851 48.8712 173.597C47.5966 163.868 44.4202 130.006 44.1611 120.242C44.4202 110.478 46.2 101.071 50.2108 92.1168C53.2277 85.3815 57.3041 79.1354 62.2012 73.6173C87.2667 45.3735 120.082 45.7377 142.432 52.8171C158.448 57.8903 189.626 75.5173 197.062 92.1168C201.073 101.071 202.852 110.478 203.112 120.242Z" fill-rule="nonzero" vectorer:node-kinds="Corner,Smooth,Smooth,Smooth,Smooth,Corner,Smooth,Smooth,Smooth,Smooth" transform="matrix(1 0 0 1 15.2777863 7.40739441)" id="node_a2e15978" vectorer:name="楕円" fill="#D5890E" stroke="#201500" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <ellipse cx="73.4195709" cy="119.638557" rx="12.9493904" ry="12.502861" transform="matrix(1 0 0 1 25.3247223 4.72821045)" id="node_6435eebd" vectorer:name="楕円" fill="#000000" stroke="none" />
+    <ellipse cx="73.4195709" cy="119.638557" rx="12.9493904" ry="12.502861" transform="matrix(1 0 0 1 80.647583 21.2029037)" id="node_b86b4c4c" vectorer:name="楕円" fill="#000000" stroke="none" />
+    <ellipse cx="73.4195709" cy="119.638557" rx="12.9493904" ry="12.502861" transform="matrix(0.435727626 0 0 0.409278184 64.4876099 71.7172318)" id="node_dde31b00" vectorer:name="楕円" fill="#FFFFFF" stroke="none" />
+    <ellipse cx="73.4195709" cy="119.638557" rx="12.9493904" ry="12.502861" transform="matrix(0.435727626 0 0 0.409278184 119.36393 88.191925)" id="node_2e8add92" vectorer:name="楕円" fill="#FFFFFF" stroke="none" />
+    <path d="M112.049 129.176C104.3 132.626 85.5924 137.694 70.5132 136.147C58.1758 134.881 54.6598 126.546 54.4743 119.259C56.1725 113.072 91.7697 77.5 96.6541 77.988C106.571 78.9788 103.581 78.7461 107.797 80.7634C116.138 84.7534 111.946 125.114 112.049 129.176Z" fill-rule="nonzero" vectorer:node-kinds="Corner,Smooth,Corner,Smooth,Smooth" transform="matrix(1.09898317 0 0 1.3585211 10.6673584 32.8863373)" id="node_cc76b48e" vectorer:name="楕円" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" />
+    <ellipse cx="92.3553238" cy="169.765747" rx="10.3818359" ry="10.2702103" transform="matrix(1 0 0 1 -2.58344269 38.8878021)" id="node_1dc31bd7" vectorer:name="楕円" fill="#000000" stroke="none" />
+  </g>
+</svg>

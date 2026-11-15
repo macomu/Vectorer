@@ -9,6 +9,7 @@
         x:Class="Vectorer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"
+        Icon="/Assets/icon.png"
         Width="1280" Height="800" MinWidth="1024" MinHeight="720"
         Background="#0D1117">
   <Window.Resources>
