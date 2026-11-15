@@ -1,9 +1,11 @@
 #!/usr/bin/env dotnet
 
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Text;
 
 string[] defaultRids = ["win-x64", "win-arm64", "osx-arm64"];
 List<string> rids = [];
@@ -333,25 +335,38 @@ static void VerifyLocalizationResources(string ridPublishDir, string rid)
 {
     string mainAssembly = Path.Combine(ridPublishDir, "Vectorer.App.dll");
     string mainExecutable = Path.Combine(ridPublishDir, rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase) ? "Vectorer.App.exe" : "Vectorer.App");
-    if ((!File.Exists(mainAssembly) || new FileInfo(mainAssembly).Length == 0) &&
-        (!File.Exists(mainExecutable) || new FileInfo(mainExecutable).Length == 0))
+    bool hasMainAssembly = File.Exists(mainAssembly) && new FileInfo(mainAssembly).Length > 0;
+    bool hasMainExecutable = File.Exists(mainExecutable) && new FileInfo(mainExecutable).Length > 0;
+    if (!hasMainAssembly && !hasMainExecutable)
     {
         throw new InvalidOperationException($"Missing or empty main application assembly in publish output for '{rid}': '{ridPublishDir}'.");
     }
 
     string jaSatellite = Path.Combine(ridPublishDir, "ja", "Vectorer.App.resources.dll");
-    if (!File.Exists(jaSatellite))
+    if (File.Exists(jaSatellite))
     {
-        throw new InvalidOperationException($"Missing Japanese satellite resource assembly for '{rid}': '{jaSatellite}'. Ensure SatelliteResourceLanguages does not strip 'ja'.");
+        long size = new FileInfo(jaSatellite).Length;
+        if (size == 0)
+        {
+            throw new InvalidOperationException($"Japanese satellite resource assembly is empty (0 bytes) for '{rid}': '{jaSatellite}'.");
+        }
+
+        Console.WriteLine($"Verified localization resources for {rid}: ja/Vectorer.App.resources.dll ({size} bytes)");
+        return;
     }
 
-    long size = new FileInfo(jaSatellite).Length;
-    if (size == 0)
+    if (hasMainExecutable)
     {
-        throw new InvalidOperationException($"Japanese satellite resource assembly is empty (0 bytes) for '{rid}': '{jaSatellite}'.");
+        using FileStream exeStream = File.OpenRead(mainExecutable);
+        byte[] tailBytes = ReadTailBytes(exeStream);
+        if (TryGetBundledEntrySize(tailBytes, "ja/Vectorer.App.resources.dll", out long bundledSize))
+        {
+            Console.WriteLine($"Verified bundled localization resources for {rid}: ja/Vectorer.App.resources.dll ({bundledSize} bytes in {Path.GetFileName(mainExecutable)})");
+            return;
+        }
     }
 
-    Console.WriteLine($"Verified localization resources for {rid}: ja/Vectorer.App.resources.dll ({size} bytes)");
+    throw new InvalidOperationException($"Missing Japanese satellite resource assembly for '{rid}': neither '{jaSatellite}' nor a bundled entry in '{Path.GetFileName(mainExecutable)}' was found. Ensure SatelliteResourceLanguages does not strip 'ja'.");
 }
 
 static void VerifyArchiveLocalizationResources(string archivePath, string rid, bool isZip)
@@ -363,6 +378,7 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
 
     bool foundMain = false;
     bool foundJaSatellite = false;
+    bool foundBundledJaSatellite = false;
 
     if (isZip)
     {
@@ -370,9 +386,22 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
             string entryPath = entry.FullName.Replace('\\', '/');
-            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal) || entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal))
             {
                 if (entry.Length > 0) foundMain = true;
+            }
+            else if (entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            {
+                if (entry.Length > 0)
+                {
+                    foundMain = true;
+                    using Stream entryStream = entry.Open();
+                    byte[] tailBytes = ReadTailBytes(entryStream);
+                    if (TryGetBundledEntrySize(tailBytes, "ja/Vectorer.App.resources.dll", out _))
+                    {
+                        foundBundledJaSatellite = true;
+                    }
+                }
             }
             else if (entryPath.Equals(expectedSatellite, StringComparison.Ordinal))
             {
@@ -397,9 +426,24 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
             }
 
             string entryPath = entry.Name.Replace('\\', '/');
-            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal) || entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal))
             {
                 if (entry.Length > 0) foundMain = true;
+            }
+            else if (entryPath.Equals(expectedExecutable, StringComparison.Ordinal))
+            {
+                if (entry.Length > 0)
+                {
+                    foundMain = true;
+                    if (entry.DataStream is not null)
+                    {
+                        byte[] tailBytes = ReadTailBytes(entry.DataStream);
+                        if (TryGetBundledEntrySize(tailBytes, "ja/Vectorer.App.resources.dll", out _))
+                        {
+                            foundBundledJaSatellite = true;
+                        }
+                    }
+                }
             }
             else if (entryPath.Equals(expectedSatellite, StringComparison.Ordinal))
             {
@@ -417,10 +461,89 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
         throw new InvalidOperationException($"Archive '{archivePath}' is missing a non-empty main application assembly ('{expectedAssembly}' or '{expectedExecutable}').");
     }
 
-    if (!foundJaSatellite)
+    if (!foundJaSatellite && !foundBundledJaSatellite)
     {
-        throw new InvalidOperationException($"Archive '{archivePath}' is missing '{expectedSatellite}' at the expected hierarchy.");
+        throw new InvalidOperationException($"Archive '{archivePath}' is missing '{expectedSatellite}' (both as a file and as a single-file bundle entry).");
     }
 
     Console.WriteLine($"Verified archive localization resources: {Path.GetFileName(archivePath)}");
+}
+
+static byte[] ReadTailBytes(Stream stream, int maxTailBytes = 1024 * 1024)
+{
+    if (stream.CanSeek)
+    {
+        int toRead = (int)Math.Min(maxTailBytes, stream.Length);
+        stream.Seek(-toRead, SeekOrigin.End);
+        byte[] result = new byte[toRead];
+        stream.ReadExactly(result);
+        return result;
+    }
+
+    byte[] previous = [];
+    byte[] current = new byte[maxTailBytes];
+    int currentOffset = 0;
+
+    while (true)
+    {
+        int read = stream.Read(current, currentOffset, current.Length - currentOffset);
+        if (read == 0)
+        {
+            break;
+        }
+
+        currentOffset += read;
+        if (currentOffset == current.Length)
+        {
+            previous = current;
+            current = new byte[maxTailBytes];
+            currentOffset = 0;
+        }
+    }
+
+    if (previous.Length == 0)
+    {
+        return current[..currentOffset];
+    }
+
+    byte[] combined = new byte[maxTailBytes];
+    int fromPrevious = maxTailBytes - currentOffset;
+    Buffer.BlockCopy(previous, previous.Length - fromPrevious, combined, 0, fromPrevious);
+    Buffer.BlockCopy(current, 0, combined, fromPrevious, currentOffset);
+    return combined;
+}
+
+static bool TryGetBundledEntrySize(ReadOnlySpan<byte> tailBytes, string relativePath, out long uncompressedSize)
+{
+    uncompressedSize = 0;
+    byte[] pathBytes = Encoding.UTF8.GetBytes(relativePath);
+    if (pathBytes.Length >= 128)
+    {
+        return false;
+    }
+
+    // .NET single-file bundle manifest writes each FileEntry as:
+    // Offset (Int64), Size (Int64), CompressedSize (Int64, v6+), Type (Byte), RelativePath (7-bit length-prefixed UTF-8)
+    byte[] needle = new byte[1 + pathBytes.Length];
+    needle[0] = (byte)pathBytes.Length;
+    pathBytes.CopyTo(needle.AsSpan(1));
+
+    int matchIndex = tailBytes.LastIndexOf(needle);
+    if (matchIndex < 25)
+    {
+        return false;
+    }
+
+    long offset = BinaryPrimitives.ReadInt64LittleEndian(tailBytes.Slice(matchIndex - 25, 8));
+    long size = BinaryPrimitives.ReadInt64LittleEndian(tailBytes.Slice(matchIndex - 17, 8));
+    long compressedSize = BinaryPrimitives.ReadInt64LittleEndian(tailBytes.Slice(matchIndex - 9, 8));
+    byte fileType = tailBytes[matchIndex - 1];
+
+    if (offset <= 0 || size <= 0 || compressedSize < 0 || fileType == 0)
+    {
+        return false;
+    }
+
+    uncompressedSize = size;
+    return true;
 }
