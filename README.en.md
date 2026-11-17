@@ -7,7 +7,7 @@
 ## Key Features
 
 - **SVG Reading and Writing**:
-  - Supports standard SVG 1.1 / 2.0 elements while preserving editor-specific metadata (layer compositing, parametric shapes, node kinds, custom shaders, etc.) non-destructively using the `vectorer:*` XML namespace (`https://vectorer.dev/ns/1.0`).
+  - Reads and writes supported SVG elements, including basic shapes, paths, text, and linear gradients. Editor metadata is preserved in the Vectorer namespace. If Vectorer detects unsupported content, saving requires a separate file to protect the original.
   - Includes document presets on creation, document settings editing, recent files history, and unsaved-changes protection.
 - **Interactive Drawing & Editing Tools**:
   - Tools for rectangles (independent/linked corner radii), ellipses, arcs (pie, chord, open), regular polygons, stars, freehand drawing, Bézier pen, and text.
@@ -18,7 +18,7 @@
 - **Layer Hierarchy, Inspectors & Effects**:
   - **Layers & Objects Tree**: Visibility/lock toggles, inline renaming, drag-and-drop reordering and reparenting across containers, and a custom-angle layer rotation dialog.
   - **Fill & Stroke Inspector**: None / Solid / Texture fills (pattern kind, colors, scale, angle) and detailed stroke settings (line cap, join, miter limit, custom dash array & offset).
-  - **Effects & Shaders Inspector**: Blend modes (`Normal`, `Multiply`, `Screen`, `Overlay`, `Add`, `Subtract`, `Difference`, `Darken`, `Lighten`), linked/independent Gaussian blur, and runtime `SkiaSharp` shaders (`SKRuntimeEffect` / SkSL) with dynamic uniform controls and a live SkSL editor.
+  - **Effects & Shaders Inspector**: Blend modes, linked or independent Gaussian blur, and plugin-provided shaders with editable uniforms. Inline SkSL in existing SVGs is preserved on save, and shapes render with their regular fills.
 - **Flexible PNG Export**:
   - `PngExportDialog` supports exporting the full document, selected elements only, or per-layer batch export with target dimensions, scale presets, aspect-ratio lock, and transparency preview.
 - **Bilingual UI (English / 日本語)**:
@@ -90,12 +90,14 @@ dotnet run build.cs -- --rid osx-arm64 --skip-tests
 [`.github/workflows/build.yml`](.github/workflows/build.yml) automates CI and releases:
 
 - **CI Build & Package Verification**: Runs tests, builds, and packages `win-x64`, `win-arm64`, and `osx-arm64` on `push` to `main`, `pull_request` targeting `main`, and `workflow_dispatch`.
-- **Automated GitHub Releases**: Pushing a `v*` tag (e.g., `v0.1.0`) builds and tests all packages with the version extracted from the tag, generates `SHA256SUMS.txt`, and publishes a GitHub Release automatically (tags containing `-`, such as `v0.1.0-rc.1`, are marked as Pre-release).
+- **Release candidates**: Pushing a version tag runs the NuGet audit and standard tests for each target. Passing archives are attached to a draft GitHub Release with `SHA256SUMS.txt`. Tags containing a hyphen are marked as prereleases.
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
+
+Extract the draft archives on their target platforms. Verify their checksums, startup, editing and Undo, SVG save and reopen, PNG export, and both UI languages. Check `licenses/DEPENDENCIES.txt` and the bundled notices, then set the actual release date in the changelog and publish the tested draft assets.
 
 ## Documentation & Contributing
 

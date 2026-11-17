@@ -30,10 +30,10 @@ jobs:
             os: windows-latest
             archive_path: artifacts/packages/Vectorer-win-x64.zip
           - rid: win-arm64
-            os: windows-latest
+            os: windows-11-arm
             archive_path: artifacts/packages/Vectorer-win-arm64.zip
           - rid: osx-arm64
-            os: macos-latest
+            os: macos-15
             archive_path: artifacts/packages/Vectorer-osx-arm64.tar.gz
 
     steps:
@@ -51,7 +51,18 @@ jobs:
 
       - name: Build, test, and package release (${{ matrix.rid }})
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
-        run: dotnet run build.cs -- --rid ${{ matrix.rid }} --configuration Release --version ${{ github.ref_name }}
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          NuGetAudit: 'true'
+          NuGetAuditMode: all
+          WarningsAsErrors: NU1900;NU1901;NU1902;NU1903;NU1904;NU1905
+        run: |
+          dotnet restore Vectorer.slnx --force-evaluate
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore src/Vectorer.App/Vectorer.App.csproj -r ${{ matrix.rid }} -p:SelfContained=true --force-evaluate
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run build.cs -- --rid ${{ matrix.rid }} --configuration Release --version $env:RELEASE_TAG
 
       - name: Upload build artifact (${{ matrix.rid }})
         uses: actions/upload-artifact@v4
@@ -62,7 +73,7 @@ jobs:
           retention-days: 30
 
   release:
-    name: Publish GitHub Release
+    name: Prepare a draft GitHub Release
     needs: build
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
@@ -79,24 +90,22 @@ jobs:
 
       - name: Generate SHA-256 checksums
         working-directory: dist
-        run: sha256sum Vectorer-* > SHA256SUMS.txt
+        run: sha256sum Vectorer-win-x64.zip Vectorer-win-arm64.zip Vectorer-osx-arm64.tar.gz > SHA256SUMS.txt
 
-      - name: Publish release assets
+      - name: Attach verified build outputs to draft
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          PRERELEASE_FLAG=""
+          FLAGS=(--draft --verify-tag)
           if [[ "$TAG" == *-* ]]; then
-            PRERELEASE_FLAG="--prerelease"
+            FLAGS+=(--prerelease)
           fi
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
-          else
-            gh release create "$TAG" dist/* \
-              --title "Vectorer $TAG" \
-              --generate-notes \
-              $PRERELEASE_FLAG
+          if gh release view "$TAG" --json isDraft >/dev/null 2>&1; then
+            echo "::error::A release already exists for $TAG. Its assets were left intact."
+            exit 1
           fi
+
+          gh release create "$TAG" dist/* --title "Vectorer $TAG" --generate-notes "${FLAGS[@]}"
