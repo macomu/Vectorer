@@ -12,6 +12,7 @@ public sealed partial class MainWindowViewModel
     public IEditorFileDialogs? FileDialogs { get; set; }
     [ObservableProperty] private bool _isBusy;
     private EditorFile? _currentFile;
+    private EditorFile? _protectedSvgSource;
     private IDocumentCommand? _savedCommand;
     private bool _untrackedChanges;
     public bool HasUnsavedChanges => _untrackedChanges || _paintGesture is { HasChanges: true } || _undoRedoService.UndoStack.LastOrDefault() != _savedCommand;
@@ -54,10 +55,24 @@ public sealed partial class MainWindowViewModel
     private async Task OpenFileCoreAsync(EditorFile file)
     {
         await using var stream = await file.OpenRead();
-        var document = await Task.Run(() => _svgSerializer.LoadFromStream(stream));
-        ReplaceDocument(document, file);
-        SetStatus(nameof(Strings.Status_FileOpened), file.Name);
+        var (document, requiresSaveAs) = await Task.Run(() =>
+        {
+            var imported = _svgSerializer.LoadFromStream(stream, out var protectSource);
+            return (imported, protectSource);
+        });
+        ReplaceDocument(document, requiresSaveAs ? null : file);
         await RememberFileAsync(file);
+        if (requiresSaveAs)
+        {
+            _protectedSvgSource = file;
+            SetStatus(nameof(Strings.Status_SvgImported), file.Name);
+            if (FileDialogs is { } dialogs)
+                await dialogs.ShowLocalizedErrorAsync(_status, StatusMessage);
+        }
+        else
+        {
+            SetStatus(nameof(Strings.Status_FileOpened), file.Name);
+        }
     }
     [RelayCommand] private Task SaveDocumentAsync() => SaveDocumentCoreAsync(false);
     [RelayCommand] private Task SaveDocumentAsAsync() => SaveDocumentCoreAsync(true);
@@ -69,15 +84,19 @@ public sealed partial class MainWindowViewModel
         IsBusy = true;
         try
         {
-            var file = saveAs || _currentFile is null ? await FileDialogs.SaveSvgAsync(_currentFile?.Name ?? "drawing.svg") : _currentFile;
+            var suggestedName = _protectedSvgSource is { } source
+                ? $"{Path.GetFileNameWithoutExtension(source.Name)}-vectorer.svg"
+                : "drawing.svg";
+            var file = saveAs || _currentFile is null ? await FileDialogs.SaveSvgAsync(_currentFile?.Name ?? suggestedName) : _currentFile;
             if (file is null) return;
-            var bytes = await Task.Run(() => System.Text.Encoding.UTF8.GetBytes(_svgSerializer.SerializeToString(CurrentDocument)));
-            await using (var stream = await file.OpenWrite())
+            if (_protectedSvgSource is { } original && IsSameSaveTarget(original, file))
             {
-                if (stream.CanSeek) stream.SetLength(0);
-                await stream.WriteAsync(bytes);
-                await stream.FlushAsync();
+                SetStatus(nameof(Strings.Status_SvgSourceProtected), original.Name);
+                await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage);
+                return;
             }
+            var bytes = await Task.Run(() => System.Text.Encoding.UTF8.GetBytes(_svgSerializer.SerializeToString(CurrentDocument)));
+            await file.SaveAsync(bytes);
             _currentFile = file; _savedCommand = _undoRedoService.UndoStack.LastOrDefault(); _untrackedChanges = false;
             NotifyDocumentState(); SetStatus(nameof(Strings.Status_FileSaved), file.Name);
             await RememberFileAsync(file);
@@ -85,6 +104,16 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         { SetStatus(nameof(Strings.Status_FileSaveFailed), ex.Message); await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage); }
         finally { IsBusy = false; }
+    }
+
+    private static bool IsSameSaveTarget(EditorFile original, EditorFile destination)
+    {
+        if (original.Location is not { } source || destination.Location is not { } target)
+            return string.Equals(original.Name, destination.Name, StringComparison.OrdinalIgnoreCase);
+        if (source.IsFile && target.IsFile)
+            return string.Equals(AtomicFileSave.ResolvePath(source.LocalPath), AtomicFileSave.ResolvePath(target.LocalPath),
+                StringComparison.OrdinalIgnoreCase);
+        return source.Equals(target);
     }
     private async Task<bool> ProtectUnsavedAsync()
     {
@@ -146,16 +175,11 @@ public sealed partial class MainWindowViewModel
                 var file = await FileDialogs.SavePngAsync(suggested);
                 if (file is null) return;
                 var bytes = await Task.Run(() => exportVm.RenderExportPngBytes());
-                await using (var stream = await file.OpenWrite())
-                {
-                    if (stream.CanSeek) stream.SetLength(0);
-                    await stream.WriteAsync(bytes);
-                    await stream.FlushAsync();
-                }
+                await file.SaveAsync(bytes);
                 SetStatus(nameof(Strings.Status_PngExported), file.Name, exportVm.TargetWidth, exportVm.TargetHeight);
             }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or OutOfMemoryException)
         {
             SetStatus(nameof(Strings.Status_PngExportFailed), ex.Message);
             await FileDialogs.ShowLocalizedErrorAsync(_status, StatusMessage);
@@ -168,7 +192,7 @@ public sealed partial class MainWindowViewModel
     private void ReplaceDocument(SvgDocument document, EditorFile? file)
     {
         FinishPaintEdit();
-        CancelInteraction(); _scope.Clear(); CurrentDocument = document; _currentFile = file;
+        CancelInteraction(); _scope.Clear(); CurrentDocument = document; _currentFile = file; _protectedSvgSource = null;
         _undoRedoService.Clear(); _savedCommand = null; _untrackedChanges = false;
         ActiveLayer = null; SyncLayersCollection(); SelectNodes([]); NotifyScope(); NotifyDocumentState();
     }

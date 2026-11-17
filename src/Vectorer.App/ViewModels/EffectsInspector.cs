@@ -77,19 +77,6 @@ public sealed partial class MainWindowViewModel
     public const string NoShaderId = "none";
     public const string CustomShaderId = "custom";
 
-    private const string DefaultCustomSksl = """
-        uniform float4 u_bounds;
-        uniform float u_frequency;
-        uniform float u_mix;
-
-        half4 main(float2 coord) {
-            float2 uv = (coord - u_bounds.xy) / max(u_bounds.zw, float2(1.0, 1.0));
-            float wave = 0.5 + 0.5 * sin(uv.x * max(u_frequency, 1.0) + uv.y * 4.0);
-            float t = clamp(u_mix * 0.01, 0.0, 1.0);
-            return half4(mix(float3(0.15, 0.65, 0.95), float3(0.95, 0.35, 0.65), wave * (0.5 + 0.5 * t)), 1.0);
-        }
-        """;
-
     private bool _syncingEffects;
 
     [ObservableProperty] private int _selectedInspectorTab;
@@ -100,8 +87,6 @@ public sealed partial class MainWindowViewModel
     [ObservableProperty] private decimal? _blurSigmaY = 0m;
     [ObservableProperty] private bool _linkBlurSigma = true;
     [ObservableProperty] private ShaderOptionItem? _selectedShaderOption;
-    [ObservableProperty] private string _skslSourceCode = DefaultCustomSksl;
-    [ObservableProperty] private string? _skslCompileError;
 
     public ObservableCollection<ShaderOptionItem> ShaderOptions { get; } = [];
     public ObservableCollection<ShaderUniformItem> ShaderUniforms { get; } = [];
@@ -113,7 +98,8 @@ public sealed partial class MainWindowViewModel
     public string EffectTargetDisplay => L10n.Format(new LocalizedMessage(nameof(Strings.Ui_EditingTarget), EffectTargetLabel));
 
     public bool HasActiveShader => SelectedShaderOption is { Id: not NoShaderId };
-    public bool HasSkslError => !string.IsNullOrWhiteSpace(SkslCompileError);
+    public bool HasInactiveInlineShader => GetEffectTargets().Any(target =>
+        !string.IsNullOrWhiteSpace(target.ShaderEffect?.InlineSksl));
 
     public string? SelectedShaderId
     {
@@ -141,7 +127,6 @@ public sealed partial class MainWindowViewModel
         {
             ShaderOptions.Add(new ShaderOptionItem(provider.ShaderId, () => provider.DisplayName));
         }
-        ShaderOptions.Add(new ShaderOptionItem(CustomShaderId, () => L10n.Ui_CustomSksl));
     }
 
     public SceneNode[] GetEffectTargets()
@@ -166,7 +151,7 @@ public sealed partial class MainWindowViewModel
         _syncingEffects = true;
         try
         {
-            if (ShaderOptions.Count != _shaderRegistry.Providers.Count + 2)
+            if (ShaderOptions.Count != _shaderRegistry.Providers.Count + 1)
             {
                 RebuildShaderOptions();
             }
@@ -181,7 +166,6 @@ public sealed partial class MainWindowViewModel
                 BlurSigmaY = 0m;
                 SelectedShaderOption = ShaderOptions.FirstOrDefault();
                 ShaderUniforms.Clear();
-                SkslCompileError = null;
             }
             else
             {
@@ -199,44 +183,26 @@ public sealed partial class MainWindowViewModel
                 BlurSigmaX = blurXs.Length == 1 ? blurXs[0] : null;
                 BlurSigmaY = blurYs.Length == 1 ? blurYs[0] : null;
 
-                var shaderIds = targets.Select(t => t.ShaderEffect?.ShaderId ?? NoShaderId).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-                if (shaderIds.Length == 1)
+                var shaderIds = targets.Select(target => target.ShaderEffect switch
                 {
-                    var id = shaderIds[0];
-                    var option = ShaderOptions.FirstOrDefault(o => string.Equals(o.Id, id, StringComparison.OrdinalIgnoreCase))
-                        ?? ShaderOptions.FirstOrDefault(o => o.Id == CustomShaderId);
-                    SelectedShaderOption = option;
+                    null => NoShaderId,
+                    { InlineSksl: { Length: > 0 } } => CustomShaderId,
+                    var effect => effect.ShaderId
+                }).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
-                    var firstEffect = targets[0].ShaderEffect;
-                    if (firstEffect is not null)
-                    {
-                        if (!string.IsNullOrWhiteSpace(firstEffect.InlineSksl))
-                        {
-                            SkslSourceCode = firstEffect.InlineSksl;
-                        }
-                        else if (_shaderRegistry.TryGetProvider(firstEffect.ShaderId, out var provider) && provider is not null)
-                        {
-                            SkslSourceCode = provider.SkslSource;
-                        }
-                        SyncUniformItems(firstEffect);
-                    }
-                    else
-                    {
-                        ShaderUniforms.Clear();
-                    }
-                }
+                SelectedShaderOption = shaderIds.Length == 1 && shaderIds[0] != CustomShaderId
+                    ? ShaderOptions.FirstOrDefault(option => string.Equals(option.Id, shaderIds[0], StringComparison.OrdinalIgnoreCase))
+                    : null;
+                if (HasActiveShader && targets[0].ShaderEffect is { } effect)
+                    SyncUniformItems(effect);
                 else
-                {
-                    SelectedShaderOption = null;
                     ShaderUniforms.Clear();
-                }
-                SkslCompileError = null;
             }
 
             OnPropertyChanged(nameof(EffectTargetLabel));
             OnPropertyChanged(nameof(EffectTargetDisplay));
             OnPropertyChanged(nameof(HasActiveShader));
-            OnPropertyChanged(nameof(HasSkslError));
+            OnPropertyChanged(nameof(HasInactiveInlineShader));
             OnPropertyChanged(nameof(SelectedShaderId));
         }
         finally
@@ -272,17 +238,6 @@ public sealed partial class MainWindowViewModel
             foreach (var (key, value) in provider.DefaultUniforms)
             {
                 result[key] = value;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(descriptor.InlineSksl))
-        {
-            foreach (var name in ShaderEffectRegistry.ExtractScalarUniformNames(descriptor.InlineSksl))
-            {
-                if (!result.ContainsKey(name))
-                {
-                    result[name] = 10f;
-                }
             }
         }
 
@@ -390,8 +345,6 @@ public sealed partial class MainWindowViewModel
         var targets = GetEffectTargets();
         if (targets.Length == 0) return;
 
-        SkslCompileError = null;
-        OnPropertyChanged(nameof(HasSkslError));
 
         if (value.Id == NoShaderId)
         {
@@ -415,29 +368,12 @@ public sealed partial class MainWindowViewModel
                 () => { foreach (var s in snapshots) s.Node.ShaderEffect = s.Before; }));
             return;
         }
-
-        if (value.Id == CustomShaderId)
-        {
-            var sksl = string.IsNullOrWhiteSpace(SkslSourceCode) ? DefaultCustomSksl : SkslSourceCode;
-            if (!ShaderEffectRegistry.TryCompileSksl(sksl, out _, out _, out var scalarNames))
-            {
-                sksl = DefaultCustomSksl;
-                ShaderEffectRegistry.TryCompileSksl(sksl, out _, out _, out scalarNames);
-            }
-            var uniforms = scalarNames.ToDictionary(n => n, _ => 10f, StringComparer.Ordinal);
-            var after = new ShaderEffectDescriptor(CustomShaderId, sksl, uniforms);
-            var snapshots = targets.Select(t => (Node: t, Before: t.ShaderEffect)).ToArray();
-            ExecuteCommand(new DelegateDocumentCommand(
-                "Apply custom SkSL shader",
-                () => { foreach (var s in snapshots) s.Node.ShaderEffect = CloneDescriptor(after); },
-                () => { foreach (var s in snapshots) s.Node.ShaderEffect = s.Before; }));
-        }
     }
 
     public void SetShaderUniform(string name, float value)
     {
         if (_syncingEffects || IsInteracting || string.IsNullOrWhiteSpace(name)) return;
-        var targets = GetEffectTargets().Where(t => t.ShaderEffect is not null).ToArray();
+        var targets = GetEffectTargets().Where(t => t.ShaderEffect is { } effect && string.IsNullOrWhiteSpace(effect.InlineSksl)).ToArray();
         if (targets.Length == 0) return;
 
         var snapshots = targets.Select(t =>
@@ -453,57 +389,6 @@ public sealed partial class MainWindowViewModel
             $"Shader uniform {name}",
             () => { foreach (var s in snapshots) s.Node.ShaderEffect = CloneDescriptor(s.After); },
             () => { foreach (var s in snapshots) s.Node.ShaderEffect = CloneDescriptor(s.Before); }));
-    }
-
-    [RelayCommand]
-    private void CompileAndApplySksl()
-    {
-        if (IsInteracting) return;
-        if (!ShaderEffectRegistry.TryCompileSksl(SkslSourceCode, out _, out var error, out var scalarNames))
-        {
-            SkslCompileError = error;
-            OnPropertyChanged(nameof(HasSkslError));
-            SetStatus(nameof(Strings.Status_SkslFailed), error);
-            return;
-        }
-
-        SkslCompileError = null;
-        OnPropertyChanged(nameof(HasSkslError));
-
-        var targets = GetEffectTargets();
-        if (targets.Length == 0) return;
-
-        var shaderId = SelectedShaderOption is { Id: not NoShaderId } opt ? opt.Id : CustomShaderId;
-        var snapshots = targets.Select(t =>
-        {
-            var before = t.ShaderEffect;
-            var dict = new Dictionary<string, float>(StringComparer.Ordinal);
-            if (before is not null)
-            {
-                foreach (var (k, v) in ResolveUniformValues(before))
-                {
-                    if (scalarNames.Contains(k, StringComparer.Ordinal))
-                    {
-                        dict[k] = v;
-                    }
-                }
-            }
-            foreach (var uName in scalarNames)
-            {
-                if (!dict.ContainsKey(uName))
-                {
-                    dict[uName] = 10f;
-                }
-            }
-            var after = new ShaderEffectDescriptor(shaderId, SkslSourceCode, dict);
-            return (Node: t, Before: before, After: after);
-        }).ToArray();
-
-        ExecuteCommand(new DelegateDocumentCommand(
-            "Compile SkSL shader",
-            () => { foreach (var s in snapshots) s.Node.ShaderEffect = CloneDescriptor(s.After); },
-            () => { foreach (var s in snapshots) s.Node.ShaderEffect = s.Before is null ? null : CloneDescriptor(s.Before); }));
-        SetStatus(nameof(Strings.Status_SkslApplied));
     }
 
     [RelayCommand]

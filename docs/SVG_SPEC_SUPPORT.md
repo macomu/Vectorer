@@ -38,16 +38,16 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 ## 3. スタイル・フィルタ・シェーダーの保存仕様
 
 ### 3.1 レイヤーブレンドモード
-- 標準 CSS `style="mix-blend-mode: overlay;"` を出力すると同時に、Vectorer 固有の加算 (`Add`) や減算 (`Subtract`) も正確に復元できるよう `vectorer:blend-mode="Add"` を併記します。
+- 対応する標準のブレンドモードは CSS の `mix-blend-mode` と `vectorer:blend-mode` を併記します。加算・減算は Vectorer 拡張属性に保持します。
 
 ### 3.2 フィルタ（ぼかし等）
-- `<defs>` 内に `<filter id="filter_xxx"><feGaussianBlur stdDeviation="sigmaX sigmaY" /></filter>` を出力し、対象要素から `filter="url(#filter_xxx)"` で参照します。また、簡易復元のために `vectorer:blur-sigma="4.5"` 属性もサポートします。
+- `<defs>` に `<filter><feGaussianBlur stdDeviation="sigmaX sigmaY"/></filter>` を出力します。対象要素には `filter="url(#id)"` と `vectorer:blur-x` / `vectorer:blur-y` を併記します。
 
 ### 3.3 テクスチャ塗りつぶし
 - `vectorer:texture-kind`、`vectorer:texture-scale`、`vectorer:texture-primary-color`、`vectorer:texture-secondary-color` などを保持し、フォールバック用の `fill` カラーも標準属性に出力します。
 
-### 3.4 SkiaSharp シェーダー (`SKRuntimeEffect`)
-- オブジェクトに適用されたシェーダーは、`vectorer:shader-id`、`vectorer:shader-uniforms`（JSON または key=value 形式）、およびカスタム SkSL がある場合は `<defs><vectorer:shader id="..." sksl="..." /></defs>` として保存します。
+### 3.4 プラグインシェーダー
+- `vectorer:shader-id` と `vectorer:shader-uniforms`（`key=value` 形式）を保存します。既存の `vectorer:shader-sksl` は保持し、描画には図形の通常の塗りを使います。
 
 
 ## Phase 2 編集データの保存（2026-11-11）
@@ -60,6 +60,8 @@ Vectorer が保存する SVG のルート `<svg>` 要素には以下の名前空
 - 編集用モデルへ変換するSVGの円弧は分割近似です。複雑な文字組み、任意のCSS継承、フォント埋込みはこの実装範囲に含めません。
 
 ## Phase 2 仕上げでの互換性補完
+
+- ルートの `opacity` はドキュメント全体を合成した後に適用します。未対応の要素やスタイルを検出した場合は別名保存になります。
 
 - `viewBox` の原点・サイズと `preserveAspectRatio`（meet / slice / none）を読み書きし、レンダラーとキャンバス操作で同じビューポート変換を使用します。
 - 塗り・線・塗り規則・不透明度・フォント設定の親からの継承とインラインstyleに対応します。SVG既定の塗りは黒です。

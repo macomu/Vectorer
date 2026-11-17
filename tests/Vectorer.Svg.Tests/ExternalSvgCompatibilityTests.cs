@@ -7,6 +7,45 @@ namespace Vectorer.Svg.Tests;
 
 public sealed class ExternalSvgCompatibilityTests
 {
+    [Theory]
+    [InlineData("<rect width='10' height='10' clip-path='url(#clip)'/>")]
+    [InlineData("<rect width='10' height='10' style='mask: url(#m)'/>")]
+    [InlineData("<image href='figure.png'/>")]
+    [InlineData("<svg><rect width='10' height='10'/></svg>")]
+    public void Load_MarksUnsupportedContentAsImport(string contents)
+    {
+        using var input = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(
+            $"<svg xmlns='http://www.w3.org/2000/svg'>{contents}</svg>"));
+        new SvgSerializer().LoadFromStream(input, out var requiresSaveAs);
+        Assert.True(requiresSaveAs);
+    }
+
+    [Fact]
+    public void LoadAndSave_PreservesRootOpacityAndSupportedStandardEffects()
+    {
+        const string svg = """
+            <svg xmlns="http://www.w3.org/2000/svg" style="opacity: 50%">
+              <defs><filter id="blur"><feGaussianBlur stdDeviation="2 4"/></filter></defs>
+              <rect width="10" height="10" filter="url(#blur)" style="mix-blend-mode: multiply"/>
+            </svg>
+            """;
+        var serializer = new SvgSerializer();
+        using var input = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svg));
+        var document = serializer.LoadFromStream(input, out var requiresSaveAs);
+        Assert.False(requiresSaveAs);
+        Assert.Equal(0.5f, document.Opacity);
+        var rectangle = Assert.Single(document.Layers[0].Children);
+        Assert.Equal(Vectorer.Abstractions.Styling.LayerBlendMode.Multiply, rectangle.BlendMode);
+        Assert.Equal(new Vectorer.Abstractions.Styling.FilterSettings(2f, 4f), rectangle.Filter);
+
+        var output = serializer.SerializeToString(document);
+        Assert.Contains("opacity=\"0.5\"", output);
+        Assert.Contains("mix-blend-mode: multiply", output);
+        Assert.Contains("feGaussianBlur stdDeviation=\"2 4\"", output);
+        using var roundTrip = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(output));
+        serializer.LoadFromStream(roundTrip, out requiresSaveAs);
+        Assert.False(requiresSaveAs);
+    }
     [Fact]
     public void Import_InheritsPresentationAndInlineStyleAndParsesWhitespacePoints()
     {

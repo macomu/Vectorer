@@ -9,7 +9,24 @@ using Avalonia.Platform.Storage;
 
 namespace Vectorer.App.Services;
 
-public sealed record EditorFile(string Name, Func<Task<Stream>> OpenRead, Func<Task<Stream>> OpenWrite, Uri? Location = null);
+public sealed record EditorFile(string Name, Func<Task<Stream>> OpenRead, Func<Task<Stream>> OpenWrite, Uri? Location = null)
+{
+    public Func<ReadOnlyMemory<byte>, Task>? SaveContentsAsync { get; init; }
+
+    public async Task SaveAsync(ReadOnlyMemory<byte> contents)
+    {
+        if (SaveContentsAsync is { } saveContents)
+        {
+            await saveContents(contents);
+            return;
+        }
+
+        await using var stream = await OpenWrite();
+        if (stream.CanSeek) stream.SetLength(0);
+        await stream.WriteAsync(contents);
+        await stream.FlushAsync();
+    }
+}
 
 public enum UnsavedDecision { Cancel, Discard, Save }
 public sealed record DocumentSettings(float Width, float Height, SKColor Background, string Title);
@@ -36,7 +53,12 @@ public sealed class EditorFileDialogs(Window owner, AppLocalization localization
 {
     private static readonly FilePickerFileType SvgType = new("SVG") { Patterns = ["*.svg"], MimeTypes = ["image/svg+xml"] };
     private static readonly FilePickerFileType PngType = new("PNG") { Patterns = ["*.png"], MimeTypes = ["image/png"] };
-    private static EditorFile Adapt(IStorageFile file) => new(file.Name, file.OpenReadAsync, file.OpenWriteAsync, file.Path);
+    private EditorFile Adapt(IStorageFile file) => new(file.Name, file.OpenReadAsync, file.OpenWriteAsync, file.Path)
+    {
+        SaveContentsAsync = file.Path.IsFile
+            ? bytes => AtomicFileSave.WriteAsync(file.Path.LocalPath, stream => stream.WriteAsync(bytes).AsTask())
+            : _ => throw new IOException(localization.Get(nameof(Strings.Error_AtomicSaveUnavailable)))
+    };
     public async Task<EditorFile?> ResolveSvgAsync(Uri location)
     {
         var file = await owner.StorageProvider.TryGetFileFromPathAsync(location);

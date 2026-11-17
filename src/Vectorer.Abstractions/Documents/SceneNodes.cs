@@ -13,6 +13,7 @@ public sealed class SvgDocument
     public float Height { get; set; } = 600f;
     public SKRect ViewBox { get; set; } = new(0, 0, 800, 600);
     public string PreserveAspectRatio { get; set; } = "xMidYMid meet";
+    public float Opacity { get; set; } = 1f;
     public SKColor BackgroundColor { get; set; } = SKColors.Transparent;
     public List<LayerNode> Layers { get; } = [];
     public List<ColorPreset> ColorPresets { get; } = new[]

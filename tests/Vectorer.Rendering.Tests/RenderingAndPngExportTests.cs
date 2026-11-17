@@ -12,6 +12,58 @@ namespace Vectorer.Rendering.Tests;
 public sealed class RenderingAndPngExportTests
 {
     [Fact]
+    public void ExportDocument_ReportsAnUnavailablePngSurface()
+    {
+        var service = new PngExportService(new SkiaDocumentRenderer());
+        var error = Assert.Throws<InvalidOperationException>(() => service.ExportDocumentToBytes(
+            SvgDocument.CreateDefault(), new PngExportOptions(TargetWidth: 0, TargetHeight: 10)));
+        Assert.Contains("Cannot allocate", error.Message);
+    }
+    [Fact]
+    public void RenderDocumentAndExport_ApplyRootOpacityOnceAfterCompositingLayers()
+    {
+        var document = SvgDocument.CreateDefault(20, 20);
+        document.Opacity = 0.5f;
+        var top = new LayerNode();
+        document.Layers.Add(top);
+        document.Layers[0].Children.Add(new RectangleShapeNode
+        {
+            Rect = new SKRect(0, 0, 20, 20),
+            Style = new ShapeStyle { Fill = new SolidColorFill(SKColors.Red) }
+        });
+        top.Children.Add(new RectangleShapeNode
+        {
+            Rect = new SKRect(0, 0, 20, 20),
+            Style = new ShapeStyle { Fill = new SolidColorFill(SKColors.Blue) }
+        });
+        var renderer = new SkiaDocumentRenderer();
+        using var bitmap = new SKBitmap(20, 20);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        renderer.RenderDocument(document, canvas);
+        var expected = SKColors.Blue.WithAlpha(128);
+        Assert.Equal(expected, bitmap.GetPixel(10, 10));
+
+        using var png = SKBitmap.Decode(new PngExportService(renderer).ExportDocumentToBytes(document));
+        Assert.Equal(expected, png.GetPixel(10, 10));
+    }
+
+    [Fact]
+    public void RenderDocument_UsesRegularFillForInactiveInlineShader()
+    {
+        var document = SvgDocument.CreateDefault(20, 20);
+        document.Layers[0].Children.Add(new RectangleShapeNode
+        {
+            Rect = new SKRect(0, 0, 20, 20),
+            Style = new ShapeStyle { Fill = new SolidColorFill(SKColors.Blue) },
+            ShaderEffect = new ShaderEffectDescriptor("custom", "half4 main(float2 p) { return half4(1, 0, 0, 1); }")
+        });
+        using var bitmap = new SKBitmap(20, 20);
+        using var canvas = new SKCanvas(bitmap);
+        new SkiaDocumentRenderer().RenderDocument(document, canvas);
+        Assert.Equal(SKColors.Blue, bitmap.GetPixel(10, 10));
+    }
+    [Fact]
     public void RenderDocument_AppliesNonZeroViewBoxAndRestoresCanvasMatrix()
     {
         var document = SvgDocument.CreateDefault(100, 100); document.ViewBox = new SKRect(10, 20, 60, 70);

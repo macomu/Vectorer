@@ -2,7 +2,7 @@
 
 **Languages:** 日本語 | [English](PLUGIN_SYSTEM.en.md)
 
-Vectorer は、外部 DLL を読み込んでメニューやツールバーに機能を追加したり、`SkiaSharp` のシェーダー (`SKRuntimeEffect`) をオブジェクト単位で適用できる拡張アーキテクチャを備えています。
+Vectorerは外部DLLからメニュー、ツールバーの機能と、オブジェクト単位のSkiaSharpシェーダーを追加できます。
 
 ---
 
@@ -59,7 +59,7 @@ public interface IShaderEffectProvider
 }
 ```
 
-- レンダリングエンジン (`Vectorer.Rendering`) は、ノードに `ShaderEffectDescriptor` が設定されている場合、対応する `IShaderEffectProvider` またはインライン SkSL コードから `SKRuntimeEffect` を生成して塗りに適用します。
+- レンダリングエンジンは対応する `IShaderEffectProvider` が返すシェーダーを適用します。v0.1.0では既存SVG内のインラインSkSLを保持し、通常の塗りで描画します。
 
 ---
 

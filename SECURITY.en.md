@@ -27,4 +27,4 @@ All communication will be handled privately within the GitHub security advisory 
 ## Security Notes for Plugins, Shaders & External Files
 
 - **External DLL Plugins (`./plugins/*.dll`)**: Vectorer dynamically loads plugin DLLs using `AssemblyLoadContext`. Because plugins execute arbitrary code with the same privileges as the host process, only install plugins from trusted sources.
-- **Custom SkSL Shaders & External SVG Files**: Exercise caution when opening untrusted SVG files containing `vectorer:shader` (SkSL) definitions. If you discover parser or renderer boundary issues or crashes, please report them privately via the steps above.
+- **External SVG files**. Please report parser or renderer crashes privately using the steps above. v0.1.0 preserves inline SkSL when saving the file.

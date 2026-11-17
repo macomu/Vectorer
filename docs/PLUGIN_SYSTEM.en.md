@@ -2,7 +2,7 @@
 
 **Languages:** [日本語](PLUGIN_SYSTEM.md) | English
 
-Vectorer supports loading external .NET DLL plugins that extend menus and toolbars, as well as attaching per-object `SkiaSharp` runtime shaders (`SKRuntimeEffect` / SkSL).
+Vectorer loads external .NET DLL plugins that add menus, toolbars, and per-object SkiaSharp shaders.
 
 ---
 
@@ -59,7 +59,7 @@ public interface IShaderEffectProvider
 }
 ```
 
-- When a node has a `ShaderEffectDescriptor`, `Vectorer.Rendering` resolves the matching `IShaderEffectProvider` or compiles inline SkSL via `SKRuntimeEffect` to render the fill.
+- The renderer uses the shader returned by the matching `IShaderEffectProvider`. v0.1.0 preserves inline SkSL from existing SVGs and renders those objects with their regular fills.
 
 ---
 

@@ -20,9 +20,12 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
         var (outWidth, outHeight, scaleX, scaleY) = CalculateOutputSize(sourceWidth, sourceHeight, options);
 
         var imageInfo = new SKImageInfo(outWidth, outHeight, SKColorType.Rgba8888, SKAlphaType.Premul);
-        using var surface = SKSurface.Create(imageInfo);
+        using var surface = SKSurface.Create(imageInfo) ??
+            throw new InvalidOperationException($"Cannot allocate a {outWidth} × {outHeight} PNG surface.");
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.Transparent);
+        using var opacityPaint = SkiaDocumentRenderer.CreateDocumentOpacityPaint(document);
+        if (opacityPaint is not null) canvas.SaveLayer(opacityPaint);
         canvas.Scale(scaleX, scaleY);
 
         if (options.IncludeBackground && document.BackgroundColor.Alpha > 0)
@@ -47,8 +50,10 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
             canvas.Restore();
         }
 
+        if (opacityPaint is not null) canvas.Restore();
         using var image = surface.Snapshot();
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100) ??
+            throw new InvalidOperationException("Cannot encode the rendered image as PNG.");
         return data.ToArray();
     }
 
@@ -90,9 +95,12 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
         var (outWidth, outHeight, scaleX, scaleY) = CalculateOutputSize(sourceWidth, sourceHeight, options);
 
         var imageInfo = new SKImageInfo(outWidth, outHeight, SKColorType.Rgba8888, SKAlphaType.Premul);
-        using var surface = SKSurface.Create(imageInfo);
+        using var surface = SKSurface.Create(imageInfo) ??
+            throw new InvalidOperationException($"Cannot allocate a {outWidth} × {outHeight} PNG surface.");
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.Transparent);
+        using var opacityPaint = SkiaDocumentRenderer.CreateDocumentOpacityPaint(document);
+        if (opacityPaint is not null) canvas.SaveLayer(opacityPaint);
 
         if (options.IncludeBackground && document is { BackgroundColor.Alpha: > 0 })
         {
@@ -105,8 +113,10 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
 
         RenderSelectedNodesInWorldSpace(document, selectedNodes, canvas);
 
+        if (opacityPaint is not null) canvas.Restore();
         using var image = surface.Snapshot();
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100) ??
+            throw new InvalidOperationException("Cannot encode the rendered image as PNG.");
         return data.ToArray();
     }
 
@@ -169,9 +179,12 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
             }
 
             var imageInfo = new SKImageInfo(outWidth, outHeight, SKColorType.Rgba8888, SKAlphaType.Premul);
-            using var surface = SKSurface.Create(imageInfo);
+            using var surface = SKSurface.Create(imageInfo) ??
+                throw new InvalidOperationException($"Cannot allocate a {outWidth} × {outHeight} PNG surface.");
             var canvas = surface.Canvas;
             canvas.Clear(SKColors.Transparent);
+            using var opacityPaint = SkiaDocumentRenderer.CreateDocumentOpacityPaint(document);
+            if (opacityPaint is not null) canvas.SaveLayer(opacityPaint);
             canvas.Scale(scaleX, scaleY);
 
             if (options.IncludeBackground && document.BackgroundColor.Alpha > 0)
@@ -195,8 +208,10 @@ public sealed class PngExportService(IDocumentRenderer renderer) : IPngExportSer
                 canvas.Restore();
             }
 
+            if (opacityPaint is not null) canvas.Restore();
             using var image = surface.Snapshot();
-            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100) ??
+                throw new InvalidOperationException("Cannot encode the rendered image as PNG.");
 
             var safeName = SanitizeFileName(layer.Name);
             var fileName = $"{filePrefix}_{i + 1:D2}_{safeName}.png";

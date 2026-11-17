@@ -29,7 +29,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IEditorWorks
 {
     private readonly IUndoRedoService _undoRedoService;
     private readonly IPathBooleanService _booleanService;
-    private readonly ISvgSerializer _svgSerializer;
+    private readonly SvgSerializer _svgSerializer;
     private readonly IPngExportService _pngExportService;
     private readonly PluginHostService _pluginHost;
     private readonly ShaderEffectRegistry _shaderRegistry;

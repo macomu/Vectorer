@@ -108,9 +108,9 @@ flowchart TD
 - **テクスチャ塗り (`TextureFill`)**: タイル模様（チェッカーボード、ストライプ、ドット等のプロシージャルパターン、またはビットマップ画像）から `SKShader.CreateBitmap(..., SKShaderTileMode.Repeat, SKShaderTileMode.Repeat)` を生成し、`SKPaint.Shader` に設定して図形内部を塗りつぶします。
 - **アウトライン (`StrokeStyle`)**: `SKPaintStyle.Stroke`、`StrokeWidth`、`StrokeCap`、`StrokeJoin`、`SKPathEffect.CreateDash` を組み合わせて描画します。
 
-### 4.4 オブジェクト単位の SkiaSharp シェーダー (`SKRuntimeEffect`)
+### 4.4 オブジェクト単位のプラグインシェーダー
 各 `SceneNode` は `ShaderEffectDescriptor`（シェーダー ID、SkSL ソースコード、Uniform パラメータ辞書）を保持できます。
-レンダリング時に `SKRuntimeEffect.CreateShader(sksl, errors)` をコンパイル（キャッシュ管理）し、オブジェクトのバウンディングボックスや時間/カスタムパラメータを `SKRuntimeEffectUniforms` として渡して描画します。
+描画時に登録済みの `IShaderEffectProvider` にバウンディングボックスとUniformを渡します。既存ファイルのインラインSkSLは保存時に保持します。
 
 ---
 

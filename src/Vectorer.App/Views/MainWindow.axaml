@@ -170,7 +170,7 @@
         <MenuItem Header="{Binding L10n.Ui_ToggleLayerBlur, Mode=OneWay}" Command="{Binding ToggleGaussianBlurOnActiveLayerCommand}" />
         <MenuItem Header="{Binding L10n.Ui_ClearFilters, Mode=OneWay}" Command="{Binding ClearFiltersCommand}" />
         <Separator />
-        <MenuItem Header="{Binding L10n.Ui_ApplySksl, Mode=OneWay}" Command="{Binding OpenShaderInspectorCommand}" />
+        <MenuItem Header="{Binding L10n.Ui_Shader, Mode=OneWay}" Command="{Binding OpenShaderInspectorCommand}" />
         <MenuItem Header="{Binding L10n.Ui_PluginCommands, Mode=OneWay}" ItemsSource="{Binding PluginMenus}">
           <MenuItem.ItemContainerTheme>
             <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:PluginMenuItem">
@@ -484,13 +484,14 @@
                   </StackPanel>
                 </Expander>
 
-                <Expander Header="{Binding L10n.Ui_Sksl, Mode=OneWay}" IsExpanded="True" HorizontalAlignment="Stretch">
+                <Expander Header="{Binding L10n.Ui_Shader, Mode=OneWay}" IsExpanded="True" HorizontalAlignment="Stretch">
                   <StackPanel Spacing="8">
                     <Grid ColumnDefinitions="Auto,*">
                       <TextBlock Text="{Binding L10n.Ui_Shader, Mode=OneWay}" />
                       <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding ShaderOptions}" ItemTemplate="{StaticResource ShaderOptionTemplate}" SelectedItem="{Binding SelectedShaderOption}" PlaceholderText="{Binding L10n.Ui_Mixed, Mode=OneWay}" />
                     </Grid>
 
+                    <TextBlock IsVisible="{Binding HasInactiveInlineShader}" Text="{Binding L10n.Ui_InlineShaderUnavailable, Mode=OneWay}" TextWrapping="Wrap" />
                     <StackPanel Spacing="6" IsVisible="{Binding HasActiveShader}">
                       <TextBlock Text="{Binding L10n.Ui_Uniforms, Mode=OneWay}" FontWeight="SemiBold" FontSize="12" Foreground="#94A3B8" />
                       <ItemsControl ItemsSource="{Binding ShaderUniforms}">
@@ -506,16 +507,6 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
-
-                      <Expander Header="{Binding L10n.Ui_LiveSksl, Mode=OneWay}" IsExpanded="False" HorizontalAlignment="Stretch">
-                        <StackPanel Spacing="6">
-                          <TextBox Text="{Binding SkslSourceCode}" AcceptsReturn="True" TextWrapping="NoWrap" Height="150" FontFamily="Consolas, Monospace" FontSize="12" />
-                          <Button Content="{Binding L10n.Ui_CompileSksl, Mode=OneWay}" Command="{Binding CompileAndApplySkslCommand}" HorizontalAlignment="Stretch" />
-                          <Border IsVisible="{Binding HasSkslError}" Background="#3B1219" BorderBrush="#F87171" BorderThickness="1" Padding="6" CornerRadius="4">
-                            <TextBlock Text="{Binding SkslCompileError}" Foreground="#FCA5A5" TextWrapping="Wrap" FontSize="11" />
-                          </Border>
-                        </StackPanel>
-                      </Expander>
                     </StackPanel>
                   </StackPanel>
                 </Expander>

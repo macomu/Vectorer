@@ -108,9 +108,9 @@ Uses `BlurSigmaX` / `BlurSigmaY` from `FilterSettings` to construct `SKImageFilt
 - **Texture Fill (`TextureFill`)**: Generates an `SKShader.CreateBitmap(..., SKShaderTileMode.Repeat, SKShaderTileMode.Repeat)` from procedural tile patterns (checkerboard, stripes, crosshatch, dots) or bitmap images and assigns it to `SKPaint.Shader`.
 - **Stroke (`StrokeStyle`)**: Combines `SKPaintStyle.Stroke`, `StrokeWidth`, `StrokeCap`, `StrokeJoin`, and `SKPathEffect.CreateDash`.
 
-### 4.4 Per-Object SkiaSharp Shaders (`SKRuntimeEffect`)
+### 4.4 Per-Object Plugin Shaders
 Any `SceneNode` can hold a `ShaderEffectDescriptor` (shader ID, SkSL source code, uniform dictionary).
-During rendering, `SKRuntimeEffect.CreateShader(sksl, errors)` is compiled (and cached) and evaluated with `SKRuntimeEffectUniforms` including object bounds and custom parameters.
+The renderer passes object bounds and uniforms to the registered `IShaderEffectProvider`. Inline SkSL in existing files is preserved on save.
 
 ---
 

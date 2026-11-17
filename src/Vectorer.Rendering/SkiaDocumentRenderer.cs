@@ -20,22 +20,30 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(canvas);
 
-        if (document.BackgroundColor.Alpha > 0)
-        {
-            using var bgPaint = new SKPaint { Color = document.BackgroundColor, Style = SKPaintStyle.Fill };
-            canvas.DrawRect(0, 0, document.Width, document.Height, bgPaint);
-        }
+        if (document.Opacity <= 0f) return;
 
-        canvas.Save();
+        using var opacityPaint = CreateDocumentOpacityPaint(document);
+        if (opacityPaint is null) canvas.Save();
+        else canvas.SaveLayer(opacityPaint);
         try
         {
             canvas.ClipRect(new SKRect(0, 0, document.Width, document.Height));
+            if (document.BackgroundColor.Alpha > 0)
+            {
+                using var bgPaint = new SKPaint { Color = document.BackgroundColor, Style = SKPaintStyle.Fill };
+                canvas.DrawRect(0, 0, document.Width, document.Height, bgPaint);
+            }
             var viewport = document.GetViewportTransform(); canvas.Concat(ref viewport);
             foreach (var layer in document.Layers)
                 if (layer.IsVisible) RenderNode(layer, canvas);
         }
         finally { canvas.Restore(); }
     }
+
+    internal static SKPaint? CreateDocumentOpacityPaint(SvgDocument? document) =>
+        document is { Opacity: < 1f }
+            ? new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Clamp(MathF.Round(document.Opacity * 255f), 0f, 255f)) }
+            : null;
 
     public void RenderLayer(LayerNode layer, SKCanvas canvas)
     {
@@ -141,20 +149,16 @@ public sealed class SkiaDocumentRenderer(ShaderEffectRegistry? shaderRegistry = 
         var bounds = path.TightBounds;
         var shaderDescriptor = shape.ShaderEffect ?? activeShader;
 
-        // 1. Fill or Per-Object Runtime Shader
-        if (shaderDescriptor is not null)
+        using var customShader = shaderDescriptor is null ? null : ShaderRegistry.CreateShaderForDescriptor(shaderDescriptor, bounds);
+        if (customShader is not null)
         {
-            using var customShader = ShaderRegistry.CreateShaderForDescriptor(shaderDescriptor, bounds);
-            if (customShader is not null)
+            using var shaderPaint = new SKPaint
             {
-                using var shaderPaint = new SKPaint
-                {
-                    Style = SKPaintStyle.Fill,
-                    Shader = customShader,
-                    IsAntialias = true
-                };
-                canvas.DrawPath(path, shaderPaint);
-            }
+                Style = SKPaintStyle.Fill,
+                Shader = customShader,
+                IsAntialias = true
+            };
+            canvas.DrawPath(path, shaderPaint);
         }
         else if (shape.Style.Fill is not null)
         {

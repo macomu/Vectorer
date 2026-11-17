@@ -13,7 +13,7 @@ namespace Vectorer.Svg;
 /// <summary>
 /// Serializes and deserializes <see cref="SvgDocument"/> to/from standard SVG XML with <c>vectorer:*</c> extension metadata.
 /// </summary>
-public sealed class SvgSerializer : ISvgSerializer
+public sealed partial class SvgSerializer : ISvgSerializer
 {
     public static readonly XNamespace SvgNs = "http://www.w3.org/2000/svg";
     public static readonly XNamespace VectorerNs = "https://vectorer.dev/ns/1.0";
@@ -42,10 +42,13 @@ public sealed class SvgSerializer : ISvgSerializer
         return ParseXDocument(xDoc);
     }
 
-    public SvgDocument LoadFromStream(Stream inputStream)
+    public SvgDocument LoadFromStream(Stream inputStream) => LoadFromStream(inputStream, out _);
+
+    public SvgDocument LoadFromStream(Stream inputStream, out bool requiresSaveAs)
     {
         ArgumentNullException.ThrowIfNull(inputStream);
         var xDoc = XDocument.Load(inputStream);
+        requiresSaveAs = HasUnsupportedContent(xDoc);
         return ParseXDocument(xDoc);
     }
 
@@ -65,6 +68,8 @@ public sealed class SvgSerializer : ISvgSerializer
         {
             root.Add(new XAttribute(VectorerNs + "background", FormatColor(document.BackgroundColor)));
         }
+        if (document.Opacity < 1f)
+            root.SetAttributeValue("opacity", FormatFloat(document.Opacity));
 
         root.Add(new XElement(SvgNs + "metadata",
             new XElement(VectorerNs + "palette", document.ColorPresets.Select(preset =>
@@ -122,12 +127,15 @@ public sealed class SvgSerializer : ISvgSerializer
         if (node.BlendMode != LayerBlendMode.Normal)
         {
             element.SetAttributeValue(VectorerNs + "blend-mode", node.BlendMode.ToString());
+            if (node.BlendMode is not LayerBlendMode.Add and not LayerBlendMode.Subtract)
+                element.SetAttributeValue("style", $"mix-blend-mode: {node.BlendMode.ToString().ToLowerInvariant()}");
         }
 
         if (node.Filter is { HasActiveFilter: true } filter)
         {
             element.SetAttributeValue(VectorerNs + "blur-x", FormatFloat(filter.BlurSigmaX));
             element.SetAttributeValue(VectorerNs + "blur-y", FormatFloat(filter.BlurSigmaY));
+            element.SetAttributeValue("filter", $"url(#{context.AddBlur(filter)})");
         }
 
         if (node.ShaderEffect is not null)
@@ -329,7 +337,7 @@ public sealed class SvgSerializer : ISvgSerializer
     private static SvgDocument ParseXDocument(XDocument xDoc)
     {
         var root = xDoc.Root ?? throw new XmlException("Invalid SVG document: missing root element.");
-        if (root.Name.LocalName != "svg" || root.Name.Namespace != SvgNs && root.Name.Namespace != XNamespace.None)
+        if (root.Name.LocalName != "svg" || !HasSvgNamespace(root))
             throw new XmlException("The selected file is not an SVG document.");
         ExpandInheritedStyles(root, new Dictionary<string, string> { ["fill"] = "#000000", ["stroke"] = "none" });
         var width = ParseFloat(root.Attribute("width")?.Value, 800f);
@@ -340,6 +348,7 @@ public sealed class SvgSerializer : ISvgSerializer
             Title = root.Attribute(VectorerNs + "title")?.Value ?? "Untitled",
             Width = width,
             Height = height,
+            Opacity = ParseUnitInterval(root.Attribute("opacity")?.Value, 1f),
             ViewBox = new SKRect(0, 0, width, height)
         };
 
@@ -368,11 +377,13 @@ public sealed class SvgSerializer : ISvgSerializer
 
         foreach (var childEl in root.Elements())
         {
+            if (!HasSvgNamespace(childEl)) continue;
             var localName = childEl.Name.LocalName;
             if (localName == "g" && childEl.Attribute(VectorerNs + "layer")?.Value == "true")
             {
                 var layer = new LayerNode();
                 ApplyCommonAttributes(childEl, layer);
+                ApplyStandardEffects(childEl, layer, context);
                 foreach (var grandChild in childEl.Elements())
                 {
                     var parsedChild = ParseElement(grandChild, context);
@@ -383,21 +394,21 @@ public sealed class SvgSerializer : ISvgSerializer
                 }
 
                 doc.Layers.Add(layer);
+                fallbackLayer = null;
             }
             else
             {
                 var parsedNode = ParseElement(childEl, context);
                 if (parsedNode is not null)
                 {
-                    fallbackLayer ??= new LayerNode { Name = "Layer 1" };
+                    if (fallbackLayer is null)
+                    {
+                        fallbackLayer = new LayerNode { Name = $"Layer {doc.Layers.Count + 1}" };
+                        doc.Layers.Add(fallbackLayer);
+                    }
                     fallbackLayer.Children.Add(parsedNode);
                 }
             }
-        }
-
-        if (fallbackLayer is not null)
-        {
-            doc.Layers.Insert(0, fallbackLayer);
         }
 
         if (doc.Layers.Count == 0)
@@ -410,6 +421,7 @@ public sealed class SvgSerializer : ISvgSerializer
 
     private static SceneNode? ParseElement(XElement el, ReadContext context)
     {
+        if (!HasSvgNamespace(el)) return null;
         var localName = el.Name.LocalName;
         SceneNode? node = localName switch
         {
@@ -427,6 +439,7 @@ public sealed class SvgSerializer : ISvgSerializer
         if (node is not null)
         {
             ApplyCommonAttributes(el, node);
+            ApplyStandardEffects(el, node, context);
             if (node is ShapeNode shapeNode)
             {
                 ReadShapeStyleAttributes(el, shapeNode.Style, context);
@@ -549,7 +562,7 @@ public sealed class SvgSerializer : ISvgSerializer
 
         node.IsVisible = !string.Equals(el.Attribute("display")?.Value, "none", StringComparison.OrdinalIgnoreCase);
         node.IsLocked = string.Equals(el.Attribute(VectorerNs + "locked")?.Value, "true", StringComparison.OrdinalIgnoreCase);
-        node.Opacity = ParseFloat(el.Attribute("opacity")?.Value, 1.0f);
+        node.Opacity = ParseUnitInterval(el.Attribute("opacity")?.Value, 1f);
         node.Transform = ParseTransform(el.Attribute("transform")?.Value);
 
         var blendStr = el.Attribute(VectorerNs + "blend-mode")?.Value;
@@ -641,11 +654,12 @@ public sealed class SvgSerializer : ISvgSerializer
     private static readonly HashSet<string> InheritedProperties = ["fill", "stroke", "fill-rule", "fill-opacity", "stroke-opacity", "stroke-width", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-dasharray", "stroke-dashoffset", "color", "font-family", "font-size", "font-weight", "font-style", "text-anchor", "letter-spacing"];
     private static void ExpandInheritedStyles(XElement element, Dictionary<string, string> inherited)
     {
+        if (element.Name.LocalName == "filter") return;
         foreach (var declaration in (element.Attribute("style")?.Value ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
         {
             var colon = declaration.IndexOf(':'); if (colon < 0) continue;
             var name = declaration[..colon].Trim();
-            if (InheritedProperties.Contains(name) || name is "opacity" or "display" or "stop-color" or "stop-opacity") element.SetAttributeValue(name, declaration[(colon + 1)..].Trim());
+            if (IsSupportedStyleProperty(name)) element.SetAttributeValue(name, declaration[(colon + 1)..].Trim());
         }
         var current = new Dictionary<string, string>(inherited);
         foreach (var property in InheritedProperties)
@@ -703,6 +717,16 @@ public sealed class SvgSerializer : ISvgSerializer
                 foreach (var child in container.Children) RegisterIds(child);
         }
 
+        public string AddBlur(FilterSettings filter)
+        {
+            string id;
+            do { id = $"vectorer_filter_{++_nextId}"; } while (!_ids.Add(id));
+            Definitions.Add(new XElement(SvgNs + "filter", new XAttribute("id", id),
+                new XElement(SvgNs + "feGaussianBlur",
+                    new XAttribute("stdDeviation", $"{FormatFloat(filter.BlurSigmaX)} {FormatFloat(filter.BlurSigmaY)}"))));
+            return id;
+        }
+
         public string AddGradient(LinearGradientFill gradient)
         {
             string id;
@@ -730,6 +754,7 @@ public sealed class SvgSerializer : ISvgSerializer
 
     private sealed class ReadContext
     {
+        private readonly Dictionary<string, FilterSettings> _filters;
         private readonly Dictionary<string, XElement> _gradients;
         private readonly SKRect _viewBox;
         private static readonly XNamespace XLinkNs = "http://www.w3.org/1999/xlink";
@@ -737,12 +762,19 @@ public sealed class SvgSerializer : ISvgSerializer
         public ReadContext(XElement root, SKRect viewBox)
         {
             _viewBox = viewBox;
+            _filters = root.Descendants().Where(element => HasSvgNamespace(element) && element.Name.LocalName == "filter")
+                .Where(element => element.Attribute("id") is not null && ReadBlurDefinition(element) is not null)
+                .GroupBy(element => element.Attribute("id")!.Value, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => ReadBlurDefinition(group.First())!, StringComparer.Ordinal);
             _gradients = root.Descendants().Where(e => e.Name.LocalName == "linearGradient"
                     && (e.Name.Namespace == SvgNs || e.Name.Namespace == XNamespace.None)
                     && e.Attribute("id") is not null)
                 .GroupBy(e => e.Attribute("id")!.Value, StringComparer.Ordinal)
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
         }
+
+        public FilterSettings? ReadBlur(string? reference) =>
+            GetLocalReference(reference) is { } id ? _filters.GetValueOrDefault(id) : null;
 
         public LinearGradientFill? ReadGradient(string id)
         {

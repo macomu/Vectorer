@@ -251,6 +251,18 @@
   <data name="Status_FileSaved" xml:space="preserve">
     <value>Saved: {0}</value>
   </data>
+  <data name="Status_SvgImported" xml:space="preserve">
+    <value>{0} contains SVG content that may change or be omitted in Vectorer. Save your edits to a separate file.</value>
+  </data>
+  <data name="Status_SvgSourceProtected" xml:space="preserve">
+    <value>Choose a different file to protect the original SVG ({0}).</value>
+  </data>
+  <data name="Ui_InlineShaderUnavailable" xml:space="preserve">
+    <value>This file contains an inline shader. Its source is preserved, and the shape’s regular fill is used for rendering.</value>
+  </data>
+  <data name="Error_AtomicSaveUnavailable" xml:space="preserve">
+    <value>This storage provider does not support safe replacement. Save to a local file.</value>
+  </data>
   <data name="Status_FileSaveFailed" xml:space="preserve">
     <value>Could not save the file: {0}</value>
   </data>

@@ -58,7 +58,7 @@ public sealed class Phase3EffectsAndShadersTests
     }
 
     [Fact]
-    public void ShaderSelection_DynamicUniformsAndLiveSkslCompilationWithErrorProtection()
+    public void ShaderSelection_ExposesPluginUniformsAndPreservesInactiveInlineShader()
     {
         var vm = CreateWorkspace();
         var shape = new RectangleShapeNode { Rect = new SKRect(10, 10, 110, 110) };
@@ -82,44 +82,17 @@ public sealed class Phase3EffectsAndShadersTests
         freqUniform.Value = 24.5m;
         Assert.Equal(24.5f, shape.ShaderEffect.Uniforms!["u_frequency"]);
 
-        // Compile custom live SkSL with an existing uniform (u_frequency) and a new uniform (u_intensity)
-        vm.SkslSourceCode = """
-            uniform float4 u_bounds;
-            uniform float u_frequency;
-            uniform float u_intensity;
+        var inline = new ShaderEffectDescriptor(MainWindowViewModel.CustomShaderId,
+            "half4 main(float2 p) { return half4(1, 0, 0, 1); }");
+        shape.ShaderEffect = inline;
+        vm.SelectNodes([]);
+        vm.SelectNodes([shape]);
 
-            half4 main(float2 coord) {
-                float v = clamp((u_frequency + u_intensity) * 0.01, 0.0, 1.0);
-                return half4(v, 0.4, 0.8, 1.0);
-            }
-            """;
-        vm.CompileAndApplySkslCommand.Execute(null);
-
-        Assert.False(vm.HasSkslError);
-        Assert.Null(vm.SkslCompileError);
-        Assert.Equal(2, vm.ShaderUniforms.Count);
-        // Existing uniform value 24.5f is preserved across recompilation
-        Assert.Equal(24.5f, shape.ShaderEffect!.Uniforms!["u_frequency"]);
-        Assert.True(shape.ShaderEffect.Uniforms.ContainsKey("u_intensity"));
-
-        // Invalid SkSL reports line-numbered error and preserves the working shader without adding Undo entry
-        var validDescriptor = shape.ShaderEffect;
-        vm.SkslSourceCode = """
-            uniform float4 u_bounds;
-            half4 main(float2 coord) {
-                return unknown_func(coord);
-            }
-            """;
-        vm.CompileAndApplySkslCommand.Execute(null);
-
-        Assert.True(vm.HasSkslError);
-        Assert.NotNull(vm.SkslCompileError);
-        Assert.Matches(@"\d+\s*:", vm.SkslCompileError!);
-        Assert.Equal(validDescriptor.InlineSksl, shape.ShaderEffect!.InlineSksl);
-
-        // Render document to verify compiled custom SkSL executes cleanly
-        using var surface = SKSurface.Create(new SKImageInfo(200, 200));
-        vm.DocumentRenderer.RenderDocument(vm.CurrentDocument, surface.Canvas);
+        Assert.True(vm.HasInactiveInlineShader);
+        Assert.False(vm.HasActiveShader);
+        Assert.Empty(vm.ShaderUniforms);
+        Assert.DoesNotContain(vm.ShaderOptions, option => option.Id == MainWindowViewModel.CustomShaderId);
+        Assert.Same(inline, shape.ShaderEffect);
     }
 
     [Fact]

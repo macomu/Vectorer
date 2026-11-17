@@ -198,6 +198,7 @@ public sealed class AppLocalization : ObservableObject
     public string Ui_Sksl => Get(nameof(Strings.Ui_Sksl));
     public string Ui_ApplySksl => Get(nameof(Strings.Ui_ApplySksl));
     public string Ui_Uniforms => Get(nameof(Strings.Ui_Uniforms));
+    public string Ui_InlineShaderUnavailable => Get(nameof(Strings.Ui_InlineShaderUnavailable));
     public string Ui_Parent => Get(nameof(Strings.Ui_Parent));
     public string Ui_BlurDialog => Get(nameof(Strings.Ui_BlurDialog));
     public string Ui_EnableBlur => Get(nameof(Strings.Ui_EnableBlur));

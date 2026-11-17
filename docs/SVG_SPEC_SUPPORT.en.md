@@ -2,7 +2,7 @@
 
 **Languages:** [日本語](SVG_SPEC_SUPPORT.md) | English
 
-Vectorer reads and writes standard SVG 1.1 / SVG 2.0 files while preserving editor-specific metadata (layers, custom blend modes, parametric shapes, node kinds, SkSL shaders, etc.) through a dedicated XML namespace.
+Vectorer reads and writes a subset of SVG and preserves editor metadata through a dedicated XML namespace.
 
 ---
 
@@ -38,20 +38,22 @@ Browsers and other vector editors (Inkscape, Illustrator, etc.) ignore `vectorer
 ## 3. Styles, Filters & Shaders
 
 ### 3.1 Layer Blend Modes
-- Outputs standard CSS `style="mix-blend-mode: overlay;"` alongside `vectorer:blend-mode="..."` so Vectorer-specific modes such as `Add` and `Subtract` round-trip accurately.
+- Writes supported blend modes using CSS `mix-blend-mode` alongside `vectorer:blend-mode`. Add and Subtract use the Vectorer extension.
 
 ### 3.2 Filters (Gaussian Blur)
-- Writes `<filter id="filter_xxx"><feGaussianBlur stdDeviation="sigmaX sigmaY" /></filter>` inside `<defs>` and references it via `filter="url(#filter_xxx)"`, plus `vectorer:blur-sigma` for simplified recovery.
+- Writes a referenced `<filter><feGaussianBlur stdDeviation="sigmaX sigmaY"/></filter>` inside `<defs>` alongside `vectorer:blur-x` and `vectorer:blur-y`. A single Gaussian blur is supported on import.
 
 ### 3.3 Texture Fills
 - Stores `vectorer:texture-kind`, `vectorer:texture-scale`, `vectorer:texture-primary-color`, and `vectorer:texture-secondary-color`, while emitting a fallback `fill` color in standard attributes.
 
-### 3.4 SkiaSharp Shaders (`SKRuntimeEffect`)
-- Persists `vectorer:shader-id`, `vectorer:shader-uniforms`, and inline custom SkSL definitions via `<defs><vectorer:shader id="..." sksl="..." /></defs>`.
+### 3.4 Plugin Shaders
+- Persists `vectorer:shader-id` and `vectorer:shader-uniforms` in `key=value` format. Existing `vectorer:shader-sksl` source is retained, and v0.1.0 renders those shapes with their regular fills.
 
 ---
 
 ## 4. Compatibility & Round-Trip Details
+
+- Root `opacity` is applied after compositing the document. If unsupported elements or styles are detected, saving requires a separate file.
 
 - Affine transforms on shapes, layers, and groups are serialized as `transform="matrix(a b c d e f)"`; parsing supports `matrix`, `translate`, `scale`, `rotate`, `skewX`, and `skewY`.
 - Path anchor node types are stored in `vectorer:node-kinds` (`Corner` / `Smooth` / `Symmetric`) alongside standard `d` and `fill-rule`.

@@ -251,6 +251,18 @@
   <data name="Status_FileSaved" xml:space="preserve">
     <value>保存しました: {0}</value>
   </data>
+  <data name="Status_SvgImported" xml:space="preserve">
+    <value>{0} には Vectorer で表示が変わるか省略される SVG データがあります。編集内容は別のファイルに保存してください。</value>
+  </data>
+  <data name="Status_SvgSourceProtected" xml:space="preserve">
+    <value>元の SVG（{0}）を保護するため、別のファイルを指定してください。</value>
+  </data>
+  <data name="Ui_InlineShaderUnavailable" xml:space="preserve">
+    <value>このファイルのインラインシェーダーはソースを保持し、描画には図形の通常の塗りを使います。</value>
+  </data>
+  <data name="Error_AtomicSaveUnavailable" xml:space="preserve">
+    <value>この保存先では安全にファイルを置換できません。ローカルファイルに保存してください。</value>
+  </data>
   <data name="Status_FileSaveFailed" xml:space="preserve">
     <value>保存できませんでした: {0}</value>
   </data>
