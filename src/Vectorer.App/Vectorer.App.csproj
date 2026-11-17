@@ -31,6 +31,7 @@
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Tmds.DBus.Protocol" />
     <PackageReference Include="SkiaSharp" />
   </ItemGroup>
 

@@ -6,6 +6,8 @@ using System.Formats.Tar;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using System.Xml.Linq;
 
 string[] defaultRids = ["win-x64", "win-arm64", "osx-arm64"];
 List<string> rids = [];
@@ -142,8 +144,9 @@ foreach (var rid in rids)
     RunDotnet(repoRoot, [.. publishArgs]);
     VerifyLocalizationResources(ridPublishDir, rid);
 
-    CopyDocIfPresent(repoRoot, ridPublishDir, "LICENSE");
-    CopyDocIfPresent(repoRoot, ridPublishDir, "THIRD_PARTY_NOTICES.md");
+    File.Copy(Path.Combine(repoRoot, "LICENSE"), Path.Combine(ridPublishDir, "LICENSE"), overwrite: true);
+    File.Copy(Path.Combine(repoRoot, "THIRD_PARTY_NOTICES.md"), Path.Combine(ridPublishDir, "THIRD_PARTY_NOTICES.md"), overwrite: true);
+    CopyDependencyNotices(appProject, configuration, rid, ridPublishDir, Path.Combine(repoRoot, "LICENSE"));
     CopyDocIfPresent(repoRoot, ridPublishDir, "README.md");
     CopyDocIfPresent(repoRoot, ridPublishDir, "README.en.md");
 
@@ -159,7 +162,7 @@ foreach (var rid in rids)
 
         Console.WriteLine($"Creating ZIP archive: {archivePath}");
         ZipFile.CreateFromDirectory(ridPublishDir, archivePath, CompressionLevel.Optimal, includeBaseDirectory: false);
-        VerifyArchiveLocalizationResources(archivePath, rid, isZip: true);
+        VerifyArchive(archivePath, rid, ridPublishDir, isZip: true);
     }
     else
     {
@@ -171,7 +174,7 @@ foreach (var rid in rids)
 
         Console.WriteLine($"Creating tar.gz archive: {archivePath}");
         CreateTarGzArchive(ridPublishDir, archivePath, $"Vectorer-{rid}");
-        VerifyArchiveLocalizationResources(archivePath, rid, isZip: false);
+        VerifyArchive(archivePath, rid, ridPublishDir, isZip: false);
     }
 
     Console.WriteLine($"Successfully packaged {rid}!");
@@ -228,6 +231,85 @@ static void CopyDocIfPresent(string repoRoot, string destinationDir, string file
     {
         File.Copy(sourcePath, Path.Combine(destinationDir, fileName), overwrite: true);
     }
+}
+
+static void CopyDependencyNotices(string appProject, string configuration, string rid, string publishDir, string mitTemplatePath)
+{
+    string objPath = Path.Combine(Path.GetDirectoryName(appProject)!, "obj");
+    using var assets = JsonDocument.Parse(File.ReadAllText(Path.Combine(objPath, "project.assets.json")));
+    using var dependencies = JsonDocument.Parse(File.ReadAllText(
+        Path.Combine(objPath, configuration, "net10.0", rid, "Vectorer.App.deps.json")));
+    var packageRoots = assets.RootElement.GetProperty("packageFolders").EnumerateObject().Select(folder => folder.Name).ToArray();
+    var dependencyRoot = dependencies.RootElement;
+    string runtimeTarget = dependencyRoot.GetProperty("runtimeTarget").GetProperty("name").GetString()!;
+    var libraries = dependencyRoot.GetProperty("libraries");
+    var shipped = dependencyRoot.GetProperty("targets").GetProperty(runtimeTarget).EnumerateObject()
+        .Where(entry => entry.Value.EnumerateObject().Any(asset => asset.Name is "runtime" or "native" or "resources" or "runtimeTargets"))
+        .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase);
+
+    string noticesRoot = Directory.CreateDirectory(Path.Combine(publishDir, "licenses")).FullName;
+    string mitTemplate = File.ReadAllText(mitTemplatePath);
+    int permissionStart = mitTemplate.IndexOf("Permission is hereby granted", StringComparison.Ordinal);
+    if (permissionStart < 0) throw new InvalidOperationException("The MIT license template is incomplete.");
+    var inventory = new List<string>();
+    foreach (var entry in shipped)
+    {
+        var library = libraries.GetProperty(entry.Name);
+        string? packagePath = library.GetProperty("type").GetString() switch
+        {
+            "package" => library.GetProperty("path").GetString(),
+            "runtimepack" => entry.Name["runtimepack.".Length..].ToLowerInvariant(),
+            _ => null
+        };
+        if (packagePath is null) continue;
+
+        string packageDirectory = packageRoots.Select(root => Path.Combine(root, packagePath))
+            .FirstOrDefault(Directory.Exists)
+            ?? throw new InvalidOperationException($"Unable to locate the restored package for {entry.Name}.");
+        string packageName = entry.Name.Replace('/', '-');
+        string destination = Directory.CreateDirectory(Path.Combine(noticesRoot, packageName)).FullName;
+        var packageFiles = Directory.EnumerateFiles(packageDirectory).Where(IsNoticeFile).ToArray();
+        foreach (string file in packageFiles)
+            File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
+
+        if (entry.Name.StartsWith("Avalonia.Fonts.Inter/", StringComparison.OrdinalIgnoreCase))
+        {
+            if (entry.Name != "Avalonia.Fonts.Inter/11.3.0")
+                throw new InvalidOperationException("Verify the bundled Inter font version and update its notice.");
+            File.Copy(Path.Combine(Path.GetDirectoryName(mitTemplatePath)!, "licenses", "Inter-OFL.txt"),
+                Path.Combine(destination, "Inter-OFL.txt"));
+        }
+
+        if (!packageFiles.Any(file => Path.GetFileName(file).StartsWith("license", StringComparison.OrdinalIgnoreCase)
+            || Path.GetFileName(file).StartsWith("copying", StringComparison.OrdinalIgnoreCase)))
+        {
+            var metadata = XDocument.Load(Directory.EnumerateFiles(packageDirectory, "*.nuspec").Single()).Root!.Elements()
+                .Single(element => element.Name.LocalName == "metadata");
+            var license = metadata.Elements().SingleOrDefault(element => element.Name.LocalName == "license");
+            var copyright = metadata.Elements().SingleOrDefault(element => element.Name.LocalName == "copyright")?.Value.Trim();
+            if (license?.Attribute("type")?.Value != "expression" || license.Value != "MIT" || string.IsNullOrWhiteSpace(copyright))
+                throw new InvalidOperationException($"No redistributable license text was found for {entry.Name}.");
+
+            string text = $"MIT License\n\n{copyright}\n\n{mitTemplate[permissionStart..]}";
+            File.WriteAllText(Path.Combine(destination, "LICENSE.txt"), text);
+        }
+
+        inventory.Add($"{entry.Name} → {packageName}/");
+    }
+
+    if (inventory.Count == 0)
+        throw new InvalidOperationException($"No runtime dependencies were found for {rid}.");
+    File.WriteAllLines(Path.Combine(noticesRoot, "DEPENDENCIES.txt"), inventory);
+}
+
+static bool IsNoticeFile(string path)
+{
+    string name = Path.GetFileNameWithoutExtension(path).Replace("-", "").Replace("_", "");
+    return name.Equals("license", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("copying", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("notice", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("notices", StringComparison.OrdinalIgnoreCase)
+        || name.Equals("thirdpartynotices", StringComparison.OrdinalIgnoreCase);
 }
 
 static void RunDotnet(string workingDirectory, params string[] arguments)
@@ -369,12 +451,17 @@ static void VerifyLocalizationResources(string ridPublishDir, string rid)
     throw new InvalidOperationException($"Missing Japanese satellite resource assembly for '{rid}': neither '{jaSatellite}' nor a bundled entry in '{Path.GetFileName(mainExecutable)}' was found. Ensure SatelliteResourceLanguages does not strip 'ja'.");
 }
 
-static void VerifyArchiveLocalizationResources(string archivePath, string rid, bool isZip)
+static void VerifyArchive(string archivePath, string rid, string publishDirectory, bool isZip)
 {
     string expectedPrefix = isZip ? "" : $"Vectorer-{rid}/";
     string expectedSatellite = $"{expectedPrefix}ja/Vectorer.App.resources.dll";
     string expectedAssembly = $"{expectedPrefix}Vectorer.App.dll";
     string expectedExecutable = $"{expectedPrefix}{(rid.StartsWith("win-", StringComparison.OrdinalIgnoreCase) ? "Vectorer.App.exe" : "Vectorer.App")}";
+    var remainingNotices = Directory.EnumerateFiles(Path.Combine(publishDirectory, "licenses"), "*", SearchOption.AllDirectories)
+        .Select(path => expectedPrefix + Path.GetRelativePath(publishDirectory, path).Replace('\\', '/'))
+        .ToHashSet(StringComparer.Ordinal);
+    remainingNotices.Add(expectedPrefix + "LICENSE");
+    remainingNotices.Add(expectedPrefix + "THIRD_PARTY_NOTICES.md");
 
     bool foundMain = false;
     bool foundJaSatellite = false;
@@ -386,6 +473,7 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
             string entryPath = entry.FullName.Replace('\\', '/');
+            if (entry.Length > 0) remainingNotices.Remove(entryPath);
             if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal))
             {
                 if (entry.Length > 0) foundMain = true;
@@ -426,6 +514,7 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
             }
 
             string entryPath = entry.Name.Replace('\\', '/');
+            if (entry.Length > 0) remainingNotices.Remove(entryPath);
             if (entryPath.Equals(expectedAssembly, StringComparison.Ordinal))
             {
                 if (entry.Length > 0) foundMain = true;
@@ -455,6 +544,9 @@ static void VerifyArchiveLocalizationResources(string archivePath, string rid, b
             }
         }
     }
+
+    if (remainingNotices.Count > 0)
+        throw new InvalidOperationException($"Archive '{archivePath}' is missing license notices: {string.Join(", ", remainingNotices)}.");
 
     if (!foundMain)
     {

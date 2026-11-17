@@ -4,11 +4,15 @@ Vectorer is licensed under the **MIT License**. All third-party dependencies use
 
 ## Dependencies
 
+Packaged builds include a `licenses/` folder generated from the runtime dependency manifest for the target platform. The inventory in `licenses/DEPENDENCIES.txt` covers bundled managed and native dependencies and the self-contained .NET runtime. Each entry includes the applicable license text and any upstream third-party notices shipped in the restored package.
+
 | Package | Version | License | Project URL |
 | :--- | :--- | :--- | :--- |
 | **Avalonia** (`Avalonia.*`) | 11.3.0 | MIT | https://github.com/AvaloniaUI/Avalonia |
+| **Inter** (font assets bundled by `Avalonia.Fonts.Inter`) | 3.019 | SIL OFL 1.1 | [Upstream license](https://github.com/rsms/inter/blob/0a5106e0b/LICENSE.txt) |
 | **SkiaSharp** | 2.88.9 | MIT | https://github.com/mono/SkiaSharp |
 | **CommunityToolkit.Mvvm** | 8.4.2 | MIT | https://github.com/CommunityToolkit/dotnet |
+| **Tmds.DBus.Protocol** | 0.21.3 | MIT | https://github.com/tmds/Tmds.DBus |
 | **xUnit** (`xunit.*`) | 2.9.3 / 3.0.2 | Apache-2.0 | https://github.com/xunit/xunit |
 | **Microsoft.NET.Test.Sdk** | 17.13.0 | MIT | https://github.com/microsoft/vstest |
 | **coverlet.collector** | 6.0.4 | MIT | https://github.com/coverlet-coverage/coverlet |

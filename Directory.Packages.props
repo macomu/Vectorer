@@ -17,11 +17,15 @@
     <PackageVersion Include="Avalonia.Desktop" Version="11.3.0" />
     <PackageVersion Include="Avalonia.Skia" Version="11.3.0" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.3.0" />
+    <!-- MIT package with Inter font assets under SIL OFL 1.1; font notice is bundled by build.cs. -->
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="11.3.0" />
     <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.0" />
 
     <!-- MVVM Toolkit (License: MIT) -->
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+
+    <!-- Avalonia.FreeDesktop D-Bus dependency: security backport for GHSA-xrw6-gwf8-vvr9 (License: MIT) -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.21.3" />
 
     <!-- 2D Graphics, Boolean Path Ops, Filters, Shaders & PNG Export: SkiaSharp (License: MIT) -->
     <PackageVersion Include="SkiaSharp" Version="2.88.9" />
