@@ -9,7 +9,7 @@ Vectorer へのバグ報告・機能提案・Pull Request を歓迎します。
 
 ## 1. 開発環境とビルド・テスト
 
-- **必須 SDK**: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)（[global.json](global.json) で `10.0.100` 以上を指定）
+- **必須 SDK**: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)（[global.json](global.json) で `10.0.403` 以上を指定）
 
 ```bash
 # ソリューション全体のビルド

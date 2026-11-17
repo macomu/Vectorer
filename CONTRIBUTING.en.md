@@ -9,7 +9,7 @@ Please review [README.en.md](README.en.md) for an overview of the project, [LICE
 
 ## 1. Development Environment, Build & Tests
 
-- **Required SDK**: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.100` or later per [global.json](global.json))
+- **Required SDK**: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.403` or later per [global.json](global.json))
 
 ```bash
 # Build the entire solution

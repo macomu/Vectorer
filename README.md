@@ -64,7 +64,7 @@ Vectorer/
 
 ## ビルド・テスト・パッケージ化
 
-前提: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`global.json` で `10.0.100` 以上を指定)
+前提: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`global.json` で `10.0.403` 以上を指定)
 
 ```bash
 # ソリューション全体のビルド

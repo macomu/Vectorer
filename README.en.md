@@ -64,7 +64,7 @@ Vectorer/
 
 ## Build, Test & Packaging
 
-Prerequisite: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.100` or later per [global.json](global.json))
+Prerequisite: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.403` or later per [global.json](global.json))
 
 ```bash
 # Build the entire solution

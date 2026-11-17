@@ -1,4 +1,5 @@
 #!/usr/bin/env dotnet
+#:property PublishAot=false
 
 using System.Buffers.Binary;
 using System.Diagnostics;
