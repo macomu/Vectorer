@@ -1,6 +1,8 @@
+using System.Globalization;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
 using Vectorer.Abstractions.Styling;
+using Vectorer.App.Localization;
 using Vectorer.App.ViewModels;
 using Xunit;
 
@@ -10,7 +12,7 @@ public sealed class Phase3FillAndStrokeInspectorTests
 {
     private static MainWindowViewModel CreateWorkspace()
     {
-        var vm = new MainWindowViewModel();
+        var vm = new MainWindowViewModel(new AppLocalization(CultureInfo.GetCultureInfo("ja-JP"), CultureInfo.InvariantCulture));
         vm.CurrentDocument.Layers.Clear();
         var layer = new LayerNode { Name = "Layer 1" };
         vm.CurrentDocument.Layers.Add(layer);

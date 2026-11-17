@@ -1,5 +1,6 @@
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
+using Vectorer.App.Localization;
 using Vectorer.App.Services;
 using Vectorer.App.ViewModels;
 using Vectorer.Core.Commands;
@@ -29,7 +30,8 @@ public sealed class DocumentProtectionTests
         var dialogs = new Dialogs { FailFlush = true }; var vm = new MainWindowViewModel { FileDialogs = dialogs };
         vm.ExecuteCommand(new AddNodeCommand(vm.ActiveLayer!, new RectangleShapeNode()));
         await vm.SaveDocumentCommand.ExecuteAsync(null); Assert.True(vm.HasUnsavedChanges); Assert.False(vm.IsBusy);
-        Assert.False(await vm.CanCloseAsync()); Assert.Contains("保存できませんでした", vm.StatusMessage);
+        Assert.False(await vm.CanCloseAsync());
+        Assert.Equal(vm.L10n.Format(new LocalizedMessage(nameof(Strings.Status_FileSaveFailed), "Disk flush failed")), vm.StatusMessage);
     }
     [Fact]
     public async Task Close_SaveChoiceBlocksClosingWhenSavePickerIsCancelled()

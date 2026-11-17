@@ -1,5 +1,6 @@
 using System.Text;
 using Vectorer.Abstractions.Documents;
+using Vectorer.App.Localization;
 using Vectorer.App.Services;
 using Vectorer.App.ViewModels;
 using Vectorer.Core.Commands;
@@ -15,6 +16,12 @@ public sealed class DocumentFilesTests
         public MemoryStream Output { get; private set; } = new();
         public bool Discard { get; set; }
         public bool SaveToSource { get; set; }
+        public LocalizedMessage? LastError { get; private set; }
+        public Task ShowLocalizedErrorAsync(LocalizedMessage message, string fallback)
+        {
+            LastError = message;
+            return Task.CompletedTask;
+        }
         public Task<bool> ConfirmDiscardAsync() => Task.FromResult(Discard);
         public Task<EditorFile?> OpenSvgAsync() => Task.FromResult<EditorFile?>(new("input.svg", () => Task.FromResult<Stream>(new MemoryStream(Encoding.UTF8.GetBytes(Input))), () => throw new NotSupportedException()));
         public Task<EditorFile?> SaveSvgAsync(string suggestedName) => Task.FromResult<EditorFile?>(new(SaveToSource ? "input.svg" : "output.svg", () => throw new NotSupportedException(), () => { Output = new MemoryStream(); return Task.FromResult<Stream>(Output); }));
@@ -90,7 +97,9 @@ public sealed class DocumentFilesTests
         var dialogs = new Dialogs { Input = "<broken" }; var vm = new MainWindowViewModel { FileDialogs = dialogs };
         var before = vm.CurrentDocument;
         await vm.OpenDocumentCommand.ExecuteAsync(null);
-        Assert.Same(before, vm.CurrentDocument); Assert.False(vm.IsBusy); Assert.Contains("開けませんでした", vm.StatusMessage);
+        Assert.Same(before, vm.CurrentDocument);
+        Assert.False(vm.IsBusy);
+        Assert.Equal(nameof(Strings.Status_FileOpenFailed), dialogs.LastError?.Key);
     }
     [Fact]
     public async Task NewDocument_RespectsDiscardDecisionAndClearsHistoryAfterAcceptance()

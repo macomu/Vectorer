@@ -1,6 +1,8 @@
+using System.Globalization;
 using SkiaSharp;
 using Vectorer.Abstractions.Documents;
 using Vectorer.Abstractions.Styling;
+using Vectorer.App.Localization;
 using Vectorer.App.ViewModels;
 using Xunit;
 
@@ -10,7 +12,7 @@ public sealed class Phase3PngExportDialogTests
 {
     private static MainWindowViewModel CreateWorkspace()
     {
-        var vm = new MainWindowViewModel();
+        var vm = new MainWindowViewModel(new AppLocalization(CultureInfo.GetCultureInfo("ja-JP"), CultureInfo.InvariantCulture));
         vm.CurrentDocument.Width = 860f;
         vm.CurrentDocument.Height = 540f;
         vm.CurrentDocument.ViewBox = new SKRect(0, 0, 860, 540);
