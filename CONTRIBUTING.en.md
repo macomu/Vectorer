@@ -9,7 +9,7 @@ Please review [README.en.md](README.en.md) for an overview of the project, [LICE
 
 ## 1. Development Environment, Build & Tests
 
-- **Required SDK**: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.403` or later per [global.json](global.json))
+- **Development environment** — Build with the [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0), version `11.0.100` or later in the `11.0` series. Install the [.NET 10 runtime](https://dotnet.microsoft.com/download/dotnet/10.0) to run the app and tests during development. CI reads its SDK version from [global.json](global.json).
 
 ```bash
 # Build the entire solution

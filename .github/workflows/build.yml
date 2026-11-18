@@ -40,10 +40,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 10
+      - name: Set up the .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
+
+      - name: Install .NET 10 test runtime (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1'
+          Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile $installer
+          & $installer -Channel 10.0 -Runtime dotnet -Architecture $env:RUNNER_ARCH -InstallDir $env:DOTNET_ROOT -NoPath -SkipNonVersionedFiles
+
+      - name: Install .NET 10 test runtime (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          installer="$RUNNER_TEMP/dotnet-install.sh"
+          curl --fail --silent --show-error --location https://dot.net/v1/dotnet-install.sh --output "$installer"
+          bash "$installer" --channel 10.0 --runtime dotnet --install-dir "$DOTNET_ROOT" --no-path --skip-non-versioned-files
 
       - name: Build, test, and package (${{ matrix.rid }})
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}

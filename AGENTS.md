@@ -69,6 +69,8 @@ Vectorer.Abstractions (プラグイン SDK・共通モデル・SkiaSharp 参照�
 
 ## 3. よく使うコマンド
 
+ビルド用SDKは `global.json` が指定する .NET 11 です。アプリとテストの実行には .NET 10 ランタイムが必要です。
+
 作業の前後や変更後には、必ず以下のコマンドでビルドとテストが通ることを確認してください。
 
 ```bash
@@ -88,7 +90,7 @@ dotnet tests/Vectorer.Rendering.Tests/bin/Debug/net10.0/Vectorer.Rendering.Tests
 # アプリケーションの実行
 dotnet run --project src/Vectorer.App/Vectorer.App.csproj
 
-# 配布パッケージ作成 (.NET 10 ファイルベースアプリ: win-x64 / win-arm64 / osx-arm64)
+# 配布パッケージ作成 (win-x64 / win-arm64 / osx-arm64)
 dotnet run build.cs
 ```
 

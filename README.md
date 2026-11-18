@@ -64,7 +64,7 @@ Vectorer/
 
 ## ビルド・テスト・パッケージ化
 
-前提: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`global.json` で `10.0.403` 以上を指定)
+ビルドには [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0) が必要です。[global.json](global.json) が `11.0.100` 以降の `11.0` 系を選びます。開発中にアプリやテストを実行する環境には [.NET 10 ランタイム](https://dotnet.microsoft.com/download/dotnet/10.0) も必要です。
 
 ```bash
 # ソリューション全体のビルド
@@ -76,7 +76,7 @@ dotnet test Vectorer.slnx
 # アプリケーションの起動
 dotnet run --project src/Vectorer.App
 
-# リリースパッケージの作成 (.NET 10 ファイルベースアプリ)
+# リリースパッケージの作成
 # デフォルトで win-x64 (.zip), win-arm64 (.zip), osx-arm64 (.tar.gz) を artifacts/packages/ に出力
 dotnet run build.cs
 

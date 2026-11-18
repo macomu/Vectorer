@@ -64,7 +64,7 @@ Vectorer/
 
 ## Build, Test & Packaging
 
-Prerequisite: [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`10.0.403` or later per [global.json](global.json))
+Building requires the [.NET 11 SDK](https://dotnet.microsoft.com/download/dotnet/11.0). [global.json](global.json) selects `11.0.100` or later in the `11.0` series. Running the app or tests during development also requires the [.NET 10 runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ```bash
 # Build the entire solution
@@ -76,7 +76,7 @@ dotnet test Vectorer.slnx
 # Launch the desktop application
 dotnet run --project src/Vectorer.App
 
-# Create release packages (.NET 10 file-based app)
+# Create release packages
 # Outputs win-x64 (.zip), win-arm64 (.zip), osx-arm64 (.tar.gz) to artifacts/packages/ by default
 dotnet run build.cs
 
