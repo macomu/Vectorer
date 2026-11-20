@@ -182,15 +182,16 @@ public sealed partial class LocalizationTests : IDisposable
         await coordinator.RequestLanguageAsync("en");
         Assert.Equal("en", l10n.RequestedLanguage);
 
-        // While first save is blocked, second request applies immediately
+        // While first save is blocked, second request applies immediately without overlapping saves
         await coordinator.RequestLanguageAsync("system");
         Assert.Equal("system", l10n.RequestedLanguage);
         Assert.Equal("ja", l10n.UiCulture.Name);
+        Assert.Equal(1, Volatile.Read(ref saveCount));
 
         firstSaveGate.SetResult();
         await coordinator.WaitForPendingSavesAsync();
 
-        Assert.Equal("system", savedLanguages.Last());
+        Assert.Equal(["en", "system"], savedLanguages);
     }
 
     [Fact]

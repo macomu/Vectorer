@@ -15,10 +15,13 @@ public sealed class LanguageChangeCoordinator : ObservableObject
     private readonly LanguageChangeSafety? _safety;
     private readonly Action<Action> _scheduleFlush;
 
+    private readonly object _legacySaveLock = new();
     private bool _isApplying;
     private bool _flushScheduled;
     private bool _isShuttingDown;
     private string? _pendingLanguage;
+    private string? _pendingLegacySaveLanguage;
+    private bool _legacySaveRunning;
     private Task _legacySaveTask = Task.CompletedTask;
 
     public string? PendingLanguage
@@ -111,7 +114,10 @@ public sealed class LanguageChangeCoordinator : ObservableObject
             return _settingsSession.WaitForIdleAsync();
         }
 
-        return _legacySaveTask;
+        lock (_legacySaveLock)
+        {
+            return _legacySaveTask;
+        }
     }
 
     private void OnSafetyStateChanged(object? sender, EventArgs e)
@@ -169,7 +175,7 @@ public sealed class LanguageChangeCoordinator : ObservableObject
             }
             else if (_saveSettingsAsync is not null)
             {
-                _legacySaveTask = SaveLegacyAsync(normalizedLanguage);
+                EnqueueLegacySave(normalizedLanguage);
             }
         }
         finally
@@ -183,15 +189,56 @@ public sealed class LanguageChangeCoordinator : ObservableObject
         }
     }
 
-    private async Task SaveLegacyAsync(string normalizedLanguage)
+    private void EnqueueLegacySave(string normalizedLanguage)
+    {
+        lock (_legacySaveLock)
+        {
+            _pendingLegacySaveLanguage = normalizedLanguage;
+            if (!_legacySaveRunning)
+            {
+                _legacySaveRunning = true;
+                _legacySaveTask = DrainLegacySavesAsync();
+            }
+        }
+    }
+
+    private async Task DrainLegacySavesAsync()
     {
         try
         {
-            await _saveSettingsAsync!(normalizedLanguage).ConfigureAwait(false);
+            while (true)
+            {
+                string languageToSave;
+                lock (_legacySaveLock)
+                {
+                    if (_pendingLegacySaveLanguage is null)
+                    {
+                        _legacySaveRunning = false;
+                        return;
+                    }
+
+                    languageToSave = _pendingLegacySaveLanguage;
+                    _pendingLegacySaveLanguage = null;
+                }
+
+                try
+                {
+                    await _saveSettingsAsync!(languageToSave).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _onSaveFailed?.Invoke(ex);
+                }
+            }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch
         {
-            _onSaveFailed?.Invoke(ex);
+            lock (_legacySaveLock)
+            {
+                _legacySaveRunning = false;
+            }
+
+            throw;
         }
     }
 }
